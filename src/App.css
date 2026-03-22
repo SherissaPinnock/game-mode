@@ -1,184 +1,354 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-  margin-bottom: 24px;
+/* =============================================
+   Sketch / Whiteboard aesthetic
+   Shared across all sketch-style games
+   ============================================= */
 
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}
-
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
-}
-
-#center {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
-}
-
-#next-steps {
-  display: flex;
-  border-top: 1px solid var(--border);
+/* Graph-paper background */
+.sketch-bg {
+  background-color: #f5f0e8;
+  background-image:
+    linear-gradient(rgba(80, 70, 60, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(80, 70, 60, 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
   text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
 }
 
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+/* Hand-drawn card */
+.sketch-card {
+  background: #fffef5;
+  border: 2px solid #2d2d2d;
+  box-shadow: 4px 4px 0px #2d2d2d;
+  border-radius: 3px;
 }
 
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
+/* Pressed-paper button */
+.sketch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+  font-size: 1rem;
+  border: 2px solid #2d2d2d;
+  box-shadow: 3px 3px 0px #2d2d2d;
+  background: #fffef5;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: box-shadow 80ms ease, transform 80ms ease;
+  color: #2d2d2d;
+  line-height: 1;
 }
 
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
+.sketch-btn:hover:not(:disabled) {
+  box-shadow: 2px 2px 0px #2d2d2d;
+  transform: translate(1px, 1px);
 }
 
-.ticks {
-  position: relative;
+.sketch-btn:active:not(:disabled) {
+  box-shadow: 0px 0px 0px #2d2d2d;
+  transform: translate(3px, 3px);
+}
+
+.sketch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Handwritten font utility */
+.font-sketch {
+  font-family: 'Caveat', system-ui;
+}
+
+/* =============================================
+   Tech Connections — card & row animations
+   ============================================= */
+
+/* Correct guess: card bounces to the category colour */
+@keyframes connections-card-correct {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.08); }
+  55%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+/* Wrong guess: card shakes horizontally */
+@keyframes connections-card-wrong {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-7px); }
+  30%       { transform: translateX(7px); }
+  45%       { transform: translateX(-5px); }
+  60%       { transform: translateX(5px); }
+  78%       { transform: translateX(-3px); }
+  90%       { transform: translateX(2px); }
+}
+
+/* Solved row: slides + scales in from the top */
+@keyframes connections-row-reveal {
+  from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-card-correct {
+  animation: connections-card-correct 0.6s ease-out forwards;
+}
+
+.animate-card-wrong {
+  animation: connections-card-wrong 0.6s ease-out forwards;
+}
+
+.animate-row-reveal {
+  animation: connections-row-reveal 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+}
+
+/* =============================================
+   Memory Match — 3D card flip
+   ============================================= */
+
+.memory-card {
+  perspective: 900px;
+  height: 80px;
+  border-radius: 8px;
+}
+
+.memory-card-clickable {
+  cursor: pointer;
+}
+
+.memory-card-inner {
   width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+.memory-card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
-  }
+/* Shared face styles */
+.memory-card-back,
+.memory-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border-width: 2px;
+  border-style: solid;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Face-down side */
+.memory-card-back {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* Face-up side — rotated so it appears after the flip */
+.memory-card-face {
+  transform: rotateY(180deg);
+  border-color: #e2e8f0;
+}
+
+/* Peek progress bar — shrinks from full width to zero over PEEK_DURATION */
+@keyframes peek-shrink {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+.peek-progress-bar {
+  animation: peek-shrink linear forwards;
+  /* animation-duration is set inline to match PEEK_DURATION */
+}
+
+/* =============================================
+   Build a Startup — drag & drop animations
+   ============================================= */
+
+@keyframes bas-correct-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(39,174,96,0.5); }
+  50%  { box-shadow: 0 0 16px 4px rgba(39,174,96,0.35); }
+  100% { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+}
+.bas-correct {
+  animation: bas-correct-flash 0.6s ease-out;
+}
+
+@keyframes bas-wrong-shake {
+  0%, 100% { transform: translateX(0); }
+  15%      { transform: translateX(-6px); }
+  30%      { transform: translateX(5px); }
+  45%      { transform: translateX(-4px); }
+  60%      { transform: translateX(3px); }
+  75%      { transform: translateX(-2px); }
+}
+.bas-wrong {
+  animation: bas-wrong-shake 0.5s ease-out;
+}
+
+/* =============================================
+   Scale or Die — arcade UI
+   ============================================= */
+
+/* CRT scanline overlay */
+.sod-scanlines {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  z-index: 0;
+}
+
+/* Neon text glow */
+.sod-glow-green { text-shadow: 0 0 8px #00ff88, 0 0 20px #00ff8866; }
+.sod-glow-red   { text-shadow: 0 0 8px #ff3344, 0 0 20px #ff334466; }
+.sod-glow-amber { text-shadow: 0 0 8px #ffaa00, 0 0 20px #ffaa0066; }
+
+/* Server unit LED pulse */
+@keyframes sod-led-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+  50%       { opacity: 0.5; box-shadow: 0 0 2px currentColor; }
+}
+
+.sod-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: sod-led-pulse 1.5s ease-in-out infinite;
+}
+
+.sod-led-green  { background: #00ff88; color: #00ff88; box-shadow: 0 0 6px #00ff88; }
+.sod-led-amber  { background: #ffaa00; color: #ffaa00; box-shadow: 0 0 6px #ffaa00; animation-duration: 0.8s; }
+.sod-led-red    { background: #ff3344; color: #ff3344; box-shadow: 0 0 6px #ff3344; animation-duration: 0.4s; }
+
+/* Fire animation on overloaded servers */
+@keyframes sod-fire {
+  0%   { transform: scaleY(1)   translateX(0px);  opacity: 1; }
+  25%  { transform: scaleY(1.2) translateX(-2px); opacity: 0.9; }
+  50%  { transform: scaleY(0.9) translateX(2px);  opacity: 1; }
+  75%  { transform: scaleY(1.3) translateX(-1px); opacity: 0.85; }
+  100% { transform: scaleY(1)   translateX(0px);  opacity: 1; }
+}
+
+.sod-fire {
+  display: inline-block;
+  animation: sod-fire 0.35s ease-in-out infinite;
+  transform-origin: bottom center;
+  filter: drop-shadow(0 0 6px #ff6600);
+}
+
+/* Skull for DDoS wave */
+@keyframes sod-skull-float {
+  0%, 100% { transform: translateY(0px) rotate(-3deg); }
+  50%       { transform: translateY(-4px) rotate(3deg); }
+}
+
+.sod-skull {
+  display: inline-block;
+  animation: sod-skull-float 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px #ff3344);
+}
+
+/* DDoS projectile — moves right to left */
+@keyframes sod-packet {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-320px); opacity: 0; }
+}
+
+.sod-packet {
+  position: absolute;
+  animation: sod-packet 0.9s linear forwards;
+  pointer-events: none;
+}
+
+/* Wave label flash */
+@keyframes sod-wave-flash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.sod-wave-alert {
+  animation: sod-wave-flash 0.7s ease-in-out infinite;
+}
+
+/* Action button hover glow */
+.sod-action-btn {
+  transition: box-shadow 0.15s ease, transform 0.1s ease, opacity 0.2s;
+}
+
+.sod-action-btn:hover:not(:disabled) {
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  transform: translateY(-1px);
+}
+
+.sod-action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Score grade flash */
+@keyframes sod-grade-in {
+  from { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(3deg);  opacity: 1; }
+  to   { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+
+.sod-grade-anim {
+  animation: sod-grade-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Server rack slot row */
+.sod-server-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.sod-server-slot.overloaded {
+  background: rgba(255, 51, 68, 0.1);
+  border-color: rgba(255, 51, 68, 0.3);
+}
+
+/* Packet stream on overload */
+@keyframes sod-stream {
+  from { background-position: 0 0; }
+  to   { background-position: -40px 0; }
+}
+
+.sod-traffic-stream {
+  height: 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #ef4444 0px, #ef4444 8px,
+    transparent 8px, transparent 16px
+  );
+  background-size: 40px 4px;
+  animation: sod-stream 0.4s linear infinite;
+}
+
+.sod-traffic-stream-ok {
+  height: 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    #00ff88 0px, #00ff88 8px,
+    transparent 8px, transparent 16px
+  );
+  background-size: 40px 4px;
+  animation: sod-stream 0.9s linear infinite;
 }

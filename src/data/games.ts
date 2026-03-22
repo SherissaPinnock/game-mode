@@ -1,4 +1,5 @@
-import { Brain, Bug, Keyboard, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, type LucideIcon } from 'lucide-react'
+// LayoutGrid is used by memory-match above
 
 export interface Game {
   id: string
@@ -10,24 +11,38 @@ export interface Game {
 
 export const games: Game[] = [
   {
-    id: 'code-quiz',
-    title: 'Code Quiz',
-    description: 'Test your programming knowledge across languages and frameworks with rapid-fire multiple choice questions.',
-    icon: Brain,
+    id: 'archery-quiz',
+    title: 'Archery Quiz',
+    description: 'Test your programming knowledge across languages and frameworks. The more you get right, the more chances you get to hit the bullseye.',
+    icon: Target,
     tag: 'Knowledge',
   },
   {
-    id: 'bug-hunt',
-    title: 'Bug Hunt',
-    description: 'Spot and squash bugs hidden in real code snippets before the timer runs out. Sharp eyes only.',
-    icon: Bug,
-    tag: 'Debugging',
+    id: 'connections',
+    title: 'Tech Connections',
+    description: 'Link related programming concepts together to strengthen your understanding. A challenge for the analytical mind.',
+    icon: Network,
+    tag: 'Deep Thinking',
   },
   {
-    id: 'type-race',
-    title: 'Type Race',
-    description: 'Race against the clock typing out code as fast and accurately as you can. Build muscle memory for syntax.',
-    icon: Keyboard,
-    tag: 'Speed',
+    id: 'memory-match',
+    title: 'Memory Match',
+    description: 'Flip cards to find matching pairs of code snippets. A fun way to boost your memory and learn new patterns.',
+    icon: LayoutGrid,
+    tag: 'Memory',
   },
+  {
+    id: 'scale-or-die',
+    title: 'Scale or Die',
+    description: 'Make strategic decisions to grow your startup. Will you scale or face the consequences?',
+    icon: Server,
+    tag: 'Strategy',
+  },
+  {
+    id: 'build-a-startup',
+    title: 'Build a Startup',
+    description: 'Drag and drop to build your own tech startup. Make smart choices to succeed in the competitive market.',
+    icon: Hammer,
+    tag: 'Strategy',
+  }
 ]
