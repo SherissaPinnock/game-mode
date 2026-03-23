@@ -193,7 +193,7 @@ const S = {
 
 const SLOT_W = 140   // px
 const SLOT_H = 56    // px
-const USERS_Y = -3   // % — users icon sits above the diagram
+const USERS_Y = 3  // % — users icon sits above the diagram
 
 // ─── Arrow Component ─────────────────────────────────────────────────────────
 
@@ -282,6 +282,7 @@ function DropSlot({
   onDragLeave,
   onDrop,
   onRemove,
+  onTapPlace,
 }: {
   slot: SlotDef
   placed: ArchComponent | null
@@ -292,6 +293,7 @@ function DropSlot({
   onDragLeave: () => void
   onDrop: (e: DragEvent) => void
   onRemove: () => void
+  onTapPlace: () => void
 }) {
   const isEmpty = !placed
 
@@ -325,7 +327,10 @@ function DropSlot({
       onDragOver={(e) => { e.preventDefault(); onDragOver(e) }}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      onClick={() => placed && !checked && onRemove()}
+      onClick={() => {
+        if (placed && !checked) onRemove()
+        else if (!placed && !checked) onTapPlace()
+      }}
       className={animClass}
       style={{
         position: 'absolute',
@@ -387,32 +392,39 @@ function DropSlot({
 function TrayItem({
   comp,
   isPlaced,
+  selected,
   onDragStart,
   onDragEnd,
+  onTap,
 }: {
   comp: ArchComponent
   isPlaced: boolean
+  selected: boolean
   onDragStart: (e: DragEvent) => void
   onDragEnd: () => void
+  onTap: () => void
 }) {
   return (
     <div
       draggable={!isPlaced}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onClick={() => !isPlaced && onTap()}
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
-        padding: '10px 14px',
-        background: isPlaced ? '#eee' : '#fff',
-        border: `2px solid ${isPlaced ? '#ddd' : comp.color}`,
+        gap: 8,
+        padding: '8px 12px',
+        background: selected ? '#e0f0ff' : isPlaced ? '#eee' : '#fff',
+        border: `2px solid ${selected ? S.accent : isPlaced ? '#ddd' : comp.color}`,
         borderRadius: 10,
-        cursor: isPlaced ? 'default' : 'grab',
+        cursor: isPlaced ? 'default' : 'pointer',
         opacity: isPlaced ? 0.4 : 1,
         transition: 'all 0.2s ease',
-        boxShadow: isPlaced ? 'none' : '0 2px 6px rgba(0,0,0,0.08)',
+        boxShadow: selected ? `0 0 0 3px ${S.accent}44` : isPlaced ? 'none' : '0 2px 6px rgba(0,0,0,0.08)',
         userSelect: 'none',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
       }}
     >
       <span style={{ fontSize: 20 }}>{comp.emoji}</span>
@@ -912,6 +924,17 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
   const [levelStars, setLevelStars] = useState(0)
   const [results, setResults] = useState<{ levelId: number; stars: number }[]>([])
   const [, setDraggingId] = useState<string | null>(null)
+  // Touch-friendly tap-to-place: tap a tray item to select, tap a slot to place
+  const [selectedComp, setSelectedComp] = useState<string | null>(null)
+
+  // Responsive: detect narrow screens to switch layout
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   // Diagram container ref for arrow measurements
   const containerRef = useRef<HTMLDivElement>(null)
@@ -941,6 +964,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
     setCorrectMap({})
     setShowResult(false)
     setLevelStars(0)
+    setSelectedComp(null)
   }, [])
 
   function handleDrop(slotId: string, compId: string) {
@@ -1132,13 +1156,88 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
-      {/* Main area: diagram + tray */}
+      {/* Mobile: tray on top as horizontal scroll, then diagram below */}
+      {isMobile && (
+        <div style={{ width: '100%', padding: '0 8px' }}>
+          {/* Selected component indicator */}
+          {selectedComp && (
+            <div style={{
+              textAlign: 'center', padding: '6px', marginBottom: 6,
+              background: '#e0f0ff', borderRadius: 8,
+              fontSize: 13, fontWeight: 600, color: S.accent,
+            }}>
+              Tap a slot to place {COMPONENTS[selectedComp]?.emoji} {COMPONENTS[selectedComp]?.label}
+            </div>
+          )}
+          <div style={{
+            display: 'flex', gap: 8, overflowX: 'auto',
+            padding: '8px 0', marginBottom: 8,
+            WebkitOverflowScrolling: 'touch',
+          }}>
+            {availableComps.map(comp => (
+              <TrayItem
+                key={comp.id}
+                comp={comp}
+                isPlaced={placedIds.has(comp.id)}
+                selected={selectedComp === comp.id}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', comp.id)
+                  e.dataTransfer.effectAllowed = 'move'
+                  setDraggingId(comp.id)
+                }}
+                onDragEnd={() => setDraggingId(null)}
+                onTap={() => setSelectedComp(prev => prev === comp.id ? null : comp.id)}
+              />
+            ))}
+          </div>
+          {/* Mobile action buttons row */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button
+              onClick={() => setShowHints(true)}
+              style={{
+                flex: 1, padding: '10px', background: '#fff',
+                border: `2px solid ${S.warn}`, borderRadius: 10,
+                fontSize: 14, fontWeight: 600, color: S.warn, cursor: 'pointer',
+              }}
+            >
+              💡 Hints
+            </button>
+            <button
+              onClick={handleCheck}
+              disabled={!allFilled || checked}
+              style={{
+                flex: 2, padding: '10px',
+                background: allFilled && !checked ? S.success : '#ddd',
+                border: 'none', borderRadius: 10,
+                fontSize: 14, fontWeight: 700,
+                color: allFilled && !checked ? '#fff' : '#aaa',
+                cursor: allFilled && !checked ? 'pointer' : 'not-allowed',
+              }}
+            >
+              ✓ Check
+            </button>
+            <button
+              onClick={() => { setPlacements({}); setChecked(false); setCorrectMap({}) }}
+              disabled={checked}
+              style={{
+                flex: 1, padding: '10px', background: 'transparent',
+                border: `1px solid ${S.border}`, borderRadius: 8,
+                fontSize: 13, color: S.mutedText,
+                cursor: checked ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main area: diagram (+ desktop tray) */}
       <div style={{
         flex: 1,
         display: 'flex',
-        flexWrap: 'wrap',
         gap: 0,
-        padding: '8px 10px',
+        padding: isMobile ? '0 8px 8px' : '8px 10px',
         minHeight: 0,
       }}>
         {/* Diagram */}
@@ -1148,20 +1247,19 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
           background: '#fff',
           border: `2px solid ${S.gridLine}`,
           borderRadius: 16,
-          // Graph paper grid
           backgroundImage: `
             linear-gradient(${S.gridLine}40 1px, transparent 1px),
             linear-gradient(90deg, ${S.gridLine}40 1px, transparent 1px)
           `,
           backgroundSize: '24px 24px',
           overflow: 'visible',
-          minHeight: 'clamp(300px, 50vh, 440px)',
+          minHeight: isMobile ? 'clamp(260px, 45vh, 380px)' : 'clamp(300px, 50vh, 440px)',
         }} ref={containerRef}>
           {/* Users icon (fixed, not a drop target) */}
           <div style={{
             position: 'absolute',
             left: `calc(50% - 55px)`,
-            top: `calc(${USERS_Y}% - 16px)`,
+            top: `calc(${USERS_Y}% - 2px)`,
             width: 110,
             height: 40,
             background: S.accent,
@@ -1194,7 +1292,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
               key={slot.id}
               slot={slot}
               placed={placements[slot.id] ? COMPONENTS[placements[slot.id]] : null}
-              dragOver={dragOverSlot === slot.id}
+              dragOver={dragOverSlot === slot.id || (!!selectedComp && !placements[slot.id] && !checked)}
               checked={checked}
               isCorrect={checked ? (correctMap[slot.id] ?? null) : null}
               onDragOver={() => setDragOverSlot(slot.id)}
@@ -1204,104 +1302,114 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
                 if (compId) handleDrop(slot.id, compId)
               }}
               onRemove={() => handleRemove(slot.id)}
+              onTapPlace={() => {
+                if (selectedComp) {
+                  handleDrop(slot.id, selectedComp)
+                  setSelectedComp(null)
+                }
+              }}
             />
           ))}
         </div>
 
-        {/* Component Tray */}
-        <div style={{
-          width: 'clamp(160px, 22vw, 200px)',
-          marginLeft: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}>
+        {/* Component Tray — desktop only (mobile tray is above diagram) */}
+        {!isMobile && (
           <div style={{
-            fontFamily: S.font,
-            fontSize: 'clamp(16px, 4vw, 22px)',
-            color: S.darkText,
-            marginBottom: 4,
-            textAlign: 'center',
-          }}>
-            Components
-          </div>
-
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
+            width: 'clamp(160px, 22vw, 200px)',
+            marginLeft: 10,
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
-            paddingRight: 4,
           }}>
-            {availableComps.map(comp => (
-              <TrayItem
-                key={comp.id}
-                comp={comp}
-                isPlaced={placedIds.has(comp.id)}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', comp.id)
-                  e.dataTransfer.effectAllowed = 'move'
-                  setDraggingId(comp.id)
+            <div style={{
+              fontFamily: S.font,
+              fontSize: 'clamp(16px, 4vw, 22px)',
+              color: S.darkText,
+              marginBottom: 4,
+              textAlign: 'center',
+            }}>
+              Components
+            </div>
+
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              paddingRight: 4,
+            }}>
+              {availableComps.map(comp => (
+                <TrayItem
+                  key={comp.id}
+                  comp={comp}
+                  isPlaced={placedIds.has(comp.id)}
+                  selected={selectedComp === comp.id}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', comp.id)
+                    e.dataTransfer.effectAllowed = 'move'
+                    setDraggingId(comp.id)
+                  }}
+                  onDragEnd={() => setDraggingId(null)}
+                  onTap={() => setSelectedComp(prev => prev === comp.id ? null : comp.id)}
+                />
+              ))}
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+              <button
+                onClick={() => setShowHints(true)}
+                style={{
+                  padding: '10px',
+                  background: '#fff',
+                  border: `2px solid ${S.warn}`,
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: S.warn,
+                  cursor: 'pointer',
                 }}
-                onDragEnd={() => setDraggingId(null)}
-              />
-            ))}
+              >
+                💡 Hints
+              </button>
+
+              <button
+                onClick={handleCheck}
+                disabled={!allFilled || checked}
+                style={{
+                  padding: '12px',
+                  background: allFilled && !checked ? S.success : '#ddd',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: allFilled && !checked ? '#fff' : '#aaa',
+                  cursor: allFilled && !checked ? 'pointer' : 'not-allowed',
+                  boxShadow: allFilled && !checked ? `0 3px 10px ${S.success}33` : 'none',
+                }}
+              >
+                ✓ Check Answer
+              </button>
+
+              <button
+                onClick={() => { setPlacements({}); setChecked(false); setCorrectMap({}) }}
+                disabled={checked}
+                style={{
+                  padding: '8px',
+                  background: 'transparent',
+                  border: `1px solid ${S.border}`,
+                  borderRadius: 8,
+                  fontSize: 13,
+                  color: S.mutedText,
+                  cursor: checked ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Reset
+              </button>
+            </div>
           </div>
-
-          {/* Action buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-            <button
-              onClick={() => setShowHints(true)}
-              style={{
-                padding: '10px',
-                background: '#fff',
-                border: `2px solid ${S.warn}`,
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                color: S.warn,
-                cursor: 'pointer',
-              }}
-            >
-              💡 Hints
-            </button>
-
-            <button
-              onClick={handleCheck}
-              disabled={!allFilled || checked}
-              style={{
-                padding: '12px',
-                background: allFilled && !checked ? S.success : '#ddd',
-                border: 'none',
-                borderRadius: 10,
-                fontSize: 15,
-                fontWeight: 700,
-                color: allFilled && !checked ? '#fff' : '#aaa',
-                cursor: allFilled && !checked ? 'pointer' : 'not-allowed',
-                boxShadow: allFilled && !checked ? `0 3px 10px ${S.success}33` : 'none',
-              }}
-            >
-              ✓ Check Answer
-            </button>
-
-            <button
-              onClick={() => { setPlacements({}); setChecked(false); setCorrectMap({}) }}
-              disabled={checked}
-              style={{
-                padding: '8px',
-                background: 'transparent',
-                border: `1px solid ${S.border}`,
-                borderRadius: 8,
-                fontSize: 13,
-                color: S.mutedText,
-                cursor: checked ? 'not-allowed' : 'pointer',
-              }}
-            >
-              Reset
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Hint modal */}
