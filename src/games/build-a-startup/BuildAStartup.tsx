@@ -685,7 +685,6 @@ function LevelIntro({
 // ─── Level Result Screen ─────────────────────────────────────────────────────
 
 function LevelResult({
-  level,
   stars,
   onNext,
   onRetry,
@@ -912,7 +911,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
   const [showResult, setShowResult] = useState(false)
   const [levelStars, setLevelStars] = useState(0)
   const [results, setResults] = useState<{ levelId: number; stars: number }[]>([])
-  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [, setDraggingId] = useState<string | null>(null)
 
   // Diagram container ref for arrow measurements
   const containerRef = useRef<HTMLDivElement>(null)
