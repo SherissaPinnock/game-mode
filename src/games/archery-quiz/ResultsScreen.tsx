@@ -37,7 +37,7 @@ export function ResultsScreen({
   const grade = getGrade()
 
   return (
-    <div className="sketch-bg flex flex-1 flex-col items-center px-6 py-12 gap-8 min-h-screen">
+    <div className="sketch-bg flex flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-12 gap-4 sm:gap-8 min-h-screen">
 
       <div className="w-full max-w-3xl flex items-center justify-between">
         <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
@@ -53,7 +53,7 @@ export function ResultsScreen({
       </div>
 
       {/* Target + breakdown side by side */}
-      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-8 items-start justify-center">
+      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 sm:gap-8 items-center sm:items-start justify-center">
 
         {/* Target with all arrows */}
         <div className="flex flex-col items-center gap-2 shrink-0">

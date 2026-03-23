@@ -146,7 +146,7 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
     <div className="flex flex-1 flex-col items-center px-4 py-10 gap-6 min-h-screen bg-background">
 
       {/* Header */}
-      <div className="w-full max-w-[580px] flex items-center justify-between">
+      <div className="w-full max-w-[580px] px-2 sm:px-0 flex items-center justify-between">
         <button onClick={onExit} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
           ← Back
         </button>
@@ -168,7 +168,7 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
 
         {/* Remaining card grid — hidden after loss (show answer rows instead) */}
         {phase !== 'lost' && (
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {remaining.map(item => (
               <ConnectionsCard
                 key={item}

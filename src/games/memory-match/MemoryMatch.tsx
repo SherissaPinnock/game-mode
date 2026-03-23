@@ -102,7 +102,7 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-1 flex-col items-center px-6 py-10 gap-6 min-h-screen bg-background">
+    <div className="flex flex-1 flex-col items-center px-3 py-6 sm:px-6 sm:py-10 gap-4 sm:gap-6 min-h-screen bg-background">
 
       {/* Header */}
       <div className="w-full max-w-[740px] flex items-center justify-between">
@@ -154,7 +154,7 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
       )}
 
       {/* Card grid */}
-      <div className="grid grid-cols-6 gap-3 w-full max-w-[740px]">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 w-full max-w-[740px]">
         {cards.map((card, index) => (
           <MemoryCard
             key={card.id}

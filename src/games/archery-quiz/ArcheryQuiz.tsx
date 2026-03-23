@@ -152,13 +152,13 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   // ── Aiming / Shot feedback: show target + controls ────────────────────────
   if (subPhase === 'aiming' || subPhase === 'shot-feedback') {
     return (
-      <div className="sketch-bg flex flex-1 flex-col items-center px-6 py-12 gap-8 min-h-screen">
+      <div className="sketch-bg flex flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-12 gap-4 sm:gap-8 min-h-screen">
         {/* Header */}
         <div className="w-full max-w-3xl flex items-center justify-between">
           <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
             ← Exit
           </button>
-          <h2 className="font-sketch text-2xl text-[#2d2d2d]">🏹 Take Your Shot!</h2>
+          <h2 className="font-sketch text-base sm:text-2xl text-[#2d2d2d]">🏹 Take Your Shot!</h2>
           {progressDots}
         </div>
 
@@ -170,7 +170,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
         </div>
 
         {/* Main layout: target left, controls right */}
-        <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-8 items-center justify-center">
+        <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 sm:gap-8 items-center justify-center">
           <div className="flex flex-col items-center gap-3 shrink-0">
             <TargetCanvas shots={shots} latestShot={latestShot} />
             <p className="font-sketch text-sm text-[#9ca3af]">
@@ -178,7 +178,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
             </p>
           </div>
 
-          <div className="sketch-card p-6 flex-1 w-full flex flex-col gap-4">
+          <div className="sketch-card p-4 sm:p-6 flex-1 w-full flex flex-col gap-4">
             {subPhase === 'aiming' ? (
               <PowerMeter
                 arrowIndex={shots.length}
@@ -210,20 +210,20 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
 
   // ── Question / Answered: show quiz card ───────────────────────────────────
   return (
-    <div className="sketch-bg flex flex-1 flex-col items-center px-6 py-12 gap-8 min-h-screen">
+    <div className="sketch-bg flex flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-12 gap-4 sm:gap-8 min-h-screen">
       {/* Header */}
       <div className="w-full max-w-3xl flex items-center justify-between">
         <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
           ← Exit
         </button>
-        <h2 className="font-sketch text-2xl text-[#2d2d2d]">
-          🎯 Question {qIndex + 1} / {sessionQuestions.length}
+        <h2 className="font-sketch text-base sm:text-2xl text-[#2d2d2d]">
+          🎯 Q{qIndex + 1}/{sessionQuestions.length}
         </h2>
         {progressDots}
       </div>
 
       {/* Target preview (small) + question side by side */}
-      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-8 items-center justify-center">
+      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 sm:gap-8 items-center justify-center">
         {/* Small target preview showing accumulated shots */}
         {shots.length > 0 && (
           <div className="flex flex-col items-center gap-2 shrink-0">

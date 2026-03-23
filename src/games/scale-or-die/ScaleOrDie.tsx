@@ -1048,8 +1048,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '20px 16px 48px',
-      gap: '18px',
+      padding: '12px 8px 32px',
+      gap: '10px',
       // Dithered scanline bg
       backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,65,0.015) 3px, rgba(0,255,65,0.015) 4px)',
       position: 'relative',
@@ -1059,7 +1059,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       {/* ── Title bar (retro window chrome) ─────────────────────────────────── */}
       <div style={{
         width: '100%',
-        maxWidth: 700,
+        maxWidth: 'min(700px, 100%)',
         background: '#003300',
         border: `4px solid ${P.green}`,
         boxShadow: `4px 4px 0 #00330088`,
@@ -1088,7 +1088,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       </div>
 
       {/* ── Status row: hearts + budget + wave ─────────────────────────────── */}
-      <div style={{ width: '100%', maxWidth: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ width: '100%', maxWidth: 'min(700px, 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Hearts */}
         <div ref={tutHealthRef} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span style={{ fontSize: '7px', color: P.gray, marginRight: 4 }}>HP</span>
@@ -1126,7 +1126,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
 
       {/* ── Wave alert banner ─────────────────────────────────────────────── */}
       <div ref={tutBannerRef} style={{
-        width: '100%', maxWidth: 700,
+        width: '100%', maxWidth: 'min(700px, 100%)',
         border: `3px solid ${isDDoS ? P.red : ui.phase === 'playing' ? P.yellow : P.dgray}`,
         background: isDDoS ? '#1a0000' : ui.phase === 'playing' ? '#1a1400' : '#0a0a0a',
         padding: '6px 12px',
@@ -1156,14 +1156,14 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       </div>
 
       {/* ── Main game area: server rack + graph ─────────────────────────────── */}
-      <div style={{ width: '100%', maxWidth: 700, display: 'flex', gap: '14px', alignItems: 'stretch' }}>
+      <div style={{ width: '100%', maxWidth: 'min(700px, 100%)', display: 'flex', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
 
         {/* Server rack */}
         <div ref={tutServersRef}>
         <PixelBox
           color={P.green}
           title="SERVER RACK"
-          style={{ width: 170, flexShrink: 0, padding: '16px 10px 10px', display: 'flex', flexDirection: 'column', gap: '8px' }}
+          style={{ width: 'clamp(130px, 25vw, 170px)', flexShrink: 0, padding: '12px 8px 8px', display: 'flex', flexDirection: 'column', gap: '6px' }}
         >
           {Array.from({ length: serverCount }).map((_, i) => {
             const load   = serverLoad - i * (1 / serverCount)
@@ -1232,9 +1232,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       </div>
 
       {/* ── Scaling actions ──────────────────────────────────────────────────── */}
-      <div ref={tutActionsRef} style={{ width: '100%', maxWidth: 700 }}>
-      <PixelBox color={P.cyan} title="DEPLOY ACTIONS" style={{ width: '100%', padding: '16px 12px 12px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div ref={tutActionsRef} style={{ width: '100%', maxWidth: 'min(700px, 100%)' }}>
+      <PixelBox color={P.cyan} title="DEPLOY ACTIONS" style={{ width: '100%', padding: '10px 8px 8px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
           {ACTIONS.map(action => {
             const canAfford = ui.budget >= action.cost
             return (
@@ -1243,8 +1243,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 onClick={() => handleAction(action)}
                 disabled={!!result || showQuestion || !canAfford}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '8px 12px',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 10px',
+                  flex: '1 1 auto', minWidth: '120px',
                   background: canAfford ? '#001a00' : '#0a0a0a',
                   border: `3px solid ${canAfford ? P.cyan : P.dgray}`,
                   color: canAfford ? P.cyan : P.dgray,

@@ -1086,7 +1086,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '14px 24px',
+        padding: '10px 12px',
         borderBottom: `2px solid ${S.gridLine}`,
         background: '#fff',
       }}>
@@ -1136,8 +1136,9 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
       <div style={{
         flex: 1,
         display: 'flex',
+        flexWrap: 'wrap',
         gap: 0,
-        padding: '16px 20px',
+        padding: '8px 10px',
         minHeight: 0,
       }}>
         {/* Diagram */}
@@ -1154,7 +1155,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
           `,
           backgroundSize: '24px 24px',
           overflow: 'visible',
-          minHeight: 440,
+          minHeight: 'clamp(300px, 50vh, 440px)',
         }} ref={containerRef}>
           {/* Users icon (fixed, not a drop target) */}
           <div style={{
@@ -1209,15 +1210,15 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
 
         {/* Component Tray */}
         <div style={{
-          width: 200,
-          marginLeft: 16,
+          width: 'clamp(160px, 22vw, 200px)',
+          marginLeft: 10,
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 8,
         }}>
           <div style={{
             fontFamily: S.font,
-            fontSize: 22,
+            fontSize: 'clamp(16px, 4vw, 22px)',
             color: S.darkText,
             marginBottom: 4,
             textAlign: 'center',
