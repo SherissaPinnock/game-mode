@@ -1,5 +1,7 @@
 import { TargetCanvas } from './TargetCanvas'
 import { ZONE_META } from './utils'
+import { GameRecommendations } from '@/components/GameRecommendations'
+import { computeStats, type PerformanceEntry } from '@/lib/performance'
 import type { ArrowShot } from './types'
 
 interface ResultsScreenProps {
@@ -7,6 +9,7 @@ interface ResultsScreenProps {
   totalScore:     number
   correctCount:   number
   totalQuestions: number
+  sessionEntries?: PerformanceEntry[]
   onPlayAgain:    () => void
   onExit:         () => void
 }
@@ -20,10 +23,12 @@ export function ResultsScreen({
   totalScore,
   correctCount,
   totalQuestions,
+  sessionEntries,
   onPlayAgain,
   onExit,
 }: ResultsScreenProps) {
   const maxScore = shots.length * 10
+  const sessionStats = sessionEntries ? computeStats(sessionEntries) : undefined
 
   // Simple grade based on ratio
   function getGrade() {
@@ -98,6 +103,9 @@ export function ResultsScreen({
           </p>
         </div>
       </div>
+
+      {/* Recommendations */}
+      <GameRecommendations sessionStats={sessionStats} />
 
       {/* Actions */}
       <div className="flex gap-4">

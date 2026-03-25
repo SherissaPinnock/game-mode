@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { MemoryCard } from './MemoryCard'
 import { concepts }   from './data/concepts'
 import type { Card }  from './types'
+import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
+import { GameRecommendations } from '@/components/GameRecommendations'
 
 const MISMATCH_DELAY = 900   // ms — mismatched pair visible before flipping back
 const MATCH_DELAY    = 350   // ms — matched pair visible before locking in
@@ -36,6 +38,11 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
   const [flipCount,  setFlipCount]  = useState(0)
   const [isChecking, setIsChecking] = useState(false)
   const [isPeeking,  setIsPeeking]  = useState(true)
+
+  // Performance tracking
+  const { report } = usePerformance()
+  const perfEntries = useRef<PerformanceEntry[]>([])
+  const hasReported = useRef(false)
 
   // Ref keeps the timer id so we can cancel it on restart
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -76,6 +83,14 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
       const [first, second] = newFlipped
       const isMatch = updatedCards[first].conceptId === updatedCards[second].conceptId
 
+      // Track each pair attempt
+      perfEntries.current.push({
+        category: 'javascript',
+        correct: isMatch,
+        gameId: 'memory-match',
+        timestamp: Date.now(),
+      })
+
       setTimeout(() => {
         setCards(prev =>
           prev.map((c, i) =>
@@ -97,7 +112,15 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
     setFlipped([])
     setFlipCount(0)
     setIsChecking(false)
+    perfEntries.current = []
+    hasReported.current = false
     startPeek()
+  }
+
+  // ── Report performance on win ──────────────────────────────────────────────
+  if (isWon && !hasReported.current) {
+    hasReported.current = true
+    report(perfEntries.current)
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -151,6 +174,11 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
             Completed in <strong>{flipCount}</strong> flip{flipCount !== 1 ? 's' : ''}
           </p>
         </div>
+      )}
+
+      {/* Recommendations */}
+      {isWon && (
+        <GameRecommendations sessionStats={computeStats(perfEntries.current)} />
       )}
 
       {/* Card grid */}

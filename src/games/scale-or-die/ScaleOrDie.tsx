@@ -1,19 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
+import type { Category, PerformanceEntry } from '@/lib/performance'
+import { usePerformance, computeStats } from '@/lib/performance'
+import { GameRecommendations } from '@/components/GameRecommendations'
 
 // ─── Question bank ────────────────────────────────────────────────────────────
-interface Question { q: string; options: string[]; answer: number }
+interface Question { q: string; options: string[]; answer: number; category: Category }
 
 const QUESTIONS: Question[] = [
-  { q: 'EC2 stands for?', options: ['Elastic Compute Cloud','Extended Cloud Computing','Edge Cache Container','Elastic Container Cluster'], answer: 0 },
-  { q: 'CDN primary purpose?', options: ['DB replication','Serve from edge nodes near users','Auto-scale instances','Monitor health'], answer: 1 },
-  { q: 'A Load Balancer does?', options: ['Stores sessions','Spreads traffic across instances','Compresses assets','Monitors CPU'], answer: 1 },
-  { q: 'Auto Scaling default metric?', options: ['Memory','Network latency','CPU utilisation','Disk I/O'], answer: 2 },
-  { q: 'Message Queue (SQS) solves?', options: ['CDN invalidation','Decouples producers & consumers','DNS distribution','Data encryption'], answer: 1 },
-  { q: 'Static file storage on AWS?', options: ['RDS','EC2','S3','Lambda'], answer: 2 },
-  { q: 'Docker containers share?', options: ['Host kernel','GPU','NIC MAC','Disk sectors'], answer: 0 },
-  { q: 'Kubernetes schedules pods onto?', options: ['Clusters','Namespaces','Nodes','Services'], answer: 2 },
-  { q: '"Horizontal scaling" means?', options: ['More RAM','More CPU cores','More instances','More disk'], answer: 2 },
-  { q: '"Service Unavailable" HTTP code?', options: ['404','500','429','503'], answer: 3 },
+  { q: 'EC2 stands for?', options: ['Elastic Compute Cloud','Extended Cloud Computing','Edge Cache Container','Elastic Container Cluster'], answer: 0, category: 'cloud-aws' },
+  { q: 'CDN primary purpose?', options: ['DB replication','Serve from edge nodes near users','Auto-scale instances','Monitor health'], answer: 1, category: 'scaling' },
+  { q: 'A Load Balancer does?', options: ['Stores sessions','Spreads traffic across instances','Compresses assets','Monitors CPU'], answer: 1, category: 'scaling' },
+  { q: 'Auto Scaling default metric?', options: ['Memory','Network latency','CPU utilisation','Disk I/O'], answer: 2, category: 'scaling' },
+  { q: 'Message Queue (SQS) solves?', options: ['CDN invalidation','Decouples producers & consumers','DNS distribution','Data encryption'], answer: 1, category: 'architecture' },
+  { q: 'Static file storage on AWS?', options: ['RDS','EC2','S3','Lambda'], answer: 2, category: 'cloud-aws' },
+  { q: 'Docker containers share?', options: ['Host kernel','GPU','NIC MAC','Disk sectors'], answer: 0, category: 'devops' },
+  { q: 'Kubernetes schedules pods onto?', options: ['Clusters','Namespaces','Nodes','Services'], answer: 2, category: 'devops' },
+  { q: '"Horizontal scaling" means?', options: ['More RAM','More CPU cores','More instances','More disk'], answer: 2, category: 'scaling' },
+  { q: '"Service Unavailable" HTTP code?', options: ['404','500','429','503'], answer: 3, category: 'networking' },
 ]
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -793,6 +796,11 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const [answered, setAnswered]         = useState<number | null>(null)
   const [result, setResult]             = useState<ResultState | null>(null)
 
+  // ── Performance tracking ─────────────────────────────────────────────────
+  const { report } = usePerformance()
+  const perfEntries = useRef<PerformanceEntry[]>([])
+  const hasReported = useRef(false)
+
   // ── Tutorial ──────────────────────────────────────────────────────────────
   const [tutStep, setTutStep] = useState<number | null>(0) // 0=splash, null=done
 
@@ -966,6 +974,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     capHistRef.current     = Array(HISTORY_LEN).fill(50)
     lastTickRef.current    = performance.now()
     setResult(null); setShowQuestion(false); setAnswered(null)
+    perfEntries.current = []; hasReported.current = false
     setUi({ health: 100, budget: 500, traffic: 0, capacity: 50, wave: 0, phase: 'breather', message: 'WAVE 1 IN 5s...', overloaded: false })
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     if (uiIntervalRef.current) clearInterval(uiIntervalRef.current)
@@ -1015,6 +1024,12 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     if (!pendingAction || !question || answered !== null) return
     setAnswered(idx)
     const correct = idx === question.answer
+    perfEntries.current.push({
+      category: question.category,
+      correct,
+      gameId: 'scale-or-die',
+      timestamp: Date.now(),
+    })
     const cost = correct ? pendingAction.cost : pendingAction.cost * 2
     setTimeout(() => {
       if (budgetRef.current >= cost) { budgetRef.current -= cost; capacityRef.current += pendingAction.cap }
@@ -1352,12 +1367,13 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       )}
 
       {/* ── Result screen ─────────────────────────────────────────────────────── */}
+      {result && !hasReported.current && (() => { hasReported.current = true; report(perfEntries.current); return null })()}
       {result && gradeInfo && (
         <div style={{
           position: 'fixed', inset: 0,
           background: 'rgba(0,0,0,0.96)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 200, fontFamily: FONT,
+          zIndex: 200, fontFamily: FONT, overflowY: 'auto',
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,65,0.02) 3px, rgba(0,255,65,0.02) 4px)',
         }}>
           <div style={{
@@ -1409,6 +1425,13 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 <span style={{ color: P.yellow }}>${result.budget}</span>
               </div>
             </div>
+
+            {/* Recommendations */}
+            {perfEntries.current.length > 0 && (
+              <div style={{ fontFamily: 'system-ui, sans-serif', textAlign: 'left', width: '100%' }}>
+                <GameRecommendations sessionStats={computeStats(perfEntries.current)} />
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '10px', marginTop: 4 }}>
               <button onClick={onExit} style={{

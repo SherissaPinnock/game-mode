@@ -1,10 +1,14 @@
 export type CategoryColor = 'yellow' | 'green' | 'blue' | 'purple'
 
+import type { Category } from '@/lib/performance'
+
 export interface ConnectionGroup {
   id: string
   category: string   // e.g. "HTTP Methods"
   color: CategoryColor
   items: string[]    // exactly 4 items
+  /** Topic category for performance tracking. */
+  topic: Category
 }
 
 export interface ConnectionsRound {

@@ -6,6 +6,8 @@ import { StrikesDisplay }  from './StrikesDisplay'
 import { COLOR_STYLES }    from './types'
 import type { ConnectionGroup, GamePhase } from './types'
 import { rounds } from './data/rounds'
+import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
+import { GameRecommendations } from '@/components/GameRecommendations'
 
 const MAX_MISTAKES  = 4
 const SELECT_LIMIT  = 4
@@ -56,6 +58,11 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
   // Prevent overlapping animations
   const animatingRef = useRef(false)
 
+  // Performance tracking
+  const { report } = usePerformance()
+  const perfEntries = useRef<PerformanceEntry[]>([])
+  const hasReported = useRef(false)
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   /** Returns the group that exactly matches the selected 4 items, or undefined. */
@@ -102,6 +109,12 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
 
     if (matched) {
       // ── Correct guess ──────────────────────────────────────────────────────
+      perfEntries.current.push({
+        category: matched.topic,
+        correct: true,
+        gameId: 'connections',
+        timestamp: Date.now(),
+      })
       setCorrectBg(COLOR_STYLES[matched.color].bg)
       setAnim('correct')
 
@@ -135,8 +148,29 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
   }, [selected, phase, solved, mistakes, round])
 
   const handleRestart = useCallback(() => {
+    perfEntries.current = []
+    hasReported.current = false
     window.location.reload() // simplest reset — full state reinit
   }, [])
+
+  // ── Report performance on game end ────────────────────────────────────────
+  if ((phase === 'won' || phase === 'lost') && !hasReported.current) {
+    hasReported.current = true
+    // Record unsolved groups as incorrect
+    const unsolvedForReport = round.groups.filter(g => !solved.find(s => s.id === g.id))
+    for (const g of unsolvedForReport) {
+      perfEntries.current.push({
+        category: g.topic,
+        correct: false,
+        gameId: 'connections',
+        timestamp: Date.now(),
+      })
+    }
+    report(perfEntries.current)
+  }
+
+  const sessionStats = (phase === 'won' || phase === 'lost')
+    ? computeStats(perfEntries.current) : undefined
 
   // ── Reveal remaining groups on loss ────────────────────────────────────────
   const unsolvedGroups = round.groups.filter(g => !solved.find(s => s.id === g.id))
@@ -213,6 +247,11 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
       )}
       {phase === 'lost' && (
         <p className="text-xl font-bold text-red-500">Better luck next time!</p>
+      )}
+
+      {/* Recommendations */}
+      {(phase === 'won' || phase === 'lost') && (
+        <GameRecommendations sessionStats={sessionStats} />
       )}
 
       {/* Action buttons */}

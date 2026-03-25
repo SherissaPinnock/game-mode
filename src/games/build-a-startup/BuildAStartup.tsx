@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback, type DragEvent } from 'react'
+import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
+import { GameRecommendations } from '@/components/GameRecommendations'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -64,9 +66,9 @@ const LEVELS: Level[] = [
     scenario: 'You\'re launching a simple personal blog. Users type in your domain, your server fetches posts from a database, and pages are served. Build the most basic web architecture!',
     difficulty: 'Easy',
     slots: [
-      { id: 's1', correctId: 'dns',        x: 50, y: 18, roleHint: 'Resolves your domain name' },
-      { id: 's2', correctId: 'web-server',  x: 50, y: 48, roleHint: 'Serves your web pages' },
-      { id: 's3', correctId: 'database',    x: 50, y: 78, roleHint: 'Stores your blog posts' },
+      { id: 's1', correctId: 'dns',        x: 50, y: 25, roleHint: 'Resolves your domain name' },
+      { id: 's2', correctId: 'web-server',  x: 50, y: 52, roleHint: 'Serves your web pages' },
+      { id: 's3', correctId: 'database',    x: 50, y: 80, roleHint: 'Stores your blog posts' },
     ],
     connections: [
       { from: 'users', to: 's1' },
@@ -81,10 +83,10 @@ const LEVELS: Level[] = [
     scenario: 'Your online store is getting traffic! Product images load slowly. You need edge caching for static content and in-memory caching for hot product data. Speed things up!',
     difficulty: 'Easy',
     slots: [
-      { id: 's1', correctId: 'cdn',         x: 50, y: 13, roleHint: 'Delivers images & assets fast' },
-      { id: 's2', correctId: 'web-server',   x: 50, y: 38, roleHint: 'Runs your store app' },
-      { id: 's3', correctId: 'cache',        x: 25, y: 68, roleHint: 'Speeds up product lookups' },
-      { id: 's4', correctId: 'database',     x: 75, y: 68, roleHint: 'Stores orders & products' },
+      { id: 's1', correctId: 'cdn',         x: 50, y: 20, roleHint: 'Delivers images & assets fast' },
+      { id: 's2', correctId: 'web-server',   x: 50, y: 44, roleHint: 'Runs your store app' },
+      { id: 's3', correctId: 'cache',        x: 25, y: 72, roleHint: 'Speeds up product lookups' },
+      { id: 's4', correctId: 'database',     x: 75, y: 72, roleHint: 'Stores orders & products' },
     ],
     connections: [
       { from: 'users', to: 's1' },
@@ -101,11 +103,11 @@ const LEVELS: Level[] = [
     scenario: 'Your social app is blowing up! One server can\'t handle the load. You need to distribute traffic, add an API layer with authentication, and cache hot queries. Build for scale!',
     difficulty: 'Medium',
     slots: [
-      { id: 's1', correctId: 'load-balancer', x: 50, y: 10, roleHint: 'Splits traffic across servers' },
-      { id: 's2', correctId: 'api-gateway',   x: 50, y: 30, roleHint: 'Routes & rate-limits requests' },
-      { id: 's3', correctId: 'web-server',    x: 22, y: 55, roleHint: 'Runs your app logic' },
-      { id: 's4', correctId: 'cache',         x: 78, y: 55, roleHint: 'In-memory speed boost' },
-      { id: 's5', correctId: 'database',      x: 50, y: 82, roleHint: 'Source of truth' },
+      { id: 's1', correctId: 'load-balancer', x: 50, y: 18, roleHint: 'Splits traffic across servers' },
+      { id: 's2', correctId: 'api-gateway',   x: 50, y: 38, roleHint: 'Routes & rate-limits requests' },
+      { id: 's3', correctId: 'web-server',    x: 22, y: 60, roleHint: 'Runs your app logic' },
+      { id: 's4', correctId: 'cache',         x: 78, y: 60, roleHint: 'In-memory speed boost' },
+      { id: 's5', correctId: 'database',      x: 50, y: 84, roleHint: 'Source of truth' },
     ],
     connections: [
       { from: 'users', to: 's1' },
@@ -123,12 +125,12 @@ const LEVELS: Level[] = [
     scenario: 'Users upload videos that need processing (transcoding, thumbnails). You can\'t do that synchronously — it would block the server! Design an async pipeline with queues and workers.',
     difficulty: 'Medium',
     slots: [
-      { id: 's1', correctId: 'api-gateway',    x: 50, y: 8,  roleHint: 'Entry point for requests' },
-      { id: 's2', correctId: 'web-server',      x: 25, y: 30, roleHint: 'Handles API logic' },
-      { id: 's3', correctId: 'message-queue',   x: 75, y: 30, roleHint: 'Buffers video jobs' },
-      { id: 's4', correctId: 'worker',          x: 75, y: 55, roleHint: 'Processes videos' },
-      { id: 's5', correctId: 'object-storage',  x: 75, y: 80, roleHint: 'Stores video files' },
-      { id: 's6', correctId: 'database',        x: 25, y: 68, roleHint: 'Stores metadata' },
+      { id: 's1', correctId: 'api-gateway',    x: 50, y: 15, roleHint: 'Entry point for requests' },
+      { id: 's2', correctId: 'web-server',      x: 25, y: 36, roleHint: 'Handles API logic' },
+      { id: 's3', correctId: 'message-queue',   x: 75, y: 36, roleHint: 'Buffers video jobs' },
+      { id: 's4', correctId: 'worker',          x: 75, y: 58, roleHint: 'Processes videos' },
+      { id: 's5', correctId: 'object-storage',  x: 75, y: 82, roleHint: 'Stores video files' },
+      { id: 's6', correctId: 'database',        x: 25, y: 72, roleHint: 'Stores metadata' },
     ],
     connections: [
       { from: 'users', to: 's1' },
@@ -147,14 +149,14 @@ const LEVELS: Level[] = [
     scenario: 'You\'re scaling to millions of users with a full microservices architecture. CDN for static assets, load balancer for traffic, separate auth and product services, async order processing, and caching. This is the big leagues!',
     difficulty: 'Hard',
     slots: [
-      { id: 's1', correctId: 'cdn',              x: 50, y: 6,  roleHint: 'Edge content delivery' },
-      { id: 's2', correctId: 'load-balancer',    x: 50, y: 20, roleHint: 'Distributes traffic' },
-      { id: 's3', correctId: 'api-gateway',      x: 50, y: 35, roleHint: 'Routes all API calls' },
-      { id: 's4', correctId: 'auth-service',     x: 15, y: 52, roleHint: 'Handles login & tokens' },
-      { id: 's5', correctId: 'product-service',  x: 50, y: 52, roleHint: 'Product catalog' },
-      { id: 's6', correctId: 'message-queue',    x: 85, y: 52, roleHint: 'Async order events' },
-      { id: 's7', correctId: 'cache',            x: 30, y: 75, roleHint: 'Fast session & data' },
-      { id: 's8', correctId: 'database',         x: 70, y: 75, roleHint: 'Persistent storage' },
+      { id: 's1', correctId: 'cdn',              x: 50, y: 12, roleHint: 'Edge content delivery' },
+      { id: 's2', correctId: 'load-balancer',    x: 50, y: 26, roleHint: 'Distributes traffic' },
+      { id: 's3', correctId: 'api-gateway',      x: 50, y: 40, roleHint: 'Routes all API calls' },
+      { id: 's4', correctId: 'auth-service',     x: 15, y: 56, roleHint: 'Handles login & tokens' },
+      { id: 's5', correctId: 'product-service',  x: 50, y: 56, roleHint: 'Product catalog' },
+      { id: 's6', correctId: 'message-queue',    x: 85, y: 56, roleHint: 'Async order events' },
+      { id: 's7', correctId: 'cache',            x: 30, y: 78, roleHint: 'Fast session & data' },
+      { id: 's8', correctId: 'database',         x: 70, y: 78, roleHint: 'Persistent storage' },
     ],
     connections: [
       { from: 'users', to: 's1' },
@@ -193,7 +195,7 @@ const S = {
 
 const SLOT_W = 140   // px
 const SLOT_H = 56    // px
-const USERS_Y = 3  // % — users icon sits above the diagram
+const USERS_Y = 1  // % — users icon sits above the diagram
 
 // ─── Arrow Component ─────────────────────────────────────────────────────────
 
@@ -800,10 +802,12 @@ function LevelResult({
 
 function GameComplete({
   results,
+  sessionStats,
   onRestart,
   onExit,
 }: {
   results: { levelId: number; stars: number }[]
+  sessionStats?: import('@/lib/performance').CategoryStats[]
   onRestart: () => void
   onExit: () => void
 }) {
@@ -875,6 +879,9 @@ function GameComplete({
           ))}
         </div>
 
+        {/* Recommendations */}
+        <GameRecommendations sessionStats={sessionStats} />
+
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button onClick={onExit} style={{
             padding: '12px 24px',
@@ -926,6 +933,11 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
   const [, setDraggingId] = useState<string | null>(null)
   // Touch-friendly tap-to-place: tap a tray item to select, tap a slot to place
   const [selectedComp, setSelectedComp] = useState<string | null>(null)
+
+  // Performance tracking
+  const { report } = usePerformance()
+  const perfEntries = useRef<PerformanceEntry[]>([])
+  const hasReported = useRef(false)
 
   // Responsive: detect narrow screens to switch layout
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 640)
@@ -1005,6 +1017,16 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
     const used = attemptsUsed + 1
     setAttemptsUsed(used)
 
+    // Track each slot as a performance entry
+    level.slots.forEach(s => {
+      perfEntries.current.push({
+        category: 'architecture',
+        correct: map[s.id],
+        gameId: 'build-a-startup',
+        timestamp: Date.now(),
+      })
+    })
+
     if (allCorrect) {
       const stars = used === 1 ? 3 : used === 2 ? 2 : 1
       setLevelStars(stars)
@@ -1064,6 +1086,8 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
   function handleRestart() {
     setLevelIdx(0)
     setResults([])
+    perfEntries.current = []
+    hasReported.current = false
     resetLevel()
     setPhase('intro')
   }
@@ -1082,9 +1106,15 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
   }
 
   if (phase === 'game-over') {
+    // Report performance once
+    if (!hasReported.current) {
+      hasReported.current = true
+      report(perfEntries.current)
+    }
     return (
       <GameComplete
         results={results}
+        sessionStats={computeStats(perfEntries.current)}
         onRestart={handleRestart}
         onExit={onExit}
       />

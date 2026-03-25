@@ -1,12 +1,16 @@
 /** How accurately the arrow hit the target. */
 export type HitZone = 'bullseye' | 'inner' | 'middle' | 'outer' | 'miss'
 
+import type { Category } from '@/lib/performance'
+
 export interface Question {
   id: number
   question: string
   options: string[]
   /** Index into options[] that is correct. */
   correctIndex: number
+  /** Topic category for performance tracking. */
+  category: Category
 }
 
 export interface ArrowShot {

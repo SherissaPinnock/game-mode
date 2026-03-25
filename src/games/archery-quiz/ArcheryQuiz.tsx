@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { QuestionCard }  from './QuestionCard'
 import { PowerMeter }    from './PowerMeter'
 import { TargetCanvas }  from './TargetCanvas'
 import { ResultsScreen } from './ResultsScreen'
 import { ZONE_META }     from './utils'
 import { questions as allQuestions } from './data/questions'
+import { usePerformance, type PerformanceEntry } from '@/lib/performance'
 import type { Question, ArrowShot } from './types'
 
 const QUESTIONS_PER_GAME = 5
@@ -48,6 +49,11 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   // Track per-question result for progress dots
   const [questionResults, setQuestionResults] = useState<('correct' | 'wrong')[]>([])
 
+  // Performance tracking
+  const { report } = usePerformance()
+  const perfEntries = useRef<PerformanceEntry[]>([])
+  const sessionStart = useRef(Date.now())
+
   const question = sessionQuestions[qIndex]
   const isLastQuestion = qIndex >= sessionQuestions.length - 1
   const wasCorrect = selectedAnswer !== null && selectedAnswer === question?.correctIndex
@@ -60,6 +66,13 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
     const correct = index === question.correctIndex
     if (correct) setCorrectCount(prev => prev + 1)
     setQuestionResults(prev => [...prev, correct ? 'correct' : 'wrong'])
+    // Track for recommendations
+    perfEntries.current.push({
+      category: question.category,
+      correct,
+      gameId: 'archery-quiz',
+      timestamp: Date.now(),
+    })
     setSubPhase('answered')
   }, [question])
 
@@ -111,9 +124,19 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
     setLatestShot(null)
     setCorrectCount(0)
     setQuestionResults([])
+    perfEntries.current = []
+    hasReported.current = false
+    sessionStart.current = Date.now()
   }, [])
 
   // ── Results screen ────────────────────────────────────────────────────────
+  // Report performance when entering results
+  const hasReported = useRef(false)
+  if (subPhase === 'results' && !hasReported.current) {
+    hasReported.current = true
+    report(perfEntries.current)
+  }
+
   if (subPhase === 'results') {
     return (
       <ResultsScreen
@@ -121,6 +144,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
         totalScore={totalScore}
         correctCount={correctCount}
         totalQuestions={sessionQuestions.length}
+        sessionEntries={perfEntries.current}
         onPlayAgain={handlePlayAgain}
         onExit={onExit}
       />
