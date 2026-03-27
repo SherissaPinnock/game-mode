@@ -7,6 +7,7 @@ import { COLOR_STYLES }    from './types'
 import type { ConnectionGroup, GamePhase } from './types'
 import { rounds } from './data/rounds'
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
+import { playCorrect, playWrong, playPop } from '@/lib/sounds'
 import { GameRecommendations } from '@/components/GameRecommendations'
 
 const MAX_MISTAKES  = 4
@@ -87,7 +88,7 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
   const handleCardClick = useCallback((item: string) => {
     if (animatingRef.current || phase !== 'playing') return
     setOneAway(false)
-
+    playPop()
     setSelected(prev => {
       if (prev.includes(item))       return prev.filter(s => s !== item)
       if (prev.length >= SELECT_LIMIT) return prev  // already at 4
@@ -117,6 +118,7 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
       })
       setCorrectBg(COLOR_STYLES[matched.color].bg)
       setAnim('correct')
+      playCorrect()
 
       setTimeout(() => {
         const newSolved = [...solved, matched]
@@ -134,6 +136,7 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
       // ── Wrong guess ────────────────────────────────────────────────────────
       setOneAway(checkOneAway(selected))
       setAnim('wrong')
+      playWrong()
       const newMistakes = mistakes + 1
       setMistakes(newMistakes)
 

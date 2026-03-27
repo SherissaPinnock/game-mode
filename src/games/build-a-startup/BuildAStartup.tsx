@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, type DragEvent } from 'react'
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
 import { GameRecommendations } from '@/components/GameRecommendations'
+import { playCorrect, playWrong, playClick, playNextLevel, playPop} from '@/lib/sounds'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1028,11 +1029,13 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
     })
 
     if (allCorrect) {
+      playCorrect()
       const stars = used === 1 ? 3 : used === 2 ? 2 : 1
       setLevelStars(stars)
       // Delay showing result to let animations play
       setTimeout(() => setShowResult(true), 800)
     } else {
+      playWrong()
       const remaining = attempts - 1
       setAttempts(remaining)
       if (remaining <= 0) {
@@ -1099,7 +1102,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
       <LevelIntro
         level={level}
         totalLevels={LEVELS.length}
-        onStart={() => { resetLevel(); setPhase('playing') }}
+        onStart={() => { resetLevel(); setPhase('playing'); playNextLevel() }}
         onExit={onExit}
       />
     )
@@ -1326,14 +1329,18 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
               checked={checked}
               isCorrect={checked ? (correctMap[slot.id] ?? null) : null}
               onDragOver={() => setDragOverSlot(slot.id)}
-              onDragLeave={() => setDragOverSlot(null)}
+              onDragLeave={() => { setDragOverSlot(null); playClick() }}
               onDrop={(e) => {
                 const compId = e.dataTransfer.getData('text/plain')
                 if (compId) handleDrop(slot.id, compId)
               }}
-              onRemove={() => handleRemove(slot.id)}
+              onRemove={() => {
+                playClick()
+                handleRemove(slot.id)
+              }}
               onTapPlace={() => {
                 if (selectedComp) {
+                  playClick()
                   handleDrop(slot.id, selectedComp)
                   setSelectedComp(null)
                 }
@@ -1376,6 +1383,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
                   isPlaced={placedIds.has(comp.id)}
                   selected={selectedComp === comp.id}
                   onDragStart={(e) => {
+                    playPop()
                     e.dataTransfer.setData('text/plain', comp.id)
                     e.dataTransfer.effectAllowed = 'move'
                     setDraggingId(comp.id)

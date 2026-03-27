@@ -6,6 +6,7 @@ import { ResultsScreen } from './ResultsScreen'
 import { ZONE_META }     from './utils'
 import { questions as allQuestions } from './data/questions'
 import { usePerformance, type PerformanceEntry } from '@/lib/performance'
+import { playCorrect, playWrong, playArrow, playComplete } from '@/lib/sounds'
 import type { Question, ArrowShot } from './types'
 
 const QUESTIONS_PER_GAME = 5
@@ -64,7 +65,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   const handleAnswer = useCallback((index: number) => {
     setSelectedAnswer(index)
     const correct = index === question.correctIndex
-    if (correct) setCorrectCount(prev => prev + 1)
+    if (correct) { setCorrectCount(prev => prev + 1); playCorrect() } else { playWrong() }
     setQuestionResults(prev => [...prev, correct ? 'correct' : 'wrong'])
     // Track for recommendations
     perfEntries.current.push({
@@ -99,6 +100,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
       setShots(prev => [...prev, shot])
       setLatestShot(shot)
       setSubPhase('shot-feedback')
+      playArrow()
     },
     [shots.length],
   )
@@ -133,6 +135,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   // Report performance when entering results
   const hasReported = useRef(false)
   if (subPhase === 'results' && !hasReported.current) {
+    playComplete()
     hasReported.current = true
     report(perfEntries.current)
   }

@@ -1,17 +1,22 @@
 import { usePerformance, type CategoryStats } from '@/lib/performance'
-import { getRecommendations, CATEGORY_LABELS, type Recommendation } from '@/lib/recommendations'
+import { getRecommendations, getStrengths, CATEGORY_LABELS, type Recommendation } from '@/lib/recommendations'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface GameRecommendationsProps {
-  /** Stats from just the completed session (pass to show session-specific recs). */
   sessionStats?: CategoryStats[]
-  /** Optionally show all-time weak spots alongside session ones. */
   showAllTime?: boolean
 }
 
-/**
- * Modular recommendation panel shown after each game.
- * Highlights weak categories and suggests courses to improve.
- */
+/** Color for a given accuracy value. */
+function accuracyColor(accuracy: number): string {
+  if (accuracy >= 80) return '#22c55e'  // green
+  if (accuracy >= 60) return '#306DF6'  // brand blue
+  if (accuracy >= 40) return '#f59e0b'  // amber
+  return '#ef4444'                      // red
+}
+
 export function GameRecommendations({ sessionStats, showAllTime = true }: GameRecommendationsProps) {
   const { allStats } = usePerformance()
 
@@ -19,170 +24,211 @@ export function GameRecommendations({ sessionStats, showAllTime = true }: GameRe
   const allTimeStats = allStats()
   const allTimeRecs = showAllTime ? getRecommendations(allTimeStats) : []
 
-  // Merge: session recs first, then all-time recs not already shown
+  // Merge: session recs first, then unseen all-time recs
   const sessionCats = new Set(sessionRecs.map(r => r.category))
   const extraRecs = allTimeRecs.filter(r => !sessionCats.has(r.category))
 
   const hasAnyRecs = sessionRecs.length > 0 || extraRecs.length > 0
+  const strengths = getStrengths(sessionStats ?? allTimeStats)
 
-  // Strengths — categories with ≥ 70% accuracy
-  const strengths = (sessionStats ?? allTimeStats).filter(s => s.accuracy >= 70 && s.total >= 2)
+  // Chart data from session or all-time
+  const chartStats = sessionStats?.length ? sessionStats : allTimeStats
+  const chartData = chartStats.map(s => ({
+    name: CATEGORY_LABELS[s.category],
+    accuracy: s.accuracy,
+    total: s.total,
+  }))
 
-  if (!hasAnyRecs && strengths.length === 0) return null
+  if (!hasAnyRecs && strengths.length === 0 && chartData.length === 0) return null
 
   return (
-    <div style={{
-      width: '100%',
-      maxWidth: 600,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 16,
-    }}>
-      {/* Strengths */}
-      {strengths.length > 0 && (
-        <div style={{
-          background: '#f0fdf4',
-          border: '2px solid #86efac',
-          borderRadius: 12,
-          padding: '14px 18px',
-        }}>
-          <h4 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#166534' }}>
-            Your Strengths
-          </h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {strengths.map(s => (
-              <span key={s.category} style={{
-                background: '#dcfce7',
-                color: '#15803d',
-                padding: '4px 10px',
-                borderRadius: 20,
-                fontSize: 13,
-                fontWeight: 600,
-              }}>
-                {CATEGORY_LABELS[s.category]} — {s.accuracy}%
-              </span>
-            ))}
-          </div>
-        </div>
+    <div className="flex flex-col gap-4 w-full max-w-[600px]">
+      {/* ── Accuracy chart ──────────────────────────────────────────────── */}
+      {chartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Performance Breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={chartData.length * 44 + 20}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
+                barCategoryGap="20%"
+              >
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  tickFormatter={v => `${v}%`}
+                  tick={{ fontSize: 12, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  tick={{ fontSize: 13, fill: '#475569' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0].payload as { name: string; accuracy: number; total: number }
+                    return (
+                      <div className="rounded-lg bg-white px-3 py-2 text-sm ring-1 ring-foreground/10 shadow-md">
+                        <p className="font-semibold text-foreground">{d.name}</p>
+                        <p className="text-muted-foreground">{d.accuracy}% across {d.total} question{d.total !== 1 ? 's' : ''}</p>
+                      </div>
+                    )
+                  }}
+                />
+                <Bar
+                  dataKey="accuracy"
+                  radius={[0, 6, 6, 0]}
+                  maxBarSize={24}
+                  fill="#306DF6"
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  shape={((props: any) => {
+                    const { x, y, width, height, payload } = props
+                    return (
+                      <rect
+                        x={x} y={y} width={width} height={height}
+                        rx={6} ry={6}
+                        fill={accuracyColor(payload.accuracy)}
+                      />
+                    )
+                  }) as any}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Weak spots / Recommendations */}
+      {/* ── Strengths ───────────────────────────────────────────────────── */}
+      {strengths.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Your Strengths
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {strengths.map(s => (
+                <Badge
+                  key={s.category}
+                  variant="secondary"
+                  className="h-auto px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200"
+                >
+                  {CATEGORY_LABELS[s.category]} — {s.accuracy}%
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Recommended courses ─────────────────────────────────────────── */}
       {hasAnyRecs && (
-        <div style={{
-          background: '#fff7ed',
-          border: '2px solid #fdba74',
-          borderRadius: 12,
-          padding: '14px 18px',
-        }}>
-          <h5 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 700, color: '#9a3412' }}>
-            Areas to Improve
-          </h5>
-          
-        <h4 style={{ margin: '0 0 12px', fontSize: 15, fontWeight: 700, color: '#9a3412' }}>
-            Explore Our Courses
-          </h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Session-specific recs */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Recommended Learning Paths
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
             {sessionRecs.map(rec => (
               <RecCard key={rec.category} rec={rec} isSession />
             ))}
 
-            {/* All-time recs */}
             {extraRecs.length > 0 && sessionRecs.length > 0 && (
-              <div style={{
-                fontSize: 12,
-                color: '#9a3412',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginTop: 4,
-              }}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-1">
                 From previous sessions
-              </div>
+              </p>
             )}
             {extraRecs.map(rec => (
               <RecCard key={rec.category} rec={rec} />
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
-      {!hasAnyRecs && (
-        <div style={{
-          textAlign: 'center',
-          padding: '12px',
-          color: '#166534',
-          fontSize: 15,
-          fontWeight: 600,
-        }}>
-          No weak spots detected — keep it up!
-        </div>
+      {/* ── All clear ───────────────────────────────────────────────────── */}
+      {!hasAnyRecs && strengths.length === 0 && chartData.length > 0 && (
+        <Card>
+          <CardContent className="py-6 text-center">
+            <p className="text-sm font-semibold text-emerald-600">
+              No weak spots detected — keep it up!
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
 }
 
-// ─── Individual recommendation card ─────────────────────────────────────────
+// ─── Course recommendation card ──────────────────────────────────────────────
 
 function RecCard({ rec, isSession }: { rec: Recommendation; isSession?: boolean }) {
   return (
-    <div style={{
-      background: '#fff',
-      border: '1px solid #fed7aa',
-      borderRadius: 10,
-      padding: '12px 14px',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-      }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>
+    <div className="rounded-xl ring-1 ring-foreground/10 bg-card p-3.5">
+      {/* Category header */}
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="text-sm font-semibold text-foreground">
           {rec.label}
         </span>
-        <span style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: rec.accuracy < 40 ? '#dc2626' : '#ea580c',
-          background: rec.accuracy < 40 ? '#fef2f2' : '#fff7ed',
-          padding: '2px 8px',
-          borderRadius: 12,
-        }}>
-          {rec.accuracy}% accuracy
-          {isSession && ' this game'}
-        </span>
+        <Badge
+          variant="outline"
+          className={`h-auto px-2 py-0.5 text-xs font-semibold rounded-lg ${
+            rec.accuracy < 40
+              ? 'bg-red-50 text-red-600 border-red-200'
+              : 'bg-amber-50 text-amber-600 border-amber-200'
+          }`}
+        >
+          {rec.accuracy}%{isSession ? ' this game' : ''}
+        </Badge>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Accuracy bar */}
+      <div className="h-1.5 rounded-full bg-secondary mb-3 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${rec.accuracy}%`,
+            backgroundColor: accuracyColor(rec.accuracy),
+          }}
+        />
+      </div>
+
+      {/* Course links */}
+      <div className="flex flex-col gap-1.5">
         {rec.courses.map((course, i) => (
           <a
             key={i}
             href={course.url}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 10px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: 8,
-              textDecoration: 'none',
-              color: '#334155',
-              fontSize: 13,
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+            className="group flex items-center gap-2.5 rounded-lg px-3 py-2.5 bg-secondary/50 ring-1 ring-foreground/5 hover:bg-secondary transition-colors"
           >
-            <span style={{ fontSize: 16 }}>📚</span>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 13 }}>{course.title}</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>{course.description}</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                {course.title}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">{course.description}</div>
             </div>
-            <span style={{ marginLeft: 'auto', fontSize: 14, color: '#94a3b8' }}>→</span>
+            <svg
+              className="w-4 h-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors"
+              fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
           </a>
         ))}
       </div>

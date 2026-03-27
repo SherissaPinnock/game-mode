@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Category, PerformanceEntry } from '@/lib/performance'
 import { usePerformance, computeStats } from '@/lib/performance'
+import { playCorrect, playGameOver, playIntro, playPop, playWarning, playWrong } from '@/lib/sounds'
 import { GameRecommendations } from '@/components/GameRecommendations'
 
 // ─── Question bank ────────────────────────────────────────────────────────────
@@ -776,6 +777,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const budgetRef      = useRef(500)
   const trafficRef     = useRef(0)
   const capacityRef    = useRef(50)
+  const wasOverloadedRef = useRef(false)
   const waveRef        = useRef(0)
   const phaseRef       = useRef<'playing' | 'breather' | 'done'>('breather')
   const waveTimerRef   = useRef(0)
@@ -827,6 +829,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     setTutStep(prev => {
       if (prev === null) return null
       const next = prev + 1
+      playPop();
       return next >= TUTORIAL_STEPS.length ? null : next
     })
   }
@@ -864,6 +867,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     }
     if (healthRef.current <= 0) {
       phaseRef.current = 'done'
+      playGameOver()
       setResult({ health: 0, budget: Math.round(budgetRef.current) })
       return
     }
@@ -967,7 +971,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   function loop(now: number) { tick(now); rafRef.current = requestAnimationFrame(loop) }
 
   function startGame() {
-    healthRef.current = 100; budgetRef.current = 500; trafficRef.current = 0
+    playIntro()
+    healthRef.current = 100; budgetRef.current = 500; trafficRef.current = 0; wasOverloadedRef.current = false
     capacityRef.current = 50; waveRef.current = 0; phaseRef.current = 'breather'
     waveTimerRef.current = 0
     trafficHistRef.current = Array(HISTORY_LEN).fill(0)
@@ -982,6 +987,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     uiIntervalRef.current = setInterval(() => {
       const w = waveRef.current, p = phaseRef.current
       const overloaded = trafficRef.current > capacityRef.current
+      if (overloaded && !wasOverloadedRef.current) playWarning()
+      wasOverloadedRef.current = overloaded
       let message = ''
       if (p === 'breather') {
         const rem = Math.max(0, Math.ceil((BREATHER_MS - waveTimerRef.current) / 1000))
@@ -1024,13 +1031,14 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     if (!pendingAction || !question || answered !== null) return
     setAnswered(idx)
     const correct = idx === question.answer
+    if (correct) playCorrect(); else playWrong()
     perfEntries.current.push({
       category: question.category,
       correct,
       gameId: 'scale-or-die',
       timestamp: Date.now(),
     })
-    const cost = correct ? pendingAction.cost : pendingAction.cost * 2
+    const cost = correct ? pendingAction.cost : pendingAction.cost * 2 
     setTimeout(() => {
       if (budgetRef.current >= cost) { budgetRef.current -= cost; capacityRef.current += pendingAction.cap }
       setShowQuestion(false); setAnswered(null); setPendingAction(null); setQuestion(null)
@@ -1327,8 +1335,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 const correct = i === question.answer
                 let bg = 'transparent', border = P.dgray, color = P.white
                 if (answered !== null) {
-                  if (correct) { bg = '#002200'; border = P.green; color = P.green }
-                  else if (chosen) { bg = '#1a0000'; border = P.red; color = P.red }
+                  if (correct) { bg = '#002200'; border = P.green; color = P.green;  }
+                  else if (chosen) { bg = '#1a0000'; border = P.red; color = P.red; }
                 }
                 return (
                   <button key={i} onClick={() => handleAnswer(i)} disabled={answered !== null}

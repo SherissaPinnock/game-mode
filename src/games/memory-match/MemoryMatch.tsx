@@ -4,6 +4,7 @@ import { MemoryCard } from './MemoryCard'
 import { concepts }   from './data/concepts'
 import type { Card }  from './types'
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
+import { playCorrect, playWrong } from '@/lib/sounds'
 import { GameRecommendations } from '@/components/GameRecommendations'
 
 const MISMATCH_DELAY = 900   // ms — mismatched pair visible before flipping back
@@ -84,6 +85,7 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
       const isMatch = updatedCards[first].conceptId === updatedCards[second].conceptId
 
       // Track each pair attempt
+      if (isMatch) playCorrect(); else playWrong()
       perfEntries.current.push({
         category: 'javascript',
         correct: isMatch,

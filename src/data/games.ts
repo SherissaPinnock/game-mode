@@ -44,5 +44,12 @@ export const games: Game[] = [
     description: 'Drag and drop to build your own tech startup. Make smart choices to succeed in the competitive market.',
     icon: Hammer,
     tag: 'Strategy',
-  }
+  },
+  {
+    id: 'devops-dynamo',
+    title: 'DevOps Dynamo',
+    description: 'Manage your infrastructure and deployments in this fast-paced DevOps simulation.',
+    icon: Server,
+    tag: 'Strategy',
+  },
 ]
