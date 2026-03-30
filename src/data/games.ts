@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, type LucideIcon } from 'lucide-react'
 // LayoutGrid is used by memory-match above
 
 export interface Game {
@@ -52,4 +52,11 @@ export const games: Game[] = [
     icon: Server,
     tag: 'Strategy',
   },
+  {
+    id: 'python-and-ladders',
+    title: 'Python & Ladders',
+    description: 'Climb the corporate ladder by answering Python questions. Avoid pitfalls and reach the top!',
+    icon: Dices,
+    tag: 'Knowledge',
+  }
 ]

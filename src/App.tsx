@@ -8,6 +8,7 @@ import { MemoryMatch }       from '@/games/memory-match/MemoryMatch'
 import ScaleOrDie            from '@/games/scale-or-die/ScaleOrDie'
 import BuildAStartup         from '@/games/build-a-startup/BuildAStartup'
 import DevOpsDynamo          from '@/games/devops-dynamo/DevOpsDynamo'
+import PythonAndLadders      from '@/games/python-and-ladders/PythonAndLadders'
 import './App.css'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
   if (activeGame === 'scale-or-die')    return <ScaleOrDie      onExit={() => setActiveGame(null)} />
   if (activeGame === 'build-a-startup') return <BuildAStartup   onExit={() => setActiveGame(null)} />
   if (activeGame === 'devops-dynamo')   return <DevOpsDynamo    onExit={() => setActiveGame(null)} />
+  if (activeGame === 'python-and-ladders') return <PythonAndLadders onExit={() => setActiveGame(null)} />
 
   return (
     <main className="flex flex-1 flex-col items-center px-4 py-10 sm:px-6 sm:py-16">

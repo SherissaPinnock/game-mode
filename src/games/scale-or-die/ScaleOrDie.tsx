@@ -26,11 +26,30 @@ const GRAPH_H        = 100
 const HISTORY_LEN    = 100
 const BREATHER_MS    = 5_000
 
-const WAVES = [
-  { label: 'WAVE 1', subtitle: 'LAUNCH DAY',   peak: 55,  duration: 18_000 },
-  { label: 'WAVE 2', subtitle: 'VIRAL SPIKE',  peak: 110, duration: 20_000 },
-  { label: 'WAVE 3', subtitle: 'DDOS ATTACK',  peak: 195, duration: 22_000 },
+const ALL_SCENARIOS = [
+  { subtitle: 'LAUNCH DAY',     peak: 55,  duration: 18_000 },
+  { subtitle: 'VIRAL SPIKE',    peak: 110, duration: 20_000 },
+  { subtitle: 'DDOS ATTACK',    peak: 195, duration: 22_000 },
+  { subtitle: 'PRODUCT HUNT',   peak: 75,  duration: 16_000 },
+  { subtitle: 'FLASH SALE',     peak: 130, duration: 15_000 },
+  { subtitle: 'BOT SWARM',      peak: 180, duration: 21_000 },
+  { subtitle: 'MORNING RUSH',   peak: 45,  duration: 14_000 },
+  { subtitle: 'STREAMING DROP', peak: 100, duration: 18_000 },
+  { subtitle: 'CRYPTO CRASH',   peak: 210, duration: 25_000 },
 ]
+
+function pickScenarios() {
+  const pool = [...ALL_SCENARIOS]
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+  return pool.slice(0, 3)
+    .sort((a, b) => a.peak - b.peak)
+    .map((w, i) => ({ ...w, label: `WAVE ${i + 1}` }))
+}
+
+const WAVES = pickScenarios()
 
 const ACTIONS = [
   { id: 'ec2', label: 'EC2',          cost: 80,  cap: 25 },
@@ -386,12 +405,14 @@ const TUTORIAL_STEPS: TutorialStepDef[] = [
     id: 'waves',
     title: '⚡ THE 3 WAVES',
     lines: [
-      'THREE WAVES STAND BETWEEN YOU',
-      'AND VICTORY:',
+      'THREE RANDOM WAVES STAND BETWEEN',
+      'YOU AND VICTORY.',
       '',
-      '[ 1 ] LAUNCH DAY  — MANAGEABLE.',
-      '[ 2 ] VIRAL SPIKE — THINGS GET HOT.',
-      '[ 3 ] DDOS ATTACK — PURE CHAOS.',
+      'EACH GAME IS DIFFERENT — THE',
+      'SCENARIOS CHANGE EVERY ROUND.',
+      '',
+      'THEY ALWAYS ESCALATE. WAVE 3',
+      'WILL TRY TO DESTROY YOU.',
       '',
       'A 5-SECOND BREATHER BETWEEN EACH.',
       'USE IT TO UPGRADE!',
@@ -430,7 +451,7 @@ const TUTORIAL_STEPS: TutorialStepDef[] = [
       'THE RED. THAT\'S THE WHOLE GAME.',
     ],
     target: 'graph',
-    tooltipSide: 'above',
+    tooltipSide: 'below',
   },
   {
     id: 'actions',
@@ -677,18 +698,24 @@ function TutorialOverlay({ stepIndex, targetRefs, onNext, onSkip }: TutorialOver
   let tooltipStyle: React.CSSProperties = {}
   let above = false
   if (side === 'below') {
+    const topPos = spotRect.bottom + pad + GAP
     tooltipStyle = {
       position: 'fixed',
-      top:  spotRect.bottom + pad + GAP,
-      left: Math.max(8, spotRect.left + spotRect.width / 2 - 160),
+      top: topPos,
+      left: Math.max(8, Math.min(window.innerWidth - 336, spotRect.left + spotRect.width / 2 - 160)),
+      maxHeight: Math.max(160, window.innerHeight - topPos - 12),
+      overflowY: 'auto',
       zIndex: 302,
     }
     above = false
   } else if (side === 'above') {
+    const bottomPos = window.innerHeight - (spotRect.top - pad - GAP)
     tooltipStyle = {
       position: 'fixed',
-      bottom: window.innerHeight - (spotRect.top - pad - GAP),
-      left: Math.max(8, spotRect.left + spotRect.width / 2 - 160),
+      bottom: bottomPos,
+      left: Math.max(8, Math.min(window.innerWidth - 336, spotRect.left + spotRect.width / 2 - 160)),
+      maxHeight: Math.max(160, spotRect.top - pad - GAP - 12),
+      overflowY: 'auto',
       zIndex: 302,
     }
     above = true
@@ -697,6 +724,8 @@ function TutorialOverlay({ stepIndex, targetRefs, onNext, onSkip }: TutorialOver
       position: 'fixed',
       top:  Math.max(8, spotRect.top + spotRect.height / 2 - 100),
       left: spotRect.right + pad + GAP,
+      maxHeight: window.innerHeight - 20,
+      overflowY: 'auto',
       zIndex: 302,
     }
   } else if (side === 'left') {
@@ -704,6 +733,8 @@ function TutorialOverlay({ stepIndex, targetRefs, onNext, onSkip }: TutorialOver
       position: 'fixed',
       top:  Math.max(8, spotRect.top + spotRect.height / 2 - 100),
       right: window.innerWidth - (spotRect.left - pad - GAP),
+      maxHeight: window.innerHeight - 20,
+      overflowY: 'auto',
       zIndex: 302,
     }
   }
@@ -787,7 +818,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const uiIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastTickRef    = useRef(0)
   const canvasRef      = useRef<HTMLCanvasElement>(null)
+  const wavesRef       = useRef(WAVES)
 
+  const [activeWaves, setActiveWaves] = useState(WAVES)
   const [ui, setUi] = useState<UIState>({
     health: 100, budget: 500, traffic: 0, capacity: 50,
     wave: 0, phase: 'breather', message: 'WAVE 1 IN 5s...', overloaded: false,
@@ -846,7 +879,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       if (waveTimerRef.current >= BREATHER_MS) {
         waveTimerRef.current = 0
         waveRef.current += 1
-        if (waveRef.current > WAVES.length) {
+        if (waveRef.current > wavesRef.current.length) {
           phaseRef.current = 'done'
           setResult({ health: Math.round(healthRef.current), budget: Math.round(budgetRef.current) })
           return
@@ -854,7 +887,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
         phaseRef.current = 'playing'
       }
     } else {
-      const wave = WAVES[waveRef.current - 1]
+      const wave = wavesRef.current[waveRef.current - 1]
       trafficRef.current = wave.peak * Math.sin((waveTimerRef.current / wave.duration) * Math.PI)
       if (waveTimerRef.current >= wave.duration) { waveTimerRef.current = 0; phaseRef.current = 'breather' }
     }
@@ -972,6 +1005,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
 
   function startGame() {
     playIntro()
+    const newWaves = pickScenarios()
+    wavesRef.current = newWaves
+    setActiveWaves(newWaves)
     healthRef.current = 100; budgetRef.current = 500; trafficRef.current = 0; wasOverloadedRef.current = false
     capacityRef.current = 50; waveRef.current = 0; phaseRef.current = 'breather'
     waveTimerRef.current = 0
@@ -993,9 +1029,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       if (p === 'breather') {
         const rem = Math.max(0, Math.ceil((BREATHER_MS - waveTimerRef.current) / 1000))
         const next = w + 1
-        message = next <= WAVES.length ? `${WAVES[next - 1].subtitle} IN ${rem}s` : 'ALL CLEAR!'
+        message = next <= wavesRef.current.length ? `${wavesRef.current[next - 1].subtitle} IN ${rem}s` : 'ALL CLEAR!'
       } else {
-        message = WAVES[w - 1]?.subtitle ?? ''
+        message = wavesRef.current[w - 1]?.subtitle ?? ''
       }
       setUi({ health: Math.round(healthRef.current), budget: Math.round(budgetRef.current),
         traffic: Math.round(trafficRef.current), capacity: Math.round(capacityRef.current),
@@ -1038,9 +1074,12 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       gameId: 'scale-or-die',
       timestamp: Date.now(),
     })
-    const cost = correct ? pendingAction.cost : pendingAction.cost * 2 
     setTimeout(() => {
-      if (budgetRef.current >= cost) { budgetRef.current -= cost; capacityRef.current += pendingAction.cap }
+      if (correct) {
+        capacityRef.current += pendingAction.cap
+      } else {
+        budgetRef.current = Math.max(0, budgetRef.current - pendingAction.cost)
+      }
       setShowQuestion(false); setAnswered(null); setPendingAction(null); setQuestion(null)
     }, 1400)
   }
@@ -1132,7 +1171,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
 
         {/* Wave counter */}
         <div ref={tutWavesRef} style={{ display: 'flex', gap: '6px' }}>
-          {WAVES.map((_, i) => (
+          {activeWaves.map((_, i) => (
             <div key={i} style={{
               width: 30, height: 30,
               border: `3px solid ${ui.wave > i + 1 || (ui.wave === i + 1 && ui.phase === 'breather') ? P.green : ui.wave === i + 1 ? P.yellow : P.dgray}`,
@@ -1289,7 +1328,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
           })}
         </div>
         <p style={{ margin: '8px 0 0', fontSize: '9px', color: P.gray, letterSpacing: '0.05em' }}>
-          <Blink>▶</Blink> ANSWER A QUESTION CORRECTLY TO DEPLOY FOR FREE. WRONG = 2X COST.
+          <Blink>▶</Blink> CORRECT = FREE UPGRADE. WRONG = LOSE $COST, NO DEPLOY.
         </p>
       </PixelBox>
       </div>{/* /tutActionsRef */}
@@ -1320,7 +1359,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                   DEPLOY {pendingAction.label}
                 </div>
                 <div style={{ fontSize: '9px', color: P.gray, marginTop: '4px' }}>
-                  CORRECT=FREE  WRONG=2X COST (${pendingAction.cost * 2})
+                  CORRECT=FREE UPGRADE  WRONG=-${pendingAction.cost} NO DEPLOY
                 </div>
               </div>
             </div>
@@ -1366,8 +1405,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 letterSpacing: '0.04em',
               }}>
                 {answered === question.answer
-                  ? `> CORRECT! +${pendingAction.cap} CAPACITY APPLIED FREE`
-                  : `> WRONG. DEPLOYED AT 2X COST ($${pendingAction.cost * 2})`}
+                  ? `> CORRECT! +${pendingAction.cap} CAPACITY DEPLOYED FREE`
+                  : `> WRONG! -$${pendingAction.cost} WASTED — NO UPGRADE DEPLOYED`}
               </div>
             )}
           </div>
@@ -1380,8 +1419,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
         <div style={{
           position: 'fixed', inset: 0,
           background: 'rgba(0,0,0,0.96)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
           zIndex: 200, fontFamily: FONT, overflowY: 'auto',
+          padding: '32px 16px',
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,65,0.02) 3px, rgba(0,255,65,0.02) 4px)',
         }}>
           <div style={{
@@ -1391,7 +1431,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
             padding: '40px 48px',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center',
-            minWidth: 320,
+            minWidth: 320, maxWidth: 560, width: '100%',
+            margin: 'auto',
           }}>
             <div style={{ fontSize: '8px', color: P.gray, letterSpacing: '0.2em' }}>
               {result.health <= 0 ? '>> SERVERS CRASHED <<' : '>> MISSION COMPLETE <<'}
