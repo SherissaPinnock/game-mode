@@ -53,7 +53,6 @@ export default function PythonAndLadders({ onExit, resumeState }: Props) {
     handleAnswer,
     handleRoll,
     handlePassReady,
-    resetGame,
   } = useGameLogic()
 
   function handleSaveAndExit() {
