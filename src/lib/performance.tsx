@@ -18,6 +18,7 @@ export type Category =
   | 'python'
   | 'agile'
   | 'design-patterns'
+  
 
 /** A single recorded attempt at a question/task. */
 export interface PerformanceEntry {

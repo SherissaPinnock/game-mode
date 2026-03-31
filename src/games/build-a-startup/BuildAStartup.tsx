@@ -2,6 +2,15 @@ import { useEffect, useRef, useState, useCallback, type DragEvent } from 'react'
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
 import { GameRecommendations } from '@/components/GameRecommendations'
 import { playCorrect, playWrong, playClick, playNextLevel, playPop} from '@/lib/sounds'
+import { saveGame, clearGame } from '@/lib/resume'
+import { ExitConfirmModal } from '@/components/ExitConfirmModal'
+
+export interface BuildAStartupSave {
+  levelIdx: number
+  results: { levelId: number; stars: number }[]
+}
+
+const GAME_ID = 'build-a-startup'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -924,23 +933,23 @@ function GameComplete({
 
 // ─── Main Game Component ─────────────────────────────────────────────────────
 
-export default function BuildAStartup({ onExit }: { onExit: () => void }) {
-  const [phase, setPhase] = useState<Phase>('intro')
-  const [levelIdx, setLevelIdx] = useState(0)
-  const [placements, setPlacements] = useState<Record<string, string>>({})  // slotId -> componentId
+export default function BuildAStartup({ onExit, resumeState }: { onExit: () => void; resumeState?: BuildAStartupSave | null }) {
+  const [phase, setPhase] = useState<Phase>(resumeState ? 'playing' : 'intro')
+  const [levelIdx, setLevelIdx] = useState(resumeState?.levelIdx ?? 0)
+  const [placements, setPlacements] = useState<Record<string, string>>({})
   const [attempts, setAttempts] = useState(3)
   const [attemptsUsed, setAttemptsUsed] = useState(0)
   const [revealUsed, setRevealUsed] = useState(false)
   const [checked, setChecked] = useState(false)
-  const [correctMap, setCorrectMap] = useState<Record<string, boolean>>({}) // slotId -> correct?
+  const [correctMap, setCorrectMap] = useState<Record<string, boolean>>({})
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null)
   const [showHints, setShowHints] = useState(false)
   const [showResult, setShowResult] = useState(false)
   const [levelStars, setLevelStars] = useState(0)
-  const [results, setResults] = useState<{ levelId: number; stars: number }[]>([])
+  const [results, setResults] = useState<{ levelId: number; stars: number }[]>(resumeState?.results ?? [])
   const [, setDraggingId] = useState<string | null>(null)
-  // Touch-friendly tap-to-place: tap a tray item to select, tap a slot to place
   const [selectedComp, setSelectedComp] = useState<string | null>(null)
+  const [showExitModal, setShowExitModal] = useState(false)
 
   // Performance tracking
   const { report } = usePerformance()
@@ -986,6 +995,26 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
     setLevelStars(0)
     setSelectedComp(null)
   }, [])
+
+  function handleSaveAndExit() {
+    saveGame(GAME_ID, { levelIdx, results } satisfies BuildAStartupSave,
+      `Level ${levelIdx + 1} of ${LEVELS.length}`)
+    onExit()
+  }
+
+  function handleQuit() {
+    clearGame(GAME_ID)
+    onExit()
+  }
+
+  const exitModal = showExitModal && (
+    <ExitConfirmModal
+      progressLabel={`Level ${levelIdx + 1} of ${LEVELS.length}`}
+      onSaveAndExit={phase === 'playing' ? handleSaveAndExit : undefined}
+      onQuit={handleQuit}
+      onCancel={() => setShowExitModal(false)}
+    />
+  )
 
   function handleDrop(slotId: string, compId: string) {
     if (checked) return
@@ -1106,17 +1135,19 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
 
   if (phase === 'intro') {
     return (
-      <LevelIntro
-        level={level}
-        totalLevels={LEVELS.length}
-        onStart={() => { resetLevel(); setPhase('playing'); playNextLevel() }}
-        onExit={onExit}
-      />
+      <>
+        {exitModal}
+        <LevelIntro
+          level={level}
+          totalLevels={LEVELS.length}
+          onStart={() => { resetLevel(); setPhase('playing'); playNextLevel() }}
+          onExit={() => setShowExitModal(true)}
+        />
+      </>
     )
   }
 
   if (phase === 'game-over') {
-    // Report performance once
     if (!hasReported.current) {
       hasReported.current = true
       report(perfEntries.current)
@@ -1126,7 +1157,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
         results={results}
         sessionStats={computeStats(perfEntries.current)}
         onRestart={handleRestart}
-        onExit={onExit}
+        onExit={handleQuit}
       />
     )
   }
@@ -1145,6 +1176,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
       display: 'flex',
       flexDirection: 'column',
     }}>
+      {exitModal}
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -1154,7 +1186,7 @@ export default function BuildAStartup({ onExit }: { onExit: () => void }) {
         borderBottom: `2px solid ${S.gridLine}`,
         background: '#fff',
       }}>
-        <button onClick={onExit} style={{
+        <button onClick={() => setShowExitModal(true)} style={{
           background: 'none', border: `2px solid ${S.border}`, borderRadius: 8,
           padding: '6px 14px', cursor: 'pointer',
           fontFamily: S.bodyFont, fontSize: 14, color: S.mutedText,

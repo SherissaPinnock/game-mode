@@ -7,9 +7,27 @@ import { DialogueBox } from './DialogueBox'
 import { incidents as allIncidents } from './data/incidents'
 import { usePerformance, type PerformanceEntry } from '@/lib/performance'
 import { playCorrect, playWrong, playWasCorrectVoiceOver, playWasWrongVoiceOver } from '@/lib/sounds'
+import { saveGame, clearGame } from '@/lib/resume'
+import { ExitConfirmModal } from '@/components/ExitConfirmModal'
 import type { Action, GamePhase, Incident, InvestigationLog, Investigation } from './types'
 
 const INCIDENTS_PER_GAME = 3
+const GAME_ID = 'devops-dynamo'
+
+export interface DevOpsDynamoSave {
+  incidentIds: string[]
+  incidentIndex: number
+  phase: GamePhase
+  slaRemaining: number
+  completedInvestigations: string[]
+  investigationLog: InvestigationLog[]
+  correctCount: number
+  lastWasCorrect: boolean
+}
+
+function incidentsFromIds(ids: string[]): Incident[] {
+  return ids.map(id => allIncidents.find(i => i.id === id)!).filter(Boolean)
+}
 
 function pickIncidents(count: number): Incident[] {
   return [...allIncidents].sort(() => Math.random() - 0.5).slice(0, count)
@@ -43,21 +61,29 @@ function getTransitionLines(incidentIndex: number, wasCorrect: boolean): string[
 
 interface DevOpsDynamoProps {
   onExit: () => void
+  resumeState?: DevOpsDynamoSave | null
 }
 
-export default function DevOpsDynamo({ onExit }: DevOpsDynamoProps) {
-  // ── Session state ────────────────────────────────────────────────────────
-  const [incidents, setIncidents] = useState<Incident[]>(() => pickIncidents(INCIDENTS_PER_GAME))
-  const [incidentIndex, setIncidentIndex] = useState(0)
-  const [phase, setPhase] = useState<GamePhase>('intro')
+export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps) {
+  // ── Session state (hydrated from save if present) ────────────────────────
+  const [incidents, setIncidents] = useState<Incident[]>(() =>
+    resumeState ? incidentsFromIds(resumeState.incidentIds) : pickIncidents(INCIDENTS_PER_GAME)
+  )
+  const [incidentIndex, setIncidentIndex] = useState(() => resumeState?.incidentIndex ?? 0)
+  const [phase, setPhase] = useState<GamePhase>(() => resumeState?.phase ?? 'intro')
 
   // ── Per-incident state ───────────────────────────────────────────────────
-  const [slaRemaining, setSlaRemaining] = useState(0)
-  const [completedInvestigations, setCompletedInvestigations] = useState<Set<string>>(new Set())
-  const [investigationLog, setInvestigationLog] = useState<InvestigationLog[]>([])
+  const [slaRemaining, setSlaRemaining] = useState(() => resumeState?.slaRemaining ?? 0)
+  const [completedInvestigations, setCompletedInvestigations] = useState<Set<string>>(
+    () => new Set(resumeState?.completedInvestigations ?? [])
+  )
+  const [investigationLog, setInvestigationLog] = useState<InvestigationLog[]>(
+    () => resumeState?.investigationLog ?? []
+  )
   const [chosenAction, setChosenAction] = useState<Action | null>(null)
-  const [correctCount, setCorrectCount] = useState(0)
-  const [lastWasCorrect, setLastWasCorrect] = useState(true)
+  const [correctCount, setCorrectCount] = useState(() => resumeState?.correctCount ?? 0)
+  const [lastWasCorrect, setLastWasCorrect] = useState(() => resumeState?.lastWasCorrect ?? true)
+  const [showExitModal, setShowExitModal] = useState(false)
 
   // ── Performance tracking ─────────────────────────────────────────────────
   const { report } = usePerformance()
@@ -75,11 +101,32 @@ export default function DevOpsDynamo({ onExit }: DevOpsDynamoProps) {
     setChosenAction(null)
   }, [])
 
-  // Initialize first incident on mount
+  // Initialize first incident SLA on fresh start only
   const initialized = useRef(false)
   if (!initialized.current) {
     initialized.current = true
-    setSlaRemaining(incident.slaTotal)
+    if (!resumeState) setSlaRemaining(incident.slaTotal)
+  }
+
+  // ── Exit handling ────────────────────────────────────────────────────────
+  function handleSaveAndExit() {
+    const save: DevOpsDynamoSave = {
+      incidentIds: incidents.map(i => i.id),
+      incidentIndex,
+      phase,
+      slaRemaining,
+      completedInvestigations: [...completedInvestigations],
+      investigationLog,
+      correctCount,
+      lastWasCorrect,
+    }
+    saveGame(GAME_ID, save, `Incident ${incidentIndex + 1} of ${incidents.length}`)
+    onExit()
+  }
+
+  function handleQuit() {
+    clearGame(GAME_ID)
+    onExit()
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -163,17 +210,31 @@ export default function DevOpsDynamo({ onExit }: DevOpsDynamoProps) {
     report(perfEntries.current)
   }
 
+  const exitBtn = (
+    <button
+      onClick={() => setShowExitModal(true)}
+      className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 rounded-lg border border-slate-200 hover:bg-white transition-colors"
+    >
+      ← Exit
+    </button>
+  )
+
+  const exitModal = showExitModal && (
+    <ExitConfirmModal
+      progressLabel={`Incident ${incidentIndex + 1} of ${incidents.length}`}
+      onSaveAndExit={handleSaveAndExit}
+      onQuit={handleQuit}
+      onCancel={() => setShowExitModal(false)}
+    />
+  )
+
   // ── Intro screen ────────────────────────────────────────────────────────
   if (phase === 'intro') {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-10 min-h-screen bg-slate-50">
+        {exitModal}
         <div className="flex items-center justify-between w-full max-w-2xl mb-8">
-          <button
-            onClick={onExit}
-            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 rounded-lg border border-slate-200 hover:bg-white transition-colors"
-          >
-            ← Exit
-          </button>
+          {exitBtn}
           <h2 className="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
             <span>🖥️</span> DevOps Dynamo
           </h2>
@@ -193,13 +254,9 @@ export default function DevOpsDynamo({ onExit }: DevOpsDynamoProps) {
   if (phase === 'transition') {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-10 min-h-screen bg-slate-50">
+        {exitModal}
         <div className="flex items-center justify-between w-full max-w-2xl mb-8">
-          <button
-            onClick={onExit}
-            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 rounded-lg border border-slate-200 hover:bg-white transition-colors"
-          >
-            ← Exit
-          </button>
+          {exitBtn}
           <span className="text-sm text-slate-500 font-medium">
             Up next: Incident {incidentIndex + 2}/{incidents.length}
           </span>
@@ -231,7 +288,7 @@ export default function DevOpsDynamo({ onExit }: DevOpsDynamoProps) {
         correctCount={correctCount}
         sessionEntries={perfEntries.current}
         onNext={handleNext}
-        onExit={onExit}
+        onExit={handleQuit}
         isLastIncident={isLastIncident}
       />
     )
@@ -240,14 +297,10 @@ export default function DevOpsDynamo({ onExit }: DevOpsDynamoProps) {
   // ── Main game screen ────────────────────────────────────────────────────
   return (
     <div className="flex flex-1 flex-col min-h-screen bg-slate-50 px-4 py-6 sm:px-8 sm:py-8">
+      {exitModal}
       {/* Header */}
       <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto w-full">
-        <button
-          onClick={onExit}
-          className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 rounded-lg border border-slate-200 hover:bg-white transition-colors"
-        >
-          ← Exit
-        </button>
+        {exitBtn}
         <h2 className="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
           🖥️ DevOps Dynamo
         </h2>

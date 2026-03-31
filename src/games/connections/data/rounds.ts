@@ -75,25 +75,11 @@ export const rounds: ConnectionsRound[] = [
     id: 3,
     groups: [
       {
-        id: 'sorting',
-        category: 'Sorting Algorithms',
-        color: 'yellow',
-        items: ['BUBBLE', 'MERGE', 'QUICK', 'HEAP'],
-        topic: 'algorithms',
-      },
-      {
         id: 'db-types',
         category: 'Database Types',
         color: 'green',
         items: ['RELATIONAL', 'GRAPH', 'DOCUMENT', 'COLUMNAR'],
         topic: 'databases',
-      },
-      {
-        id: 'testing-types',
-        category: 'Types of Software Testing',
-        color: 'blue',
-        items: ['UNIT', 'INTEGRATION', 'SMOKE', 'REGRESSION'],
-        topic: 'testing',
       },
       {
         id: 'agile',

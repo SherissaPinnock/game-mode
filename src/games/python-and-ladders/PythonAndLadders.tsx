@@ -6,16 +6,31 @@ import { PlayerInfo } from './components/PlayerInfo'
 import { ResultsScreen } from './components/ResultsScreen'
 import { PassDeviceScreen } from './components/PassDeviceScreen'
 import { useGameLogic } from './hooks/useGameLogic'
-import type { GameMode } from './types'
+import type { GameMode, Player } from './types'
 import { playClick } from '@/lib/sounds'
+import { saveGame, clearGame } from '@/lib/resume'
+import { ExitConfirmModal } from '@/components/ExitConfirmModal'
+
+export interface PythonAndLaddersSave {
+  gameMode: GameMode
+  players: Player[]
+  activePlayer: 'p1' | 'p2'
+  questionCount: number
+  correctCount: number
+  friendName: string
+}
+
+const GAME_ID = 'python-and-ladders'
 
 interface Props {
   onExit: () => void
+  resumeState?: PythonAndLaddersSave | null
 }
 
-export default function PythonAndLadders({ onExit }: Props) {
-  const [selectedMode, setSelectedMode] = useState<GameMode>('vs-bot')
-  const [friendName, setFriendName] = useState('')
+export default function PythonAndLadders({ onExit, resumeState }: Props) {
+  const [selectedMode, setSelectedMode] = useState<GameMode>(resumeState?.gameMode ?? 'vs-bot')
+  const [friendName, setFriendName] = useState(resumeState?.friendName ?? '')
+  const [showExitModal, setShowExitModal] = useState(false)
 
   const {
     phase,
@@ -41,11 +56,35 @@ export default function PythonAndLadders({ onExit }: Props) {
     resetGame,
   } = useGameLogic()
 
+  function handleSaveAndExit() {
+    const save: PythonAndLaddersSave = {
+      gameMode, players, activePlayer, questionCount, correctCount,
+      friendName: gameMode === 'vs-friend' ? p2.name : '',
+    }
+    saveGame(GAME_ID, save, `${p1.name} on cell ${p1.position} vs ${p2.name} on cell ${p2.position}`)
+    onExit()
+  }
+
+  function handleQuitToMenu() {
+    clearGame(GAME_ID)
+    onExit()
+  }
+
+  const exitModal = showExitModal && (
+    <ExitConfirmModal
+      progressLabel={`Cell ${p1.position} / 36`}
+      onSaveAndExit={phase !== 'intro' && phase !== 'finished' ? handleSaveAndExit : undefined}
+      onQuit={handleQuitToMenu}
+      onCancel={() => setShowExitModal(false)}
+    />
+  )
+
   // ─── Intro Screen ──────────────────────────────────────────────────
 
   if (phase === 'intro') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col items-center justify-center px-4 py-8">
+        {exitModal}
         <div className="w-full max-w-sm text-center space-y-6">
           <div className="space-y-2">
             <div className="text-5xl">🐍🪜</div>
@@ -112,7 +151,7 @@ export default function PythonAndLadders({ onExit }: Props) {
 
           <div className="flex gap-3">
             <button
-              onClick={() => { playClick(); onExit() }}
+              onClick={() => { playClick(); setShowExitModal(true) }}
               className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
             >
               Back
@@ -154,7 +193,7 @@ export default function PythonAndLadders({ onExit }: Props) {
           correctCount={correctCount}
           sessionStats={sessionStats}
           onPlayAgain={() => startGame(gameMode, gameMode === 'vs-friend' ? p2.name : '')}
-          onExit={onExit}
+          onExit={handleQuitToMenu}
         />
       </div>
     )
@@ -169,10 +208,11 @@ export default function PythonAndLadders({ onExit }: Props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col">
+      {exitModal}
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white/80 backdrop-blur-sm shrink-0">
         <button
-          onClick={() => { playClick(); resetGame() }}
+          onClick={() => { playClick(); setShowExitModal(true) }}
           className="text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors"
         >
           ← Exit
