@@ -6,7 +6,6 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 export type Category =
   | 'html-css'
   | 'javascript'
-  | 'data-structures'
   | 'networking'
   | 'cloud-aws'
   | 'scaling'
@@ -15,9 +14,7 @@ export type Category =
   | 'security'
   | 'architecture'
   | 'git'
-  | 'testing'
   | 'react'
-  | 'algorithms'
   | 'python'
   | 'agile'
   | 'design-patterns'
