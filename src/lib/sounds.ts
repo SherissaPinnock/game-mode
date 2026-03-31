@@ -10,6 +10,8 @@ import warningSrc from '@/assets/sounds/warning sound 2.mp3'
 import completeSrc from '@/assets/sounds/complete sound.mp3'
 import nextLevelSrc from '@/assets/sounds/next level.mp3'
 import voiceOverSrc from '@/assets/sounds/tutorial voice over.mp3'
+import wasCorrectSrc from '@/assets/sounds/was correct voice over.mp3'
+import wasWrongSrc from '@/assets/sounds/was wrong voice over.mp3'
 /**
  * Play a short sound effect. Creates a fresh Audio each time
  * so overlapping plays don't cut each other off.
@@ -66,6 +68,23 @@ export function playNextLevel() {
   play(nextLevelSrc)
 }
 
-export function playVoiceOver() {
-  play(voiceOverSrc)
+export function playVoiceOver(): HTMLAudioElement {
+  const audio = new Audio(voiceOverSrc)
+  audio.volume = 0.5
+  audio.play().catch(() => {})
+  return audio
+}
+
+export function playWasCorrectVoiceOver(): HTMLAudioElement {
+  const audio = new Audio(wasCorrectSrc)
+  audio.volume = 0.5
+  audio.play().catch(() => {})
+  return audio
+}
+
+export function playWasWrongVoiceOver(): HTMLAudioElement {
+  const audio = new Audio(wasWrongSrc)
+  audio.volume = 0.5
+  audio.play().catch(() => {})
+  return audio
 }

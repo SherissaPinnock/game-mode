@@ -19,20 +19,32 @@ interface DialogueBoxProps {
   lines: string[]
   buttonLabel: string
   onContinue: () => void
+  voiceOverFn?: () => HTMLAudioElement
 }
 
-export function DialogueBox({ mood, lines, buttonLabel, onContinue }: DialogueBoxProps) {
+export function DialogueBox({ mood, lines, buttonLabel, onContinue, voiceOverFn = playVoiceOver }: DialogueBoxProps) {
   const fullText = lines.join('\n\n')
   const [displayedLen, setDisplayedLen] = useState(0)
   const [done, setDone] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Reset when lines change
+  function stopAudio() {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current = null
+    }
+  }
+
+  // Reset when lines change — stop previous audio first
   useEffect(() => {
-    playVoiceOver()
+    stopAudio()
+    audioRef.current = voiceOverFn()
     setDisplayedLen(0)
     setDone(false)
-  }, [fullText])
+    return () => stopAudio() // also stop on unmount
+  }, [fullText]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Typewriter tick
   useEffect(() => {
@@ -60,6 +72,7 @@ export function DialogueBox({ mood, lines, buttonLabel, onContinue }: DialogueBo
 
   const handleSkip = () => {
     if (timerRef.current) clearTimeout(timerRef.current)
+    stopAudio()
     playPop()
     setDisplayedLen(fullText.length)
     setDone(true)

@@ -12,8 +12,8 @@ export function GameCard({ game, onPlay }: GameCardProps) {
   const Icon = game.icon
 
   return (
-    <Card className="flex-1 cursor-pointer transition-all duration-200 hover:ring-2 hover:ring-primary/40 hover:shadow-lg">
-      <CardHeader>
+    <Card className="flex flex-col cursor-pointer transition-all duration-200 hover:ring-2 hover:ring-primary/40 hover:shadow-lg">
+      <CardHeader className="flex-1">
         <div className="flex items-start justify-between">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
             <Icon className="h-6 w-6" strokeWidth={1.5} />

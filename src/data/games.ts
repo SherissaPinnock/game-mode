@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, type LucideIcon } from 'lucide-react'
 // LayoutGrid is used by memory-match above
 
 export interface Game {
@@ -47,9 +47,9 @@ export const games: Game[] = [
   },
   {
     id: 'devops-dynamo',
-    title: 'DevOps Dynamo',
+    title: 'DevOps Diagnostics',
     description: 'Manage your infrastructure and deployments in this fast-paced DevOps simulation.',
-    icon: Server,
+    icon: Stethoscope,
     tag: 'Strategy',
   },
   {

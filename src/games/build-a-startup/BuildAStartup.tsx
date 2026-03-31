@@ -818,70 +818,77 @@ function GameComplete({
   return (
     <div style={{
       minHeight: '100vh',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
       background: S.bg,
       fontFamily: S.bodyFont,
+      padding: '48px 24px',
     }}>
       <div style={{
         background: '#fff',
         border: `3px solid ${S.accent}`,
         borderRadius: 20,
         padding: '44px 48px',
-        maxWidth: 480,
-        textAlign: 'center',
+        width: '100%',
+        maxWidth: 900,
         boxShadow: `0 12px 40px ${S.accent}22`,
       }}>
-        <div style={{ fontSize: 52, marginBottom: 8 }}>🏗️</div>
-
-        <h1 style={{
-          fontFamily: S.font,
-          fontSize: 40,
-          margin: '0 0 8px',
-          color: S.darkText,
-        }}>
-          Startup Built!
-        </h1>
-
-        <p style={{ fontSize: 15, color: '#666', margin: '0 0 24px' }}>
-          You've completed all {results.length} architecture challenges.
-        </p>
-
-        {/* Star summary */}
-        <div style={{
-          fontSize: 28, fontWeight: 700, color: S.accent,
-          marginBottom: 20,
-        }}>
-          {totalStars} / {maxStars} ⭐
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 52, marginBottom: 8 }}>🏗️</div>
+          <h1 style={{
+            fontFamily: S.font,
+            fontSize: 40,
+            margin: '0 0 8px',
+            color: S.darkText,
+          }}>
+            Startup Built!
+          </h1>
+          <p style={{ fontSize: 15, color: '#666', margin: '0 0 12px' }}>
+            You've completed all {results.length} architecture challenges.
+          </p>
+          <div style={{ fontSize: 28, fontWeight: 700, color: S.accent }}>
+            {totalStars} / {maxStars} ⭐
+          </div>
         </div>
 
-        {/* Per-level breakdown */}
+        {/* Two-column layout on desktop */}
         <div style={{
-          display: 'flex', flexDirection: 'column', gap: 8,
-          marginBottom: 28,
-          padding: '16px',
-          background: S.paper,
-          borderRadius: 12,
-          border: `1px solid ${S.gridLine}`,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 24,
+          marginBottom: 32,
         }}>
-          {results.map((r, i) => (
-            <div key={r.levelId} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '6px 8px',
-            }}>
-              <span style={{ fontSize: 14, color: S.darkText, fontWeight: 600 }}>
-                Lv.{r.levelId} — {LEVELS[i].title}
-              </span>
-              <span>
-                {[1, 2, 3].map(s => (
-                  <span key={s} style={{ opacity: s <= r.stars ? 1 : 0.2, fontSize: 16 }}>⭐</span>
-                ))}
-              </span>
-            </div>
-          ))}
-        </div>
+          {/* Per-level breakdown */}
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: 8,
+            padding: '20px',
+            background: S.paper,
+            borderRadius: 12,
+            border: `1px solid ${S.gridLine}`,
+          }}>
+            {results.map((r, i) => (
+              <div key={r.levelId} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '8px 8px',
+                borderBottom: i < results.length - 1 ? `1px solid ${S.gridLine}` : 'none',
+              }}>
+                <span style={{ fontSize: 14, color: S.darkText, fontWeight: 600 }}>
+                  Lv.{r.levelId} — {LEVELS[i].title}
+                </span>
+                <span>
+                  {[1, 2, 3].map(s => (
+                    <span key={s} style={{ opacity: s <= r.stars ? 1 : 0.2, fontSize: 16 }}>⭐</span>
+                  ))}
+                </span>
+              </div>
+            ))}
+          </div>
 
-        {/* Recommendations */}
-        <GameRecommendations sessionStats={sessionStats} />
+          {/* Recommendations */}
+          <div>
+            <GameRecommendations sessionStats={sessionStats} />
+          </div>
+        </div>
 
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button onClick={onExit} style={{
