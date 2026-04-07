@@ -352,3 +352,75 @@
   background-size: 40px 4px;
   animation: sod-stream 0.9s linear infinite;
 }
+
+/* =============================================
+   Home screen responsive layout
+   ============================================= */
+
+.home-nav { padding: 14px 32px; }
+.home-header { padding: 32px 32px 0; }
+.home-search { padding: 20px 32px 0; }
+.home-body { display: flex; padding: 24px 32px 48px; align-items: flex-start; gap: 0; }
+
+.home-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e8e8e8;
+  padding: 20px 16px;
+  margin-right: 24px;
+  position: sticky;
+  top: 24px;
+}
+
+.home-sidebar-mobile {
+  display: none;
+}
+
+.home-chips {
+  display: none;
+}
+
+.home-cards {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .home-nav { padding: 12px 16px; }
+  .home-header { padding: 20px 16px 0; }
+  .home-search { padding: 14px 16px 0; }
+
+  .home-body {
+    flex-direction: column;
+    padding: 16px 16px 48px;
+    gap: 16px;
+  }
+
+  .home-sidebar { display: none; }
+
+  .home-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .home-cards { width: 100%; }
+
+  .home-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-card-thumb { height: 150px !important; }
+}
