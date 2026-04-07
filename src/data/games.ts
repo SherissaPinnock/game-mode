@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, type LucideIcon } from 'lucide-react'
 // LayoutGrid is used by memory-match above
 
 export interface Game {
@@ -58,5 +58,19 @@ export const games: Game[] = [
     description: 'Climb the corporate ladder by answering Python questions. Avoid pitfalls and reach the top!',
     icon: Dices,
     tag: 'Knowledge',
+  },
+  {
+    id: 'prompt-sculptor',
+    title: 'Prompt Sculptor',
+    description: 'Craft the perfect prompt to solve challenges. Test and refine your prompts to achieve the best results.',
+    icon: Pencil,
+    tag: 'Strategy',
+  },
+  {
+    id: 'clue-game',
+    title: 'Clue',
+    description: 'Guess the technology based a series of clues. The fewer clues needed the more points',
+    icon: Lightbulb,
+    tag: 'Knowledge'
   }
 ]

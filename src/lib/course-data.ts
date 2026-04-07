@@ -65,7 +65,10 @@ export const COURSE_MAP: Record<Category, CourseLink[]> = {
   'design-patterns': [
     { title: 'Design Patterns', description: 'Singleton, Observer, Factory, Strategy, Decorator', url: '#patterns-course' },
   ],
-  
+  prompting: [
+    { title: 'Prompt Engineering Guide', description: 'Roles, constraints, format control, chain-of-thought techniques', url: '#prompting-course' },
+    { title: 'Advanced Prompting Patterns', description: 'Few-shot examples, structured outputs, and evaluation strategies', url: '#advanced-prompting-course' },
+  ],
 }
 
 /** Human-readable display names for each category. */
@@ -84,4 +87,5 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   python: 'Python',
   agile: 'Agile',
   'design-patterns': 'Design Patterns',
+  prompting: 'Prompt Engineering',
 }

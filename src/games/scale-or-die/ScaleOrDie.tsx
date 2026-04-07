@@ -59,6 +59,65 @@ const ACTIONS = [
   { id: 'mq',  label: 'MSG QUEUE',    cost: 90,  cap: 20 },
 ]
 
+// ─── Action feedback by scenario ─────────────────────────────────────────────
+type FeedbackEntry = { bad?: string; good?: string }
+const ACTION_FEEDBACK: Record<string, Partial<Record<string, FeedbackEntry>>> = {
+  'BOT SWARM': {
+    ec2: { bad: "More servers just give the bots more targets — scaling won't stop them!" },
+    lb:  { bad: "Load balancing spreads bot traffic evenly. That's not a fix!" },
+    as:  { bad: "Auto-scaling to serve bots just drains your budget faster!" },
+    cdn: { good: "CDN edge rules can rate-limit bots before they reach your servers!" },
+    mq:  { good: "Queuing limits the flood — only process what you can handle!" },
+  },
+  'DDOS ATTACK': {
+    ec2: { bad: "More instances won't stop a DDoS — they'll flood any size you spin up!" },
+    as:  { bad: "Scaling into a DDoS just burns money without stopping the attack!" },
+    lb:  { bad: "Load balancers spread attack traffic — they don't block it!" },
+    cdn: { good: "CDN absorbs and filters DDoS traffic at the edge. Smart move!" },
+    mq:  { good: "Queuing caps your request rate — limits what the DDoS can hammer!" },
+  },
+  'VIRAL SPIKE': {
+    ec2: { good: "More instances for real users flooding in — exactly right!" },
+    cdn: { good: "CDN serves assets from edge nodes, freeing up your origin!" },
+    lb:  { good: "Load balancer spreads the viral surge evenly. Servers stay happy!" },
+    as:  { good: "Auto-scaling matches the viral wave automatically — perfect!" },
+  },
+  'FLASH SALE': {
+    ec2: { good: "More instances handle the purchase rush — good call!" },
+    cdn: { good: "CDN caches product pages — way less load on your origin!" },
+    as:  { good: "Auto-scaling kicks in as the sale surge hits — well timed!" },
+    mq:  { good: "Queue absorbs the order burst and processes them steadily. Nice!" },
+  },
+  'STREAMING DROP': {
+    cdn: { good: "CDN edge nodes deliver streams near users — that's exactly right!" },
+    ec2: { bad: "More server instances won't fix stream delivery — the issue is distance!" },
+    lb:  { bad: "Load balancing won't help — the problem is network distance, not load!" },
+  },
+  'PRODUCT HUNT': {
+    cdn: { good: "CDN handles the Product Hunt hug-of-death from users worldwide!" },
+    lb:  { good: "Load balancer spreads the Product Hunt crowd across your servers!" },
+    ec2: { good: "Extra instances ready for the Product Hunt surge — smart prep!" },
+  },
+  'LAUNCH DAY': {
+    ec2: { good: "Extra instances for the launch crowd — well prepared!" },
+    lb:  { good: "Load balancer handles the launch surge without breaking a sweat!" },
+    as:  { good: "Auto-scaling grows with your launch traffic — hands-free!" },
+    cdn: { good: "CDN takes static asset load off your servers on launch day!" },
+  },
+  'MORNING RUSH': {
+    ec2: { good: "Smooth! More instances absorb the morning traffic build-up." },
+    as:  { good: "Auto-scaling eases in as the morning surge builds — efficient!" },
+    cdn: { good: "CDN handles cached requests so your servers aren't slammed!" },
+    mq:  { bad: "Message queues add latency — morning users expect fast responses!" },
+  },
+  'CRYPTO CRASH': {
+    mq:  { good: "Queue handles the compute storm — no trade requests dropped!" },
+    as:  { good: "Auto-scaling matches the intense compute demand of the crash!" },
+    cdn: { bad: "CDN caches static content — won't help with compute-heavy trading spikes!" },
+    lb:  { bad: "Load balancing helps spread load, but can't generate compute from thin air!" },
+  },
+}
+
 // ─── Retro 8-bit palette ──────────────────────────────────────────────────────
 const P = {
   black:   '#0a0a0a',
@@ -830,6 +889,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const [pendingAction, setPendingAction] = useState<typeof ACTIONS[0] | null>(null)
   const [answered, setAnswered]         = useState<number | null>(null)
   const [result, setResult]             = useState<ResultState | null>(null)
+  const [actionFeedback, setActionFeedback] = useState<{ message: string; good: boolean } | null>(null)
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ── Performance tracking ─────────────────────────────────────────────────
   const { report } = usePerformance()
@@ -1060,6 +1121,22 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
 
   function handleAction(action: typeof ACTIONS[0]) {
     if (showQuestion || result) return
+
+    // Show contextual feedback if we're in an active wave
+    if (phaseRef.current === 'playing') {
+      const subtitle = wavesRef.current[waveRef.current - 1]?.subtitle ?? ''
+      const entry = ACTION_FEEDBACK[subtitle]?.[action.id]
+      if (entry?.bad) {
+        if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+        setActionFeedback({ message: entry.bad, good: false })
+        feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000)
+      } else if (entry?.good) {
+        if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+        setActionFeedback({ message: entry.good, good: true })
+        feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000)
+      }
+    }
+
     setQuestion(pickQuestion()); setPendingAction(action); setAnswered(null); setShowQuestion(true)
   }
 
@@ -1500,6 +1577,48 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 RETRY ↺
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Action feedback toast ────────────────────────────────────────────── */}
+      {actionFeedback && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 150,
+          background: P.black,
+          border: `3px solid ${actionFeedback.good ? P.green : P.red}`,
+          boxShadow: `4px 4px 0 ${actionFeedback.good ? P.green : P.red}44`,
+          padding: '10px 16px',
+          maxWidth: 380,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          fontFamily: FONT,
+          pointerEvents: 'none',
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
+            {actionFeedback.good ? '✓' : '✗'}
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{
+              fontSize: '8px',
+              color: actionFeedback.good ? P.green : P.red,
+              letterSpacing: '0.1em',
+            }}>
+              {actionFeedback.good ? 'NICE MOVE!' : 'UH OH!'}
+            </span>
+            <span style={{
+              fontSize: '12px',
+              color: P.white,
+              fontFamily: 'system-ui, sans-serif',
+              lineHeight: 1.5,
+            }}>
+              {actionFeedback.message}
+            </span>
           </div>
         </div>
       )}

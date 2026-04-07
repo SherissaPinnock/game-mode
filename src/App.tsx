@@ -10,6 +10,8 @@ import ScaleOrDie            from '@/games/scale-or-die/ScaleOrDie'
 import BuildAStartup         from '@/games/build-a-startup/BuildAStartup'
 import DevOpsDynamo          from '@/games/devops-dynamo/DevOpsDynamo'
 import PythonAndLadders      from '@/games/python-and-ladders/PythonAndLadders'
+import { PromptSculptor }    from '@/games/prompt-sculptor/PromptSculptor'
+import ClueGame             from '@/games/clue-game/ClueGame'
 import { loadGame, clearGame } from '@/lib/resume'
 import type { SavedGame } from '@/lib/resume'
 import './App.css'
@@ -63,6 +65,8 @@ function App() {
   if (activeGame === 'build-a-startup')    return <BuildAStartup   onExit={exitGame} resumeState={resumeState} />
   if (activeGame === 'devops-dynamo')      return <DevOpsDynamo    onExit={exitGame} resumeState={resumeState} />
   if (activeGame === 'python-and-ladders') return <PythonAndLadders onExit={exitGame} resumeState={resumeState} />
+  if (activeGame === 'prompt-sculptor')    return <PromptSculptor  onExit={exitGame} />
+  if (activeGame === 'clue-game')          return <ClueGame         onExit={exitGame} />
 
   return (
     <>
