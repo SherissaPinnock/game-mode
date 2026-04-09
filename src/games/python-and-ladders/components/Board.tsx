@@ -7,13 +7,10 @@ interface BoardProps {
   players: Player[]
   highlightedCell: number | null
   activeSlide: SnakeOrLadder | null
+  isDark: boolean
 }
 
-/**
- * Renders the 6x6 board grid with boustrophedon numbering
- * and an SVG overlay for snakes & ladders stretched across cells.
- */
-export function Board({ players, highlightedCell, activeSlide }: BoardProps) {
+export function Board({ players, highlightedCell, activeSlide, isDark }: BoardProps) {
   const rows: number[][] = []
   for (let row = GRID_ROWS - 1; row >= 0; row--) {
     const cells: number[] = []
@@ -25,17 +22,27 @@ export function Board({ players, highlightedCell, activeSlide }: BoardProps) {
     rows.push(cells)
   }
 
+  const finishLabel = isDark
+    ? 'text-rose-400 bg-rose-500/20 border border-rose-500/30'
+    : 'text-rose-600 bg-rose-100 border border-rose-300'
+
+  const startLabel = isDark
+    ? 'text-emerald-400 bg-emerald-500/20 border border-emerald-500/30'
+    : 'text-emerald-600 bg-emerald-100 border border-emerald-300'
+
+  const boardWrap = isDark
+    ? 'bg-slate-900/40 border border-white/[0.07] rounded-xl p-2 shadow-2xl'
+    : 'bg-white border border-slate-200 rounded-xl p-2 shadow-lg'
+
   return (
     <div className="w-full max-w-[360px] lg:max-w-[520px] mx-auto">
-      {/* Finish label */}
       <div className="flex justify-start mb-1.5">
-        <span className="text-[10px] uppercase tracking-widest font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">
+        <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${finishLabel}`}>
           Finish {BOARD_SIZE}
         </span>
       </div>
 
-      {/* Board with SVG overlay */}
-      <div className="relative">
+      <div className={`relative ${boardWrap}`}>
         <div className="grid grid-rows-6 gap-1">
           {rows.map((row, ri) => (
             <div key={ri} className="grid grid-cols-6 gap-1">
@@ -46,19 +53,17 @@ export function Board({ players, highlightedCell, activeSlide }: BoardProps) {
                   players={players}
                   isHighlighted={highlightedCell === cellNum}
                   activeSlide={activeSlide}
+                  isDark={isDark}
                 />
               ))}
             </div>
           ))}
         </div>
-
-        {/* SVG snakes & ladders overlay */}
         <BoardOverlay activeSlide={activeSlide} />
       </div>
 
-      {/* Start label */}
       <div className="flex justify-start mt-1.5">
-        <span className="text-[10px] uppercase tracking-widest font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">
+        <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${startLabel}`}>
           Start
         </span>
       </div>

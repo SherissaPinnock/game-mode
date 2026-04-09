@@ -1,6 +1,7 @@
 import { usePerformance, type CategoryStats } from '@/lib/performance'
-import { getRecommendations, getStrengths, CATEGORY_LABELS, type Recommendation } from '@/lib/recommendations'
+import { getRecommendations, CATEGORY_LABELS, type Recommendation } from '@/lib/recommendations'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import type { CourseLink } from '@/lib/course-data'
 
 interface GameRecommendationsProps {
   sessionStats?: CategoryStats[]
@@ -33,27 +34,24 @@ const SECTION_LABEL: React.CSSProperties = {
   marginBottom: 4,
 }
 
-export function GameRecommendations({ sessionStats, showAllTime = true }: GameRecommendationsProps) {
+export function GameRecommendations({ sessionStats }: GameRecommendationsProps) {
   const { allStats } = usePerformance()
 
-  const sessionRecs   = sessionStats ? getRecommendations(sessionStats) : []
-  const allTimeStats  = allStats()
-  const allTimeRecs   = showAllTime ? getRecommendations(allTimeStats) : []
+  // ── Single worst-performing category from previous sessions ────────────────
+  const previousStats = allStats()
+  const worstRec: Recommendation | null = (() => {
+    const recs = getRecommendations(previousStats)
+    return recs.length > 0 ? recs[0] : null   // already sorted weakest-first
+  })()
 
-  const sessionCats = new Set(sessionRecs.map(r => r.category))
-  const extraRecs   = allTimeRecs.filter(r => !sessionCats.has(r.category))
-
-  const hasAnyRecs = sessionRecs.length > 0 || extraRecs.length > 0
-  const strengths  = getStrengths(sessionStats ?? allTimeStats)
-
-  const chartStats = sessionStats?.length ? sessionStats : allTimeStats
+  const chartStats = sessionStats?.length ? sessionStats : previousStats
   const chartData  = chartStats.map(s => ({
     name:     CATEGORY_LABELS[s.category],
     accuracy: s.accuracy,
     total:    s.total,
   }))
 
-  if (!hasAnyRecs && strengths.length === 0 && chartData.length === 0) return null
+  if (chartData.length === 0 && !worstRec) return null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', fontFamily: 'system-ui, sans-serif' }}>
@@ -117,46 +115,16 @@ export function GameRecommendations({ sessionStats, showAllTime = true }: GameRe
         </div>
       )}
 
-      {/* ── Strengths ── */}
-      {strengths.length > 0 && (
-        <div style={SECTION}>
-          <div style={SECTION_LABEL}>Your Strengths</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {strengths.map(s => (
-              <span key={s.category} style={{
-                padding: '6px 14px',
-                borderRadius: 20,
-                background: '#f0fdf4',
-                border: '1.5px solid #bbf7d0',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#15803d',
-              }}>
-                {CATEGORY_LABELS[s.category]} — {s.accuracy}%
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Recommended Learning Paths ── */}
-      {hasAnyRecs && (
-        <div style={SECTION}>
-          <div style={SECTION_LABEL}>Recommended Learning Paths</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {sessionRecs.map(rec => <RecCard key={rec.category} rec={rec} isSession />)}
-            {extraRecs.length > 0 && sessionRecs.length > 0 && (
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 4 }}>
-                From previous sessions
-              </div>
-            )}
-            {extraRecs.map(rec => <RecCard key={rec.category} rec={rec} />)}
-          </div>
+      {/* ── Single course recommendation (worst category, previous sessions) ── */}
+      {worstRec && worstRec.courses[0] && (
+        <div style={{ ...SECTION, padding: '16px 18px', gap: 10 }}>
+          <div style={SECTION_LABEL}>Recommended for You</div>
+          <RecCard rec={worstRec} />
         </div>
       )}
 
       {/* ── All clear ── */}
-      {!hasAnyRecs && strengths.length === 0 && chartData.length > 0 && (
+      {!worstRec && chartData.length > 0 && (
         <div style={{ ...SECTION, alignItems: 'center', padding: '28px' }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#16a34a' }}>No weak spots detected — keep it up!</span>
         </div>
@@ -167,69 +135,98 @@ export function GameRecommendations({ sessionStats, showAllTime = true }: GameRe
 
 // ─── RecCard ─────────────────────────────────────────────────────────────────
 
-function RecCard({ rec, isSession }: { rec: Recommendation; isSession?: boolean }) {
+function RecCard({ rec }: { rec: Recommendation }) {
+  const course = rec.courses[0]
   const isWeak = rec.accuracy < 40
 
   return (
-    <div style={{
-      borderRadius: 12,
-      border: '1px solid #e8eaf0',
-      overflow: 'hidden',
-    }}>
-      {/* Header row */}
+    <a
+      href={course.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ textDecoration: 'none', display: 'block' }}
+    >
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 18px 12px',
+        borderRadius: 10, border: '1px solid #e8eaf0', padding: '12px 14px',
+        background: '#fafafa', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', gap: 10,
+        transition: 'box-shadow 0.15s',
       }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>
-          {rec.label}
-        </span>
-        <span style={{
-          padding: '3px 12px',
-          borderRadius: 20,
-          fontSize: 12,
-          fontWeight: 700,
-          background: isWeak ? '#fef2f2' : '#fffbeb',
-          color: isWeak ? '#dc2626' : '#d97706',
-          border: `1.5px solid ${isWeak ? '#fecaca' : '#fde68a'}`,
-        }}>
-          {rec.accuracy}%{isSession ? ' this game' : ''}
-        </span>
-      </div>
-
-      {/* Divider */}
-      <div style={{ height: 1, background: '#f1f5f9', margin: '0 18px' }} />
-
-      {/* Course links */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-        {rec.courses.map((course, i) => (
-          <a
-            key={i}
-            href={course.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '13px 18px',
-              borderTop: i > 0 ? '1px solid #f1f5f9' : undefined,
-              textDecoration: 'none',
-              background: '#fff',
-              transition: 'background 0.15s',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>{course.title}</span>
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>{course.description}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+            background: isWeak ? '#ef4444' : '#f59e0b',
+          }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {course.title}
             </div>
-            <span style={{ fontSize: 16, color: '#94a3b8', flexShrink: 0, marginLeft: 12 }}>→</span>
-          </a>
-        ))}
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{course.description}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{
+            padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+            background: isWeak ? '#fef2f2' : '#fffbeb',
+            color: isWeak ? '#dc2626' : '#d97706',
+            border: `1.5px solid ${isWeak ? '#fecaca' : '#fde68a'}`,
+          }}>
+            {rec.accuracy}% in {rec.label}
+          </span>
+          <span style={{
+            fontSize: 11, fontWeight: 600, color: '#306DF6',
+            padding: '3px 9px', border: '1.5px solid #bfdbfe',
+            borderRadius: 7, background: '#eff6ff',
+          }}>
+            Open ↗
+          </span>
+        </div>
       </div>
+    </a>
+  )
+}
+
+// ─── StaticCourseRecommendation ───────────────────────────────────────────────
+// Hardcoded recommendation — no performance system needed.
+// Pass one or more CourseLink objects directly from COURSE_MAP.
+
+export function StaticCourseRecommendation({ courses }: { courses: CourseLink[] }) {
+  if (!courses.length) return null
+
+  return (
+    <div style={{ ...SECTION, padding: '16px 18px', gap: 10 }}>
+      <div style={SECTION_LABEL}>Recommended Course</div>
+      {courses.map(course => (
+        <a
+          key={course.url}
+          href={course.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: 'none', display: 'block' }}
+        >
+          <div style={{
+            borderRadius: 10, border: '1px solid #e8eaf0', padding: '12px 14px',
+            background: '#fafafa', display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: 10,
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {course.title}
+              </div>
+              {course.description && (
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{course.description}</div>
+              )}
+            </div>
+            <span style={{
+              flexShrink: 0, fontSize: 11, fontWeight: 600, color: '#306DF6',
+              padding: '3px 9px', border: '1.5px solid #bfdbfe',
+              borderRadius: 7, background: '#eff6ff',
+            }}>
+              Open ↗
+            </span>
+          </div>
+        </a>
+      ))}
     </div>
   )
 }

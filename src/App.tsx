@@ -14,6 +14,7 @@ import ClueGame             from '@/games/clue-game/ClueGame'
 import EscapeRoom           from '@/games/escape-room/EscapeRoom'
 import SudokuGame           from '@/games/sudoku/SudokuGame'
 import CheckersGame         from '@/games/checkers/CheckersGame'
+import Hackgammon           from '@/games/hackgammon/Hackgammon'
 import { loadGame, clearGame } from '@/lib/resume'
 import type { SavedGame } from '@/lib/resume'
 import './App.css'
@@ -75,6 +76,7 @@ function App() {
   if (activeGame === 'escape-room')        return <EscapeRoom       onExit={exitGame} />
   if (activeGame === 'sudoku')             return <SudokuGame       onExit={exitGame} />
   if (activeGame === 'checkers')           return <CheckersGame     onExit={exitGame} />
+  if (activeGame === 'hackgammon')         return <Hackgammon       onExit={exitGame} />
 
   const allLevels = ['Beginner', 'Intermediate', 'Advanced']
   const allTags   = [...new Set(games.map(g => g.tag))]

@@ -1,5 +1,7 @@
 import { useState} from 'react'
 import { playCorrect, playWrong, playComplete } from '@/lib/sounds'
+import { StaticCourseRecommendation } from '@/components/GameRecommendations'
+import { COURSE_MAP } from '@/lib/course-data'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -591,13 +593,13 @@ export default function SudokuGame({ onExit }: SudokuGameProps) {
   if (gameOver) {
     return (
       <div style={{
-        minHeight: '100vh', background: C.bg, display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'system-ui, sans-serif', padding: 24,
+        minHeight: '100vh', background: C.bg, overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        fontFamily: 'system-ui, sans-serif', padding: 24, gap: 16,
       }}>
         <div style={{
           background: C.surface, border: `3px solid ${gameOver === 'win' ? C.gold : C.red}`,
-          borderRadius: 16, padding: '40px 44px', maxWidth: 440, width: '100%',
+          borderRadius: 16, padding: '36px 44px', maxWidth: 440, width: '100%',
           textAlign: 'center', boxShadow: `0 0 40px ${gameOver === 'win' ? C.gold : C.red}44`,
         }}>
           <div style={{ fontSize: 56, marginBottom: 12 }}>{gameOver === 'win' ? '🏆' : '💀'}</div>
@@ -611,7 +613,7 @@ export default function SudokuGame({ onExit }: SudokuGameProps) {
           </p>
           <div style={{
             background: C.surfaceAlt, borderRadius: 10, padding: '14px 20px',
-            marginBottom: 28, marginTop: 16,
+            marginBottom: 24, marginTop: 16,
           }}>
             <div style={{ fontSize: 36, fontWeight: 900, color: C.gold }}>{score}</div>
             <div style={{ fontSize: 11, color: C.muted, letterSpacing: '0.12em', textTransform: 'uppercase' }}>points</div>
@@ -622,6 +624,9 @@ export default function SudokuGame({ onExit }: SudokuGameProps) {
               Next Puzzle ↺
             </button>
           </div>
+        </div>
+        <div style={{ maxWidth: 440, width: '100%' }}>
+          <StaticCourseRecommendation courses={COURSE_MAP.architecture} />
         </div>
       </div>
     )

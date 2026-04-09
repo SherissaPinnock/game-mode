@@ -1,6 +1,7 @@
 import type { Player, GameMode } from '../types'
 import type { CategoryStats } from '@/lib/performance'
-import { GameRecommendations } from '@/components/GameRecommendations'
+import { StaticCourseRecommendation } from '@/components/GameRecommendations'
+import { COURSE_MAP } from '@/lib/course-data'
 
 interface ResultsScreenProps {
   winner: 'p1' | 'p2'
@@ -10,7 +11,7 @@ interface ResultsScreenProps {
   gameMode: GameMode
   questionCount: number
   correctCount: number
-  sessionStats: CategoryStats[]
+  sessionStats?: CategoryStats[]
   onPlayAgain: () => void
   onExit: () => void
 }
@@ -71,8 +72,7 @@ export function ResultsScreen({
         <span>{p2.emoji} {p2.name}: cell {p2.position}</span>
       </div>
 
-      {/* Performance recommendations — session only */}
-      <GameRecommendations sessionStats={sessionStats} showAllTime={false} />
+      <StaticCourseRecommendation courses={COURSE_MAP.python} />
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">

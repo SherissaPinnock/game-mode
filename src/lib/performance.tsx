@@ -17,6 +17,9 @@ export type Category =
   | 'python'
   | 'prompting'
   | 'data'
+  | 'C#'
+  | 'web development'
+  | 'other' // catch-all for uncategorized questions
 
 
 /** A single recorded attempt at a question/task. */

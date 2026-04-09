@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { MemoryCard } from './MemoryCard'
 import { concepts }   from './data/concepts'
 import type { Card }  from './types'
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
 import { playCorrect, playWrong } from '@/lib/sounds'
 import { GameRecommendations } from '@/components/GameRecommendations'
+import { useGameTheme } from '@/lib/useGameTheme'
 
-const MISMATCH_DELAY = 900   // ms — mismatched pair visible before flipping back
-const MATCH_DELAY    = 350   // ms — matched pair visible before locking in
-const PEEK_DURATION  = 3000  // ms — how long the opening sneak peek lasts
+const MISMATCH_DELAY = 900
+const MATCH_DELAY    = 350
+const PEEK_DURATION  = 3000
 
 function buildDeck(): Card[] {
   const deck: Card[] = concepts.flatMap(concept => [
@@ -23,32 +23,21 @@ function buildDeck(): Card[] {
   return deck
 }
 
-interface MemoryMatchProps {
-  onExit: () => void
-}
+interface MemoryMatchProps { onExit: () => void }
 
-/**
- * Memory Match — 12 JS concept pairs.
- *
- * Opening peek: all cards are briefly revealed so the player can take a
- * mental snapshot, then they all flip back down before play begins.
- */
 export function MemoryMatch({ onExit }: MemoryMatchProps) {
+  const { isDark, toggle } = useGameTheme()
   const [cards,      setCards]      = useState<Card[]>(buildDeck)
   const [flipped,    setFlipped]    = useState<number[]>([])
   const [flipCount,  setFlipCount]  = useState(0)
   const [isChecking, setIsChecking] = useState(false)
   const [isPeeking,  setIsPeeking]  = useState(true)
 
-  // Performance tracking
   const { report } = usePerformance()
   const perfEntries = useRef<PerformanceEntry[]>([])
   const hasReported = useRef(false)
-
-  // Ref keeps the timer id so we can cancel it on restart
   const peekTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Start the peek countdown — clears when isPeeking becomes false
   function startPeek() {
     setIsPeeking(true)
     peekTimerRef.current = setTimeout(() => setIsPeeking(false), PEEK_DURATION)
@@ -63,19 +52,16 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
   const matchedPairs = cards.filter(c => c.state === 'matched').length / 2
   const isWon        = matchedPairs === concepts.length
 
-  // ── Card click ─────────────────────────────────────────────────────────────
   function handleCardClick(index: number) {
     if (isPeeking || isChecking)         return
     if (cards[index].state !== 'hidden') return
     if (flipped.length >= 2)             return
 
     setFlipCount(prev => prev + 1)
-
     const updatedCards = cards.map((c, i) =>
       i === index ? { ...c, state: 'flipped' as const } : c,
     )
     setCards(updatedCards)
-
     const newFlipped = [...flipped, index]
     setFlipped(newFlipped)
 
@@ -84,7 +70,6 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
       const [first, second] = newFlipped
       const isMatch = updatedCards[first].conceptId === updatedCards[second].conceptId
 
-      // Track each pair attempt
       if (isMatch) playCorrect(); else playWrong()
       perfEntries.current.push({
         category: 'javascript',
@@ -107,7 +92,6 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
     }
   }
 
-  // ── Restart ────────────────────────────────────────────────────────────────
   function handleRestart() {
     if (peekTimerRef.current) clearTimeout(peekTimerRef.current)
     setCards(buildDeck())
@@ -119,69 +103,79 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
     startPeek()
   }
 
-  // ── Report performance on win ──────────────────────────────────────────────
   if (isWon && !hasReported.current) {
     hasReported.current = true
     report(perfEntries.current)
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Theme ────────────────────────────────────────────────────────────────
+  const BG = isDark
+    ? 'bg-[radial-gradient(ellipse_at_50%_0%,_#2a0a4e_0%,_#07071a_50%,_#1a0522_100%)]'
+    : 'bg-gradient-to-br from-fuchsia-100 via-violet-50 to-sky-100'
+  const HEADER    = isDark ? 'bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl' : 'bg-white/80 backdrop-blur-md border border-slate-200 rounded-2xl'
+  const EXIT_BTN  = isDark ? 'border border-white/15 text-slate-400 hover:text-white hover:border-white/30 rounded-full px-3 py-1.5 text-sm font-medium transition-all' : 'border border-slate-300 text-slate-500 hover:text-slate-800 hover:border-slate-400 rounded-full px-3 py-1.5 text-sm font-medium transition-all'
+  const TITLE     = isDark ? 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-violet-300' : 'text-slate-800'
+  const BADGE     = isDark ? 'bg-white/5 text-slate-400 rounded-full px-2 py-1' : 'bg-slate-100 text-slate-500 rounded-full px-2 py-1'
+  const MUTED     = isDark ? 'text-slate-500' : 'text-slate-400'
+  const PEEK_BAR  = isDark ? 'bg-fuchsia-400' : 'bg-violet-500'
+  const PEEK_TRACK = isDark ? 'bg-white/10' : 'bg-slate-200'
+  const WIN_BOX   = isDark ? 'bg-emerald-950/60 border border-emerald-400/40 text-emerald-300' : 'bg-emerald-50 border border-emerald-300 text-emerald-700'
+  const PRIMARY_BTN = isDark
+    ? 'bg-gradient-to-r from-fuchsia-600 to-violet-600 hover:from-fuchsia-500 hover:to-violet-500 text-white font-bold shadow-lg shadow-fuchsia-500/25 active:scale-95 transition-all'
+    : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold shadow-lg shadow-violet-500/20 active:scale-95 transition-all'
+  const SEC_BTN = isDark
+    ? 'border border-white/15 text-slate-400 hover:text-white hover:border-white/30 transition-all'
+    : 'border border-slate-300 text-slate-500 hover:text-slate-800 hover:border-slate-400 transition-all'
+
+  const ThemeToggle = (
+    <button onClick={toggle} title={isDark ? 'Light mode' : 'Dark mode'}
+      className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ${isDark ? 'bg-fuchsia-600' : 'bg-amber-400'}`}>
+      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${isDark ? 'left-5' : 'left-1'}`} />
+    </button>
+  )
+
   return (
-    <div className="flex flex-1 flex-col items-center px-3 py-6 sm:px-6 sm:py-10 gap-4 sm:gap-6 min-h-screen bg-background">
+    <div className={`flex flex-1 flex-col items-center px-3 py-6 sm:px-6 sm:py-10 gap-4 sm:gap-5 min-h-screen ${BG}`}>
 
       {/* Header */}
-      <div className="w-full max-w-[740px] flex items-center justify-between">
-        <button
-          onClick={onExit}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Back
-        </button>
-        <h2 className="text-lg font-bold">Memory Match</h2>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-muted-foreground">
-            Flips: <strong className="text-foreground">{flipCount}</strong>
-          </span>
-          <span className="text-muted-foreground">
-            Pairs: <strong className="text-foreground">{matchedPairs} / {concepts.length}</strong>
-          </span>
+      <div className={`w-full max-w-[740px] flex items-center justify-between px-4 py-2.5 ${HEADER}`}>
+        <button onClick={onExit} className={EXIT_BTN}>← Exit</button>
+        <h2 className={`text-base font-black ${TITLE}`}>🧠 Memory Match</h2>
+        <div className="flex items-center gap-2 text-xs">
+          <span className={BADGE}><strong className={isDark ? 'text-white' : 'text-slate-700'}>{flipCount}</strong> flips</span>
+          <span className={BADGE}><strong className={isDark ? 'text-fuchsia-300' : 'text-violet-600'}>{matchedPairs}</strong><span className={MUTED}>/{concepts.length}</span></span>
+          {ThemeToggle}
         </div>
       </div>
 
-      {/* Peek banner — shows while cards are revealed */}
+      {/* Peek banner */}
       {isPeeking ? (
         <div className="w-full max-w-[740px] flex flex-col gap-2">
-          <p className="text-center text-sm font-semibold text-foreground">
+          <p className={`text-center text-sm font-semibold ${isDark ? 'text-fuchsia-300' : 'text-violet-700'}`}>
             👀 Take a mental snapshot — cards flip back in a moment!
           </p>
-          {/* Depleting progress bar driven by CSS animation */}
-          <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary peek-progress-bar"
-              style={{ animationDuration: `${PEEK_DURATION}ms` }}
-            />
+          <div className={`w-full h-1.5 rounded-full overflow-hidden ${PEEK_TRACK}`}>
+            <div className={`h-full rounded-full peek-progress-bar ${PEEK_BAR}`}
+              style={{ animationDuration: `${PEEK_DURATION}ms` }} />
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">
-          Match all 12 pairs of JavaScript concepts. Fewest flips wins.
+        <p className={`text-sm ${MUTED}`}>
+          Match all {concepts.length} pairs of JavaScript concepts. Fewest flips wins.
         </p>
       )}
 
       {/* Win banner */}
       {isWon && (
-        <div className="text-center flex flex-col gap-1">
-          <p className="text-2xl font-bold text-green-600">🎉 All pairs matched!</p>
-          <p className="text-muted-foreground text-sm">
-            Completed in <strong>{flipCount}</strong> flip{flipCount !== 1 ? 's' : ''}
+        <div className={`text-center flex flex-col gap-1 rounded-2xl px-6 py-4 ${WIN_BOX}`}>
+          <p className="text-2xl font-black">🎉 All pairs matched!</p>
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Completed in <strong className={isDark ? 'text-white' : 'text-slate-800'}>{flipCount}</strong> flip{flipCount !== 1 ? 's' : ''}
           </p>
         </div>
       )}
 
-      {/* Recommendations */}
-      {isWon && (
-        <GameRecommendations sessionStats={computeStats(perfEntries.current)} />
-      )}
+      {isWon && <GameRecommendations sessionStats={computeStats(perfEntries.current)} />}
 
       {/* Card grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 w-full max-w-[740px]">
@@ -191,6 +185,7 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
             card={card}
             forceReveal={isPeeking}
             isDisabled={isPeeking || isChecking || isWon}
+            isDark={isDark}
             onClick={() => handleCardClick(index)}
           />
         ))}
@@ -200,11 +195,11 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
       <div className="flex gap-3 mt-1">
         {isWon ? (
           <>
-            <Button variant="outline" onClick={onExit}>← Menu</Button>
-            <Button onClick={handleRestart}>Play Again</Button>
+            <button onClick={onExit} className={`px-5 py-2.5 rounded-xl text-sm ${SEC_BTN}`}>← Menu</button>
+            <button onClick={handleRestart} className={`px-5 py-2.5 rounded-xl text-sm ${PRIMARY_BTN}`}>Play Again</button>
           </>
         ) : (
-          <Button variant="outline" onClick={handleRestart}>Restart</Button>
+          <button onClick={handleRestart} className={`px-5 py-2.5 rounded-xl text-sm ${SEC_BTN}`}>Restart</button>
         )}
       </div>
     </div>

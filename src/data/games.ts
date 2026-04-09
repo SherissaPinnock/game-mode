@@ -11,7 +11,7 @@ import memoryThumb from '@/assets/game thumbnails/memory_match thumbnail.webp'
 import promptThumb from '@/assets/game thumbnails/prompt-sculptor thumbnail.webp'
 import checkersThumb from '@/assets/game thumbnails/checkers thumbnail.webp'
 import sudokuThumb from '@/assets/game thumbnails/sudoku thumbnail.webp'
-
+import hackgammonThumb from '@/assets/game thumbnails/hackgammon thumbnail.webp'
 export interface Game {
   id: string
   title: string
@@ -122,5 +122,14 @@ export const games: Game[] = [
     tag: 'Trivia',
     level: 'Beginner',
     thumbnail: checkersThumb
+  },
+  {
+    id: 'hackgammon',
+    title: 'Hackgammon',
+    description: 'Race checkers home in a trivia-powered backgammon remix with NestJS and Next.js questions.',
+    icon: Dices,
+    tag: 'Trivia',
+    level: 'Advanced',
+    thumbnail: hackgammonThumb,
   }
 ]

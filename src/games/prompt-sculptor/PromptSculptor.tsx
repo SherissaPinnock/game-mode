@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { CHALLENGES } from './challenges'
 import type { Challenge, TechniqueOption, GamePhase, TechniqueType } from './types'
 import { playCorrect, playWrong } from '@/lib/sounds'
+import { useGameTheme } from '@/lib/useGameTheme'
 
 // ─── Tutorial Content ────────────────────────────────────────────────────────
 
@@ -93,6 +94,8 @@ interface PromptSculptorProps {
 }
 
 export function PromptSculptor({ onExit }: PromptSculptorProps) {
+  const { isDark, toggle } = useGameTheme()
+
   const [phase, setPhase] = useState<GamePhase>('tutorial')
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0)
   const [appliedTechniques, setAppliedTechniques] = useState<Set<string>>(new Set())
@@ -357,11 +360,33 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
     return { label: 'Inefficient', color: 'text-red-600' }
   }
 
+  // ── Theme tokens ─────────────────────────────────────────────────────────
+  const BG = isDark
+    ? 'bg-[radial-gradient(ellipse_at_top_right,_#1a0533_0%,_#07071a_50%,_#0a1628_100%)]'
+    : 'bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-100'
+  const HEADER_CLS = isDark
+    ? 'border-b border-white/10 bg-black/40 backdrop-blur-sm'
+    : 'border-b border-slate-200 bg-white/90 backdrop-blur-sm shadow-sm'
+  const EXIT_BTN_CLS = isDark
+    ? 'text-sm font-medium text-slate-400 hover:text-white border border-white/10 hover:border-white/30 px-3 py-1.5 rounded-full transition-all'
+    : 'text-sm font-medium text-slate-500 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-3 py-1.5 rounded-full transition-all'
+  const TITLE_CLS = isDark
+    ? 'font-semibold text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300'
+    : 'font-semibold text-slate-800'
+
+  const ThemeToggle = (
+    <button onClick={toggle} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ${isDark ? 'bg-violet-600' : 'bg-amber-400'}`}>
+      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${isDark ? 'left-5' : 'left-1'}`} />
+    </button>
+  )
+
   // ── Render Tutorial ────────────────────────────────────────────────────────
   if (phase === 'tutorial') {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 bg-background min-h-screen">
-        <Card className="max-w-lg w-full p-6 sm:p-8 shadow-lg">
+      <div className={`flex flex-1 flex-col items-center justify-center px-4 py-8 min-h-screen ${BG}`}>
+        <div className="w-full max-w-lg flex justify-end mb-3">{ThemeToggle}</div>
+        <Card className="max-w-lg w-full p-6 sm:p-8 shadow-lg bg-slate-800/80 border-white/10 text-white">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">
@@ -410,8 +435,8 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
     const percentage = Math.round((score / maxScore) * 100)
 
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 bg-background min-h-screen">
-        <Card className="max-w-lg w-full p-8 shadow-lg text-center">
+      <div className={`flex flex-1 flex-col items-center justify-center px-4 py-8 min-h-screen ${BG}`}>
+        <Card className="max-w-lg w-full p-8 shadow-lg text-center bg-slate-800/80 border-white/10 text-white">
           <div className="text-5xl mb-4 animate-bounce">🎉</div>
           <h2 className="text-2xl font-bold mb-2">Congratulations!</h2>
           <p className="text-muted-foreground mb-6">
@@ -461,39 +486,32 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
   // ── Render Game ────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-1 flex-col min-h-screen bg-background">
+    <div className={`flex flex-1 flex-col min-h-screen ${BG}`}>
       {/* Header */}
-      <header className="border-b bg-card px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <header className={`px-4 py-3 flex items-center justify-between sticky top-0 z-10 ${HEADER_CLS}`}>
         <div className="flex items-center gap-3">
-          <button
-            onClick={onExit}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-          >
-            ← Back
-          </button>
-          <div className="h-6 w-px bg-border" />
+          <button onClick={onExit} className={EXIT_BTN_CLS}>← Exit</button>
+          <div className={`h-6 w-px ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
           <div className="flex items-center gap-2">
             <span className="text-lg">🎨</span>
-            <span className="font-semibold hidden sm:inline">Prompt Sculptor</span>
+            <span className={`hidden sm:inline ${TITLE_CLS}`}>Prompt Sculptor</span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground hidden sm:inline">Score:</span>
-            <span className="font-bold text-primary">{score}</span>
+            <span className={`hidden sm:inline ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Score:</span>
+            <span className={`font-bold ${isDark ? 'text-violet-300' : 'text-violet-600'}`}>{score}</span>
           </div>
-          <Badge
-            variant="outline"
-            className={
-              currentChallenge.difficulty === 'Beginner'
-                ? 'bg-green-100 text-green-800 border-green-200'
-                : currentChallenge.difficulty === 'Intermediate'
-                ? 'bg-amber-100 text-amber-800 border-amber-200'
-                : 'bg-red-100 text-red-800 border-red-200'
-            }
-          >
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+            currentChallenge.difficulty === 'Beginner'
+              ? 'bg-emerald-500/20 text-emerald-700 border-emerald-300'
+              : currentChallenge.difficulty === 'Intermediate'
+              ? 'bg-amber-500/20 text-amber-700 border-amber-300'
+              : 'bg-rose-500/20 text-rose-700 border-rose-300'
+          }`}>
             {currentChallenge.difficulty}
-          </Badge>
+          </span>
+          {ThemeToggle}
         </div>
       </header>
 

@@ -20,17 +20,15 @@ export const COURSE_MAP: Record<Category, CourseLink[]> = {
 
   javascript: [
     { title: 'JavaScript Deep Dive', description: 'Closures, scope, prototypes, async patterns', url: 'https://www.intellibus.academy/learning-paths/javascript-time-travel' },
-    { title: 'Modern JS (ES6+)', description: 'Arrow functions, destructuring, modules, promises', url: '#modern-js-course' },
   ],
   networking: [
-    { title: 'HTTP & Web Protocols', description: 'HTTP methods, status codes, REST, WebSockets', url: '#http-course' },
-    { title: 'API Design', description: 'RESTful APIs, authentication, rate limiting', url: '#api-design-course' },
+    { title: 'HTTP & Web Protocols', description: 'HTTP methods, status codes, REST, WebSockets', url: 'https://www.intellibus.academy/learning-paths/amazon-route' },
   ],
   'cloud-aws': [
-    { title: 'AWS Cloud Practitioner', description: 'EC2, S3, Lambda, IAM fundamentals', url: '#aws-cloud-course' },
+    { title: 'AWS Cloud Practitioner', description: 'EC2, S3, Lambda, IAM fundamentals', url: 'https://www.intellibus.academy/learning-paths/amazon-s3' },
   ],
   scaling: [
-    { title: 'System Scaling Strategies', description: 'Horizontal vs vertical, load balancing, caching', url: '#scaling-course' },
+    { title: 'System Scaling Strategies', description: 'Horizontal vs vertical, load balancing, caching', url: 'https://www.intellibus.academy/learning-paths/aws-loadbalancing' },
     { title: 'High Availability Design', description: 'Redundancy, failover, auto-scaling groups', url: '#ha-course' },
   ],
   devops: [
@@ -61,7 +59,17 @@ export const COURSE_MAP: Record<Category, CourseLink[]> = {
   
   prompting: [
     { title: 'Prompt Engineering Guide', description: 'Roles, constraints, format control, chain-of-thought techniques', url: 'https://www.intellibus.academy/learning-paths/hugging-face' },
-    { title: 'Advanced Prompting Patterns', description: 'Few-shot examples, structured outputs, and evaluation strategies', url: '#advanced-prompting-course' },
+  ],
+
+  'web development' : [
+    { title: 'Next.js Fundamentals', description: 'Frontend, backend, databases, deployment', url: 'https://www.intellibus.academy/learning-paths/nextjs-evolution' },
+    { title: 'Nest JS', description: 'Frontend, backend, databases, deployment', url: 'https://www.intellibus.academy/learning-paths/nestjs-sanctuary' },
+  ],
+  'C#': [
+    { title: 'C# for Beginners', description: 'Syntax, OOP, LINQ, async programming', url: 'https://www.intellibus.academy/learning-paths/csharp-architecture' },
+  ],
+  other: [
+    { title: 'General Programming Concepts', description: 'Algorithms, data structures, design patterns', url: 'https://www.intellibus.academy/learning-paths' },
   ],
 }
 
@@ -79,5 +87,8 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   react: 'React',
   python: 'Python',
   prompting: 'Prompt Engineering',
-  data: 'Data'
+  data: 'Data',
+  'web development': 'Web Development',
+  'C#': 'C#',
+  other: 'Other',
 }

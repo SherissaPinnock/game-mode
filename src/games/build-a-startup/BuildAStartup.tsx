@@ -4,6 +4,7 @@ import { GameRecommendations } from '@/components/GameRecommendations'
 import { playCorrect, playWrong, playClick, playNextLevel, playPop} from '@/lib/sounds'
 import { saveGame, clearGame } from '@/lib/resume'
 import { ExitConfirmModal } from '@/components/ExitConfirmModal'
+import { useGameTheme } from '@/lib/useGameTheme'
 
 export interface BuildAStartupSave {
   levelIdx: number
@@ -187,18 +188,18 @@ const LEVELS: Level[] = [
 // ─── Style constants ─────────────────────────────────────────────────────────
 
 const S = {
-  bg:        '#faf8f0',
-  paper:     '#f5f0e8',
-  gridLine:  '#e0d9cc',
-  border:    '#bbb4a7',
-  darkText:  '#2d2d2d',
-  mutedText: '#888',
-  accent:    '#4a90d9',
-  success:   '#27ae60',
-  error:     '#e74c3c',
-  warn:      '#f39c12',
-  slotBg:    '#f0ede5',
-  slotDash:  '#aaa49a',
+  bg:        '#0f0c29',
+  paper:     '#1a1730',
+  gridLine:  '#2a2650',
+  border:    '#3d3870',
+  darkText:  '#e2e0ff',
+  mutedText: '#7c78b8',
+  accent:    '#818cf8',
+  success:   '#34d399',
+  error:     '#f87171',
+  warn:      '#fbbf24',
+  slotBg:    '#1e1a3a',
+  slotDash:  '#4a4680',
   font:      'IBM Plex Sans, -apple-system, sans-serif',
   bodyFont:  'system-ui, -apple-system, sans-serif',
 }
@@ -595,13 +596,13 @@ function LevelIntro({
       fontFamily: S.bodyFont,
     }}>
       <div style={{
-        background: '#fff',
+        background: S.paper,
         border: `3px solid ${S.border}`,
         borderRadius: 20,
         padding: '44px 48px',
         maxWidth: 520,
         width: '90%',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
         textAlign: 'center',
       }}>
         {/* Level badge */}
@@ -646,7 +647,7 @@ function LevelIntro({
         <p style={{
           fontSize: 16,
           lineHeight: 1.7,
-          color: '#555',
+          color: S.mutedText,
           margin: '0 0 8px',
         }}>
           {level.scenario}
@@ -729,13 +730,13 @@ function LevelResult({
       backdropFilter: 'blur(3px)',
     }}>
       <div style={{
-        background: '#fff',
+        background: S.paper,
         border: `3px solid ${passed ? S.success : S.error}`,
         borderRadius: 20,
         padding: '40px 48px',
         maxWidth: 420,
         textAlign: 'center',
-        boxShadow: `0 12px 40px ${passed ? S.success : S.error}22`,
+        boxShadow: `0 12px 40px ${passed ? S.success : S.error}33`,
       }}>
         {/* Stars */}
         <div style={{ fontSize: 44, marginBottom: 12 }}>
@@ -761,7 +762,7 @@ function LevelResult({
 
         <p style={{
           fontSize: 15,
-          color: '#666',
+          color: S.mutedText,
           lineHeight: 1.6,
           margin: '0 0 24px',
         }}>
@@ -833,13 +834,13 @@ function GameComplete({
       padding: '48px 24px',
     }}>
       <div style={{
-        background: '#fff',
+        background: S.paper,
         border: `3px solid ${S.accent}`,
         borderRadius: 20,
         padding: '44px 48px',
         width: '100%',
         maxWidth: 900,
-        boxShadow: `0 12px 40px ${S.accent}22`,
+        boxShadow: `0 12px 40px ${S.accent}33`,
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -852,7 +853,7 @@ function GameComplete({
           }}>
             Startup Built!
           </h1>
-          <p style={{ fontSize: 15, color: '#666', margin: '0 0 12px' }}>
+          <p style={{ fontSize: 15, color: S.mutedText, margin: '0 0 12px' }}>
             You've completed all {results.length} architecture challenges.
           </p>
           <div style={{ fontSize: 28, fontWeight: 700, color: S.accent }}>
@@ -934,6 +935,8 @@ function GameComplete({
 // ─── Main Game Component ─────────────────────────────────────────────────────
 
 export default function BuildAStartup({ onExit, resumeState }: { onExit: () => void; resumeState?: BuildAStartupSave | null }) {
+  const { isDark, toggle: toggleTheme } = useGameTheme()
+
   const [phase, setPhase] = useState<Phase>(resumeState ? 'playing' : 'intro')
   const [levelIdx, setLevelIdx] = useState(resumeState?.levelIdx ?? 0)
   const [placements, setPlacements] = useState<Record<string, string>>({})
@@ -1168,10 +1171,31 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
     : level.difficulty === 'Medium' ? S.warn
     : S.error
 
+  const outerBg = isDark ? S.bg : '#f0f4ff'
+
+  const ThemeToggle = (
+    <button
+      onClick={toggleTheme}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      style={{
+        position: 'relative', width: 40, height: 24, borderRadius: 12,
+        background: isDark ? '#6d28d9' : '#f59e0b',
+        border: 'none', cursor: 'pointer', flexShrink: 0, transition: 'background 0.3s',
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 4, width: 16, height: 16, borderRadius: '50%',
+        background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        transition: 'left 0.3s',
+        left: isDark ? 20 : 4,
+      }} />
+    </button>
+  )
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: S.bg,
+      background: outerBg,
       fontFamily: S.bodyFont,
       display: 'flex',
       flexDirection: 'column',
@@ -1182,16 +1206,17 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '10px 12px',
-        borderBottom: `2px solid ${S.gridLine}`,
-        background: '#fff',
+        padding: '10px 16px',
+        borderBottom: `1px solid ${S.gridLine}`,
+        background: 'rgba(0,0,0,0.3)',
+        backdropFilter: 'blur(8px)',
       }}>
         <button onClick={() => setShowExitModal(true)} style={{
-          background: 'none', border: `2px solid ${S.border}`, borderRadius: 8,
-          padding: '6px 14px', cursor: 'pointer',
-          fontFamily: S.bodyFont, fontSize: 14, color: S.mutedText,
+          background: 'none', border: `1px solid ${S.border}`, borderRadius: 50,
+          padding: '6px 16px', cursor: 'pointer',
+          fontFamily: S.bodyFont, fontSize: 13, color: S.mutedText,
         }}>
-          ← Back
+          ← Exit
         </button>
 
         <div style={{ textAlign: 'center' }}>
@@ -1213,8 +1238,8 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
           </span>
         </div>
 
-        {/* Attempts */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Attempts + theme toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 13, color: S.mutedText, fontWeight: 600 }}>Tries:</span>
           {[1, 2, 3].map(i => (
             <span key={i} style={{
@@ -1225,6 +1250,7 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
               ❤️
             </span>
           ))}
+          {ThemeToggle}
         </div>
       </div>
 
