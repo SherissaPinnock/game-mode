@@ -106,15 +106,6 @@ export const games: Game[] = [
     thumbnail: clueThumb,
   },
   {
-    id: 'escape-room',
-    title: 'AWS Escape room',
-    description: '',
-    icon: Lightbulb,
-    tag: 'Trivia',
-    level: 'Intermediate',
-    thumbnailBg: ''
-  },
-  {
     id: 'sudoku',
     title: 'Sharp Sudoku',
     description: 'Answer C# questions while mastering Sudoku ',
