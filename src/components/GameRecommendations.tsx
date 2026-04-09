@@ -1,7 +1,5 @@
 import { usePerformance, type CategoryStats } from '@/lib/performance'
 import { getRecommendations, getStrengths, CATEGORY_LABELS, type Recommendation } from '@/lib/recommendations'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface GameRecommendationsProps {
@@ -9,226 +7,226 @@ interface GameRecommendationsProps {
   showAllTime?: boolean
 }
 
-/** Color for a given accuracy value. */
 function accuracyColor(accuracy: number): string {
-  if (accuracy >= 80) return '#22c55e'  // green
-  if (accuracy >= 60) return '#306DF6'  // brand blue
-  if (accuracy >= 40) return '#f59e0b'  // amber
-  return '#ef4444'                      // red
+  if (accuracy >= 80) return '#22c55e'
+  if (accuracy >= 60) return '#306DF6'
+  if (accuracy >= 40) return '#f59e0b'
+  return '#ef4444'
+}
+
+const SECTION: React.CSSProperties = {
+  background: '#fff',
+  borderRadius: 14,
+  border: '1px solid #e8eaf0',
+  padding: '24px 28px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+}
+
+const SECTION_LABEL: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: '#94a3b8',
+  marginBottom: 4,
 }
 
 export function GameRecommendations({ sessionStats, showAllTime = true }: GameRecommendationsProps) {
   const { allStats } = usePerformance()
 
-  const sessionRecs = sessionStats ? getRecommendations(sessionStats) : []
-  const allTimeStats = allStats()
-  const allTimeRecs = showAllTime ? getRecommendations(allTimeStats) : []
+  const sessionRecs   = sessionStats ? getRecommendations(sessionStats) : []
+  const allTimeStats  = allStats()
+  const allTimeRecs   = showAllTime ? getRecommendations(allTimeStats) : []
 
-  // Merge: session recs first, then unseen all-time recs
   const sessionCats = new Set(sessionRecs.map(r => r.category))
-  const extraRecs = allTimeRecs.filter(r => !sessionCats.has(r.category))
+  const extraRecs   = allTimeRecs.filter(r => !sessionCats.has(r.category))
 
   const hasAnyRecs = sessionRecs.length > 0 || extraRecs.length > 0
-  const strengths = getStrengths(sessionStats ?? allTimeStats)
+  const strengths  = getStrengths(sessionStats ?? allTimeStats)
 
-  // Chart data from session or all-time
   const chartStats = sessionStats?.length ? sessionStats : allTimeStats
-  const chartData = chartStats.map(s => ({
-    name: CATEGORY_LABELS[s.category],
+  const chartData  = chartStats.map(s => ({
+    name:     CATEGORY_LABELS[s.category],
     accuracy: s.accuracy,
-    total: s.total,
+    total:    s.total,
   }))
 
   if (!hasAnyRecs && strengths.length === 0 && chartData.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[600px]">
-      {/* ── Accuracy chart ──────────────────────────────────────────────── */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', fontFamily: 'system-ui, sans-serif' }}>
+
+      {/* ── Performance Breakdown ── */}
       {chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Performance Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={chartData.length * 44 + 20}>
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
-                barCategoryGap="20%"
-              >
-                <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  type="number"
-                  domain={[0, 100]}
-                  tickFormatter={v => `${v}%`}
-                  tick={{ fontSize: 12, fill: '#94a3b8' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={110}
-                  tick={{ fontSize: 13, fill: '#475569' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null
-                    const d = payload[0].payload as { name: string; accuracy: number; total: number }
-                    return (
-                      <div className="rounded-lg bg-white px-3 py-2 text-sm ring-1 ring-foreground/10 shadow-md">
-                        <p className="font-semibold text-foreground">{d.name}</p>
-                        <p className="text-muted-foreground">{d.accuracy}% across {d.total} question{d.total !== 1 ? 's' : ''}</p>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar
-                  dataKey="accuracy"
-                  radius={[0, 6, 6, 0]}
-                  maxBarSize={24}
-                  fill="#306DF6"
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  shape={((props: any) => {
-                    const { x, y, width, height, payload } = props
-                    return (
-                      <rect
-                        x={x} y={y} width={width} height={height}
-                        rx={6} ry={6}
-                        fill={accuracyColor(payload.accuracy)}
-                      />
-                    )
-                  }) as any}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <div style={SECTION}>
+          <div style={SECTION_LABEL}>Performance Breakdown</div>
+          <ResponsiveContainer width="100%" height={chartData.length * 48 + 24}>
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 0, right: 12, bottom: 0, left: 0 }}
+              barCategoryGap="28%"
+            >
+              <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis
+                type="number"
+                domain={[0, 100]}
+                tickFormatter={v => `${v}%`}
+                tick={{ fontSize: 12, fill: '#94a3b8' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                width={120}
+                tick={{ fontSize: 13, fill: '#334155' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) return null
+                  const d = payload[0].payload as { name: string; accuracy: number; total: number }
+                  return (
+                    <div style={{
+                      background: '#fff', borderRadius: 8, padding: '8px 12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: 13,
+                      border: '1px solid #e8eaf0',
+                    }}>
+                      <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>{d.name}</div>
+                      <div style={{ color: '#64748b' }}>{d.accuracy}% · {d.total} question{d.total !== 1 ? 's' : ''}</div>
+                    </div>
+                  )
+                }}
+              />
+              <Bar
+                dataKey="accuracy"
+                radius={[0, 6, 6, 0]}
+                maxBarSize={22}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                shape={((props: any) => {
+                  const { x, y, width, height, payload } = props
+                  return <rect x={x} y={y} width={width} height={height} rx={5} ry={5} fill={accuracyColor(payload.accuracy)} />
+                }) as any}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
 
-      {/* ── Strengths ───────────────────────────────────────────────────── */}
+      {/* ── Strengths ── */}
       {strengths.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Your Strengths
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {strengths.map(s => (
-                <Badge
-                  key={s.category}
-                  variant="secondary"
-                  className="h-auto px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200"
-                >
-                  {CATEGORY_LABELS[s.category]} — {s.accuracy}%
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div style={SECTION}>
+          <div style={SECTION_LABEL}>Your Strengths</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {strengths.map(s => (
+              <span key={s.category} style={{
+                padding: '6px 14px',
+                borderRadius: 20,
+                background: '#f0fdf4',
+                border: '1.5px solid #bbf7d0',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#15803d',
+              }}>
+                {CATEGORY_LABELS[s.category]} — {s.accuracy}%
+              </span>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* ── Recommended courses ─────────────────────────────────────────── */}
+      {/* ── Recommended Learning Paths ── */}
       {hasAnyRecs && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Recommended Learning Paths
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {sessionRecs.map(rec => (
-              <RecCard key={rec.category} rec={rec} isSession />
-            ))}
-
+        <div style={SECTION}>
+          <div style={SECTION_LABEL}>Recommended Learning Paths</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {sessionRecs.map(rec => <RecCard key={rec.category} rec={rec} isSession />)}
             {extraRecs.length > 0 && sessionRecs.length > 0 && (
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-1">
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 4 }}>
                 From previous sessions
-              </p>
+              </div>
             )}
-            {extraRecs.map(rec => (
-              <RecCard key={rec.category} rec={rec} />
-            ))}
-          </CardContent>
-        </Card>
+            {extraRecs.map(rec => <RecCard key={rec.category} rec={rec} />)}
+          </div>
+        </div>
       )}
 
-      {/* ── All clear ───────────────────────────────────────────────────── */}
+      {/* ── All clear ── */}
       {!hasAnyRecs && strengths.length === 0 && chartData.length > 0 && (
-        <Card>
-          <CardContent className="py-6 text-center">
-            <p className="text-sm font-semibold text-emerald-600">
-              No weak spots detected — keep it up!
-            </p>
-          </CardContent>
-        </Card>
+        <div style={{ ...SECTION, alignItems: 'center', padding: '28px' }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#16a34a' }}>No weak spots detected — keep it up!</span>
+        </div>
       )}
     </div>
   )
 }
 
-// ─── Course recommendation card ──────────────────────────────────────────────
+// ─── RecCard ─────────────────────────────────────────────────────────────────
 
 function RecCard({ rec, isSession }: { rec: Recommendation; isSession?: boolean }) {
+  const isWeak = rec.accuracy < 40
+
   return (
-    <div className="rounded-xl ring-1 ring-foreground/10 bg-card p-3.5">
-      {/* Category header */}
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="text-sm font-semibold text-foreground">
+    <div style={{
+      borderRadius: 12,
+      border: '1px solid #e8eaf0',
+      overflow: 'hidden',
+    }}>
+      {/* Header row */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 18px 12px',
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>
           {rec.label}
         </span>
-        <Badge
-          variant="outline"
-          className={`h-auto px-2 py-0.5 text-xs font-semibold rounded-lg ${
-            rec.accuracy < 40
-              ? 'bg-red-50 text-red-600 border-red-200'
-              : 'bg-amber-50 text-amber-600 border-amber-200'
-          }`}
-        >
+        <span style={{
+          padding: '3px 12px',
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 700,
+          background: isWeak ? '#fef2f2' : '#fffbeb',
+          color: isWeak ? '#dc2626' : '#d97706',
+          border: `1.5px solid ${isWeak ? '#fecaca' : '#fde68a'}`,
+        }}>
           {rec.accuracy}%{isSession ? ' this game' : ''}
-        </Badge>
+        </span>
       </div>
 
-      {/* Accuracy bar */}
-      <div className="h-1.5 rounded-full bg-secondary mb-3 overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{
-            width: `${rec.accuracy}%`,
-            backgroundColor: accuracyColor(rec.accuracy),
-          }}
-        />
-      </div>
+      {/* Divider */}
+      <div style={{ height: 1, background: '#f1f5f9', margin: '0 18px' }} />
 
       {/* Course links */}
-      <div className="flex flex-col gap-1.5">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {rec.courses.map((course, i) => (
           <a
             key={i}
             href={course.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-2.5 rounded-lg px-3 py-2.5 bg-secondary/50 ring-1 ring-foreground/5 hover:bg-secondary transition-colors"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '13px 18px',
+              borderTop: i > 0 ? '1px solid #f1f5f9' : undefined,
+              textDecoration: 'none',
+              background: '#fff',
+              transition: 'background 0.15s',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
           >
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                {course.title}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5">{course.description}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>{course.title}</span>
+              <span style={{ fontSize: 12, color: '#94a3b8' }}>{course.description}</span>
             </div>
-            <svg
-              className="w-4 h-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors"
-              fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
+            <span style={{ fontSize: 16, color: '#94a3b8', flexShrink: 0, marginLeft: 12 }}>→</span>
           </a>
         ))}
       </div>

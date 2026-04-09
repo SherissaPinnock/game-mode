@@ -11,6 +11,9 @@ import DevOpsDynamo          from '@/games/devops-dynamo/DevOpsDynamo'
 import PythonAndLadders      from '@/games/python-and-ladders/PythonAndLadders'
 import { PromptSculptor }    from '@/games/prompt-sculptor/PromptSculptor'
 import ClueGame             from '@/games/clue-game/ClueGame'
+import EscapeRoom           from '@/games/escape-room/EscapeRoom'
+import SudokuGame           from '@/games/sudoku/SudokuGame'
+import CheckersGame         from '@/games/checkers/CheckersGame'
 import { loadGame, clearGame } from '@/lib/resume'
 import type { SavedGame } from '@/lib/resume'
 import './App.css'
@@ -69,6 +72,9 @@ function App() {
   if (activeGame === 'python-and-ladders') return <PythonAndLadders onExit={exitGame} resumeState={resumeState} />
   if (activeGame === 'prompt-sculptor')    return <PromptSculptor  onExit={exitGame} />
   if (activeGame === 'clue-game')          return <ClueGame         onExit={exitGame} />
+  if (activeGame === 'escape-room')        return <EscapeRoom       onExit={exitGame} />
+  if (activeGame === 'sudoku')             return <SudokuGame       onExit={exitGame} />
+  if (activeGame === 'checkers')           return <CheckersGame     onExit={exitGame} />
 
   const allLevels = ['Beginner', 'Intermediate', 'Advanced']
   const allTags   = [...new Set(games.map(g => g.tag))]

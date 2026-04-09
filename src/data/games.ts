@@ -1,14 +1,16 @@
 import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, type LucideIcon } from 'lucide-react'
 
-import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.png'
-import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.png'
-import devopsThumb       from '@/assets/game thumbnails/devops-diagnostics thumbnail.png'
-import buildStartupThumb from '@/assets/game thumbnails/build-a-start-up thumbnail.png'
-import pythonLaddersThumb from '@/assets/game thumbnails/pythons-and-ladders-thumbnail.png'
-import scaleThumb from '@/assets/game thumbnails/scale-or-die thumbnail.png'
-import clueThumb from '@/assets/game thumbnails/clue thumbnail.png'
-import memoryThumb from '@/assets/game thumbnails/memory_match thumbnail.png'
-import promptThumb from '@/assets/game thumbnails/prompt-sculptor thumbnail.png'
+import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.webp'
+import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.webp'
+import devopsThumb       from '@/assets/game thumbnails/devops-diagnostics thumbnail.webp'
+import buildStartupThumb from '@/assets/game thumbnails/build-a-start-up thumbnail.webp'
+import pythonLaddersThumb from '@/assets/game thumbnails/pythons-and-ladders-thumbnail.webp'
+import scaleThumb from '@/assets/game thumbnails/scale-or-die thumbnail.webp'
+import clueThumb from '@/assets/game thumbnails/clue thumbnail.webp'
+import memoryThumb from '@/assets/game thumbnails/memory_match thumbnail.webp'
+import promptThumb from '@/assets/game thumbnails/prompt-sculptor thumbnail.webp'
+import checkersThumb from '@/assets/game thumbnails/checkers thumbnail.webp'
+import sudokuThumb from '@/assets/game thumbnails/sudoku thumbnail.webp'
 
 export interface Game {
   id: string
@@ -103,4 +105,31 @@ export const games: Game[] = [
     level: 'Intermediate',
     thumbnail: clueThumb,
   },
+  {
+    id: 'escape-room',
+    title: 'AWS Escape room',
+    description: '',
+    icon: Lightbulb,
+    tag: 'Trivia',
+    level: 'Intermediate',
+    thumbnailBg: ''
+  },
+  {
+    id: 'sudoku',
+    title: 'Sharp Sudoku',
+    description: 'Answer C# questions while mastering Sudoku ',
+    icon: Lightbulb,
+    tag: 'Trivia',
+    level: 'Intermediate',
+    thumbnail: sudokuThumb
+  },
+  {
+    id: 'checkers',
+    title: 'Git Checkers',
+    description: 'Answer git and version control questions while mastering checkers ',
+    icon: Lightbulb,
+    tag: 'Trivia',
+    level: 'Beginner',
+    thumbnail: checkersThumb
+  }
 ]

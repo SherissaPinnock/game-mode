@@ -58,17 +58,21 @@ export function useGameLogic() {
 
   // ─── Start game ──────────────────────────────────────────────────────
 
-  const startGame = useCallback((mode: GameMode, friendName: string) => {
-    const newPlayers = makePlayers(mode, friendName)
+  const startGame = useCallback((
+    mode: GameMode,
+    friendName: string,
+    saved?: { players: Player[]; activePlayer: 'p1' | 'p2'; questionCount: number; correctCount: number },
+  ) => {
+    const newPlayers = saved?.players ?? makePlayers(mode, friendName)
     setGameMode(mode)
     setPlayers(newPlayers)
-    setActivePlayer('p1')
+    setActivePlayer(saved?.activePlayer ?? 'p1')
     setWinner(null)
     setLastRoll(null)
     setActiveSlide(null)
     setMessage('')
-    setQuestionCount(0)
-    setCorrectCount(0)
+    setQuestionCount(saved?.questionCount ?? 0)
+    setCorrectCount(saved?.correctCount ?? 0)
     setSessionStats([])
     perfEntries.current = []
 

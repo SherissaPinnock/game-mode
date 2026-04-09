@@ -156,7 +156,7 @@ export default function PythonAndLadders({ onExit, resumeState }: Props) {
               Back
             </button>
             <button
-              onClick={() => { playClick(); startGame(selectedMode, friendName) }}
+              onClick={() => { playClick(); startGame(selectedMode, friendName, resumeState ?? undefined) }}
               className={`flex-1 px-4 py-3 rounded-xl text-white text-sm font-semibold transition-colors shadow-sm ${
                 selectedMode === 'vs-friend'
                   ? 'bg-orange-500 hover:bg-orange-600'

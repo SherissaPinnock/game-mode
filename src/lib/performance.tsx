@@ -4,7 +4,6 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 
 /** Recognised topic categories across all games. */
 export type Category =
-  | 'html-css'
   | 'javascript'
   | 'networking'
   | 'cloud-aws'
@@ -16,9 +15,8 @@ export type Category =
   | 'git'
   | 'react'
   | 'python'
-  | 'agile'
-  | 'design-patterns'
   | 'prompting'
+  | 'data'
 
 
 /** A single recorded attempt at a question/task. */

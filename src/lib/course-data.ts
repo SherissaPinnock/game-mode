@@ -17,10 +17,7 @@ export interface CourseLink {
 }
 
 export const COURSE_MAP: Record<Category, CourseLink[]> = {
-  'html-css': [
-    { title: 'HTML & CSS Fundamentals', description: 'Semantic HTML, box model, flexbox, grid', url: '#html-css-course' },
-    { title: 'CSS Layout Mastery', description: 'Responsive design and modern CSS techniques', url: '#css-layout-course' },
-  ],
+
   javascript: [
     { title: 'JavaScript Deep Dive', description: 'Closures, scope, prototypes, async patterns', url: 'https://www.intellibus.academy/learning-paths/javascript-time-travel' },
     { title: 'Modern JS (ES6+)', description: 'Arrow functions, destructuring, modules, promises', url: '#modern-js-course' },
@@ -38,13 +35,12 @@ export const COURSE_MAP: Record<Category, CourseLink[]> = {
   ],
   devops: [
     { title: 'Docker & Containers', description: 'Containerization, images, volumes, networking', url: 'https://www.intellibus.academy/learning-paths/docker-universe' },
-    { title: 'Kubernetes Essentials', description: 'Pods, services, deployments, orchestration', url: '#k8s-course' },
   ],
   databases: [
     { title: 'SQL Fundamentals', description: 'Queries, joins, indexes, normalization', url: 'https://www.intellibus.academy/learning-paths/sql-sovereignty' },
   ],
   security: [
-    { title: 'Web Security Basics', description: 'HTTPS, CORS, XSS, CSRF, authentication', url: '#security-course' },
+    { title: 'Web Security Basics', description: 'HTTPS, CORS, XSS, CSRF, authentication', url: 'https://www.intellibus.academy/learning-paths/aws-securitygroups#' },
     { title: 'Auth & Authorization', description: 'OAuth, JWT, session management', url: '#auth-course' },
   ],
   architecture: [
@@ -59,21 +55,18 @@ export const COURSE_MAP: Record<Category, CourseLink[]> = {
   python: [
     { title: 'Python Essentials', description: 'Built-ins, data types, list comprehensions', url: 'https://www.intellibus.academy/learning-paths/python-ascendancy' },
   ],
-  agile: [
-    { title: 'Agile & Scrum', description: 'Ceremonies, sprints, user stories, retrospectives', url: '#agile-course' },
+  data: [
+    {title: "Data Essentials", description: '', url:''}
   ],
-  'design-patterns': [
-    { title: 'Design Patterns', description: 'Singleton, Observer, Factory, Strategy, Decorator', url: '#patterns-course' },
-  ],
+  
   prompting: [
-    { title: 'Prompt Engineering Guide', description: 'Roles, constraints, format control, chain-of-thought techniques', url: '#prompting-course' },
+    { title: 'Prompt Engineering Guide', description: 'Roles, constraints, format control, chain-of-thought techniques', url: 'https://www.intellibus.academy/learning-paths/hugging-face' },
     { title: 'Advanced Prompting Patterns', description: 'Few-shot examples, structured outputs, and evaluation strategies', url: '#advanced-prompting-course' },
   ],
 }
 
 /** Human-readable display names for each category. */
 export const CATEGORY_LABELS: Record<Category, string> = {
-  'html-css': 'HTML & CSS',
   javascript: 'JavaScript',
   networking: 'Networking & HTTP',
   'cloud-aws': 'Cloud & AWS',
@@ -85,7 +78,6 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   git: 'Git',
   react: 'React',
   python: 'Python',
-  agile: 'Agile',
-  'design-patterns': 'Design Patterns',
   prompting: 'Prompt Engineering',
+  data: 'Data'
 }
