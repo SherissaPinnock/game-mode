@@ -122,7 +122,7 @@ export function ResultsScreen({
               onClick={onNext}
               className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-colors"
             >
-              Play Again
+              ✓ Back to Map
             </button>
           ) : (
             <button

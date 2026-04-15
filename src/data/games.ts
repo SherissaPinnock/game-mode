@@ -12,6 +12,9 @@ import promptThumb from '@/assets/game thumbnails/prompt-sculptor thumbnail.webp
 import checkersThumb from '@/assets/game thumbnails/checkers thumbnail.webp'
 import sudokuThumb from '@/assets/game thumbnails/sudoku thumbnail.webp'
 import hackgammonThumb from '@/assets/game thumbnails/hackgammon thumbnail.webp'
+import chessThumb from '@/assets/game thumbnails/cloud chess.webp'
+import mahjongThumb from '@/assets/game thumbnails/mahjong.webp'
+
 export interface Game {
   id: string
   title: string
@@ -131,5 +134,23 @@ export const games: Game[] = [
     tag: 'Trivia',
     level: 'Advanced',
     thumbnail: hackgammonThumb,
-  }
+  },
+  {
+    id: 'mahjong',
+    title: 'Tech Mahjong',
+    description: 'Match tiles to clear the board in this tech-themed Mahjong game. Answer questions to earn power-ups and bonuses.',
+    icon: LayoutGrid,
+    tag: 'Matching',
+    level: 'Advanced',
+    thumbnail: mahjongThumb,
+  },
+  {
+    id: 'chess-clouds',
+    title: 'Chess in the Clouds',
+    description: 'A guided chess quest where every capture requires a cloud computing question. 5 missions covering containers, CI/CD, scaling, security and more.',
+    icon: Server,
+    tag: 'Strategy',
+    level: 'Intermediate',
+    thumbnail: chessThumb
+  },
 ]

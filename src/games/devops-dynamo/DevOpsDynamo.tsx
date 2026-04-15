@@ -10,9 +10,71 @@ import { playCorrect, playWrong, playWasCorrectVoiceOver, playWasWrongVoiceOver 
 import { saveGame, clearGame } from '@/lib/resume'
 import { ExitConfirmModal } from '@/components/ExitConfirmModal'
 import { useGameTheme } from '@/lib/useGameTheme'
+import { LearningRoadmap, type RoadmapLevel } from '@/components/LearningRoadmap'
+import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
 import type { Action, GamePhase, Incident, InvestigationLog, Investigation } from './types'
 
-const INCIDENTS_PER_GAME = 3
+// ── Journey levels — one incident each, concept taught before play ────────────
+const ROADMAP_ID = 'devops-dynamo'
+
+const DYNAMO_LEVELS: RoadmapLevel[] = [
+  {
+    id: 'level-1',
+    title: 'First Alert',
+    subtitle: 'Diagnose a broken deploy',
+    icon: '🚨',
+    conceptTitle: 'What Is an Incident?',
+    conceptBody: 'An incident is when something breaks in production and real users are affected right now. P1 = critical (site down). P2 = degraded (slow or partial). Your job: find the root cause and fix it fast — before the SLA timer runs out.',
+    conceptHighlight: 'Google calls an incident "an event that disrupts normal operations and requires an immediate coordinated response."',
+  },
+  {
+    id: 'level-2',
+    title: 'Memory Meltdown',
+    subtitle: 'Track down a container memory leak',
+    icon: '📊',
+    conceptTitle: 'Reading the Metrics',
+    conceptBody: 'Your symptom board shows vital signs: Response Time (healthy: <500ms), Error Rate (healthy: <1%), CPU, and Memory. Red metrics tell a story — read them together. High errors + normal CPU usually means bad code. High CPU + normal errors usually means a traffic spike.',
+    conceptHighlight: 'Tip: Never look at just one metric in isolation. The pattern across all metrics is what points to the real cause.',
+  },
+  {
+    id: 'level-3',
+    title: 'Connection Crisis',
+    subtitle: 'Fix a database connection pool issue',
+    icon: '⏱️',
+    conceptTitle: 'SLA — Your Time Budget',
+    conceptBody: 'A Service Level Agreement (SLA) is a promise to your users about availability. During an incident, your SLA timer counts down. Every investigation costs time. Choose clues that are most likely to reveal the root cause — not all of them.',
+    conceptHighlight: '"Five nines" (99.999% uptime) allows only 5.26 minutes of downtime per year. Every second you spend on a wrong lead is SLA time you can\'t get back.',
+  },
+  {
+    id: 'level-4',
+    title: 'Network Nightmare',
+    subtitle: 'Resolve a Kubernetes DNS failure',
+    icon: '🔍',
+    conceptTitle: 'Investigate Before Acting',
+    conceptBody: 'Never jump to a fix without evidence. Run 2–3 targeted investigations to gather clues — each one narrows down the root cause. Acting on a wrong assumption wastes SLA time and can introduce new problems.',
+    conceptHighlight: 'The #1 mistake in incident response: deploying a fix before confirming the cause. Correlation ≠ causation.',
+  },
+  {
+    id: 'level-5',
+    title: 'Pipeline Problem',
+    subtitle: 'Debug a broken Docker image in CI',
+    icon: '🔧',
+    conceptTitle: 'Know Your Fixes',
+    conceptBody: 'Rollback: revert to the last known-good version — safest after a bad deploy. Restart: quick fix for memory leaks or hung processes. Scale up: add capacity when traffic is the problem. Hotfix: patch code without rolling back — riskier under pressure.',
+    conceptHighlight: 'When in doubt, rollback. A brief disruption from a rollback is almost always better than extended downtime from a bad hotfix.',
+  },
+]
+
+// Maps roadmap level index → incident ID to use
+const LEVEL_INCIDENT_IDS = [
+  'bad-deploy',
+  'docker-memleak',
+  'db-connections',
+  'docker-dns',
+  'docker-image',
+]
+
+const INCIDENTS_PER_GAME = 1  // one incident per roadmap level
 const GAME_ID = 'devops-dynamo'
 
 export interface DevOpsDynamoSave {
@@ -66,14 +128,54 @@ interface DevOpsDynamoProps {
 }
 
 export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps) {
+  // ── Roadmap state ───────────────────────────────────────────────────────────
+  const [view, setView] = useState<'roadmap' | 'game'>('roadmap')
+  const [activeLevelIdx, setActiveLevelIdx] = useState(0)
+  const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(
+    () => getCompletedLevels(ROADMAP_ID)
+  )
+
+  function handlePlayLevel(levelIdx: number) {
+    setActiveLevelIdx(levelIdx)
+    setView('game')
+    // Reset game state for new level
+    const incidentId = LEVEL_INCIDENT_IDS[levelIdx]
+    const inc = allIncidents.find(i => i.id === incidentId)
+    if (inc) {
+      setIncidents([inc])
+      setIncidentIndex(0)
+      setPhase('intro')
+      setSlaRemaining(inc.slaTotal)
+      setCompletedInvestigations(new Set())
+      setInvestigationLog([])
+      setChosenAction(null)
+      setCorrectCount(0)
+      setLastWasCorrect(true)
+      perfEntries.current = []
+      hasReported.current = false
+      initialized.current = false
+    }
+  }
+
+  function handleLevelFinished() {
+    const levelId = DYNAMO_LEVELS[activeLevelIdx]?.id
+    if (levelId) {
+      markLevelComplete(ROADMAP_ID, levelId)
+      setCompletedLevelIds(getCompletedLevels(ROADMAP_ID))
+    }
+    setView('roadmap')
+  }
   const { isDark, toggle } = useGameTheme()
 
   // ── Session state (hydrated from save if present) ────────────────────────
-  const [incidents, setIncidents] = useState<Incident[]>(() =>
-    resumeState ? incidentsFromIds(resumeState.incidentIds) : pickIncidents(INCIDENTS_PER_GAME)
-  )
+  const [incidents, setIncidents] = useState<Incident[]>(() => {
+    if (resumeState) return incidentsFromIds(resumeState.incidentIds)
+    // Default: level 0 incident (overridden when user picks a level from roadmap)
+    const inc = allIncidents.find(i => i.id === LEVEL_INCIDENT_IDS[0])
+    return inc ? [inc] : pickIncidents(INCIDENTS_PER_GAME)
+  })
   const [incidentIndex, setIncidentIndex] = useState(() => resumeState?.incidentIndex ?? 0)
-  const [phase, setPhase] = useState<GamePhase>(() => resumeState?.phase ?? 'intro')
+  const [phase, setPhase] = useState<GamePhase>(() => resumeState ? (resumeState.phase ?? 'intro') : 'intro')
 
   // ── Per-incident state ───────────────────────────────────────────────────
   const [slaRemaining, setSlaRemaining] = useState(() => resumeState?.slaRemaining ?? 0)
@@ -124,12 +226,12 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
       lastWasCorrect,
     }
     saveGame(GAME_ID, save, `Incident ${incidentIndex + 1} of ${incidents.length}`)
-    onExit()
+    setView('roadmap')
   }
 
   function handleQuit() {
     clearGame(GAME_ID)
-    onExit()
+    setView('roadmap')
   }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
@@ -182,21 +284,13 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
 
   const handleNext = useCallback(() => {
     if (isLastIncident) {
-      // Play again — reset everything
-      const newIncidents = pickIncidents(INCIDENTS_PER_GAME)
-      setIncidents(newIncidents)
-      setIncidentIndex(0)
-      setCorrectCount(0)
-      setLastWasCorrect(true)
-      perfEntries.current = []
-      hasReported.current = false
-      initialized.current = false
-      resetIncidentState(newIncidents[0])
-      setPhase('intro')
+      // Level complete — return to roadmap
+      handleLevelFinished()
     } else {
       // Go to transition dialogue before next incident
       setPhase('transition')
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLastIncident, resetIncidentState])
 
   const handleTransitionDone = useCallback(() => {
@@ -261,6 +355,21 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
       onCancel={() => setShowExitModal(false)}
     />
   )
+
+  // ── Roadmap screen ──────────────────────────────────────────────────────
+  if (view === 'roadmap') {
+    return (
+      <LearningRoadmap
+        gameName="DevOps Dynamo"
+        gameEmoji="🖥️"
+        themeColor="#0ea5e9"
+        completedIds={completedLevelIds}
+        levels={DYNAMO_LEVELS}
+        onPlay={handlePlayLevel}
+        onExit={onExit}
+      />
+    )
+  }
 
   // ── Intro screen ────────────────────────────────────────────────────────
   if (phase === 'intro') {

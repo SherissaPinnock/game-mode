@@ -3,6 +3,69 @@ import type { Category, PerformanceEntry } from '@/lib/performance'
 import { usePerformance, computeStats } from '@/lib/performance'
 import { playCorrect, playGameOver, playIntro, playPop, playWarning, playWrong } from '@/lib/sounds'
 import { GameRecommendations } from '@/components/GameRecommendations'
+import { LearningRoadmap, type RoadmapLevel } from '@/components/LearningRoadmap'
+import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
+
+// ─── Journey roadmap levels ────────────────────────────────────────────────────
+const ROADMAP_ID = 'scale-or-die'
+
+const SCALE_LEVELS: RoadmapLevel[] = [
+  {
+    id: 'level-1',
+    title: 'Traffic 101',
+    subtitle: 'Survive a single traffic wave',
+    icon: '🌊',
+    conceptTitle: 'Why Servers Crash Under Load',
+    conceptBody: 'Every server has a max capacity — when traffic exceeds it, response times spike, requests fail, and users leave. This level simulates a small traffic event. Your job: keep your servers alive before they get overwhelmed.',
+    conceptHighlight: 'Amazon loses ~$220,000 per minute during outages. Your health bar in this game represents real-world uptime.',
+  },
+  {
+    id: 'level-2',
+    title: 'Scale It Up',
+    subtitle: 'Add EC2 instances to handle load',
+    icon: '🖥️',
+    conceptTitle: 'Horizontal Scaling with EC2',
+    conceptBody: 'Elastic Compute Cloud (EC2) lets you launch virtual servers on demand. Each instance handles a slice of your traffic. Adding more instances is called horizontal scaling — many smaller servers instead of one huge one.',
+    conceptHighlight: 'Horizontal scaling beats vertical scaling: more instances are cheaper, more resilient, and easier to replace if one dies.',
+  },
+  {
+    id: 'level-3',
+    title: 'Go Global',
+    subtitle: 'Use CDN and load balancers across two waves',
+    icon: '🌐',
+    conceptTitle: 'CDN & Load Balancers',
+    conceptBody: 'A CDN caches your files on edge servers worldwide so users get them from nearby nodes, not your origin. A load balancer then distributes requests evenly across all your instances — no single server gets overwhelmed.',
+    conceptHighlight: 'CDNs carry ~70% of all internet traffic. Netflix, YouTube, and Cloudflare depend on them to scale globally without crashing.',
+  },
+  {
+    id: 'level-4',
+    title: 'Hands-Free Scaling',
+    subtitle: 'Tackle two waves with auto-scaling',
+    icon: '📈',
+    conceptTitle: 'Auto-Scaling',
+    conceptBody: 'Auto-scaling watches your metrics — CPU, request rate — and automatically adds or removes servers based on rules you define. Scale up during spikes, scale back down to save money when traffic drops.',
+    conceptHighlight: 'Without auto-scaling you either over-provision (waste money) or under-provision (crash). Auto-scaling eliminates both problems.',
+  },
+  {
+    id: 'level-5',
+    title: 'Full Stack',
+    subtitle: 'Survive all three waves using everything you\'ve learned',
+    icon: '📬',
+    conceptTitle: 'Message Queues — Buffer the Storm',
+    conceptBody: 'Queues decouple your frontend from backend processing. Requests sit in the queue (like SQS) instead of hitting your server directly. Your server drains the queue at its own pace — during a spike, nothing crashes.',
+    conceptHighlight: 'Message queues power order processing at every major e-commerce site. They turn a thundering herd into a steady stream.',
+  },
+]
+
+// Level configs: { waveCount, peakCap } — filters which scenarios are eligible
+interface ScaleLevelConfig { waveCount: number; peakCap: number }
+const LEVEL_CONFIGS: ScaleLevelConfig[] = [
+  { waveCount: 1, peakCap: 80  },   // level-1: easy 1-wave
+  { waveCount: 1, peakCap: 130 },   // level-2: medium 1-wave
+  { waveCount: 2, peakCap: 130 },   // level-3: medium 2-wave
+  { waveCount: 2, peakCap: 999 },   // level-4: hard 2-wave
+  { waveCount: 3, peakCap: 999 },   // level-5: full game
+]
 
 // ─── Question bank ────────────────────────────────────────────────────────────
 interface Question { q: string; options: string[]; answer: number; category: Category }
@@ -38,13 +101,17 @@ const ALL_SCENARIOS = [
   { subtitle: 'CRYPTO CRASH',   peak: 210, duration: 25_000 },
 ]
 
-function pickScenarios() {
-  const pool = [...ALL_SCENARIOS]
-  for (let i = pool.length - 1; i > 0; i--) {
+function pickScenarios(cfg?: ScaleLevelConfig) {
+  const count = cfg?.waveCount ?? 3
+  const maxPeak = cfg?.peakCap ?? 999
+  const pool = [...ALL_SCENARIOS].filter(s => s.peak <= maxPeak)
+  // If not enough scenarios for this peak cap, fall back to all
+  const eligible = pool.length >= count ? pool : [...ALL_SCENARIOS]
+  for (let i = eligible.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]]
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]]
   }
-  return pool.slice(0, 3)
+  return eligible.slice(0, count)
     .sort((a, b) => a.peak - b.peak)
     .map((w, i) => ({ ...w, label: `WAVE ${i + 1}` }))
 }
@@ -862,6 +929,12 @@ function Blink({ children }: { children: React.ReactNode }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
+  // ── Roadmap state ──────────────────────────────────────────────────────────
+  const [view, setView] = useState<'roadmap' | 'game'>('roadmap')
+  const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(
+    () => getCompletedLevels(ROADMAP_ID)
+  )
+  const activeLevelIdxRef = useRef(0)
   // ── Game refs (60fps loop) ────────────────────────────────────────────────
   const healthRef      = useRef(100)
   const budgetRef      = useRef(500)
@@ -877,7 +950,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const uiIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastTickRef    = useRef(0)
   const canvasRef      = useRef<HTMLCanvasElement>(null)
-  const wavesRef       = useRef(WAVES)
+  const wavesRef       = useRef(WAVES)   // overridden when level starts
 
   const [activeWaves, setActiveWaves] = useState(WAVES)
   const [ui, setUi] = useState<UIState>({
@@ -1178,6 +1251,48 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     mq:  <PixelEnvelope s={3} />,
   }
 
+  // ── Roadmap screen ───────────────────────────────────────────────────────
+  if (view === 'roadmap') {
+    return (
+      <LearningRoadmap
+        gameName="Scale or Die"
+        gameEmoji="🖥️"
+        themeColor="#00c853"
+        completedIds={completedLevelIds}
+        levels={SCALE_LEVELS}
+        onPlay={(levelIdx) => {
+          activeLevelIdxRef.current = levelIdx
+          const cfg = LEVEL_CONFIGS[levelIdx]
+          const newWaves = pickScenarios(cfg)
+          wavesRef.current = newWaves
+          setActiveWaves(newWaves)
+          // Reset game state
+          healthRef.current = 100
+          budgetRef.current = 500
+          trafficRef.current = 0
+          capacityRef.current = 50
+          waveRef.current = 0
+          phaseRef.current = 'breather'
+          waveTimerRef.current = 0
+          trafficHistRef.current = Array(HISTORY_LEN).fill(0)
+          capHistRef.current = Array(HISTORY_LEN).fill(50)
+          setUi({ health: 100, budget: 500, traffic: 0, capacity: 50, wave: 0, phase: 'breather', message: 'WAVE 1 IN 5s...', overloaded: false })
+          setResult(null)
+          setShowQuestion(false)
+          setQuestion(null)
+          setPendingAction(null)
+          setAnswered(null)
+          perfEntries.current = []
+          hasReported.current = false
+          setTutStep(levelIdx === 0 ? 0 : null) // show tutorial only on first level
+          hasStartedRef.current = false
+          setView('game')
+        }}
+        onExit={onExit}
+      />
+    )
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -1217,12 +1332,12 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
           SCALE_OR_DIE.EXE
         </span>
         <button
-          onClick={onExit}
+          onClick={() => setView('roadmap')}
           style={{ background: 'none', border: `2px solid ${P.green}`, color: P.green,
             fontFamily: FONT, fontSize: '7px', cursor: 'pointer', padding: '2px 6px',
             boxShadow: `2px 2px 0 ${P.green}66` }}
         >
-          EXIT
+          MAP
         </button>
       </div>
 
@@ -1559,20 +1674,27 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: 4 }}>
-              <button onClick={onExit} style={{
-                padding: '8px 16px', border: `3px solid ${P.dgray}`,
-                background: 'transparent', color: P.gray,
-                fontFamily: FONT, fontSize: '7px', cursor: 'pointer',
-                boxShadow: `3px 3px 0 ${P.dgray}44`,
-              }}>
-                ← MENU
-              </button>
-              <button onClick={startGame} style={{
-                padding: '8px 20px', border: `3px solid ${P.green}`,
+            <div style={{ display: 'flex', gap: '10px', marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => {
+                const levelId = SCALE_LEVELS[activeLevelIdxRef.current]?.id
+                if (levelId) {
+                  markLevelComplete(ROADMAP_ID, levelId)
+                  setCompletedLevelIds(getCompletedLevels(ROADMAP_ID))
+                }
+                setView('roadmap')
+              }} style={{
+                padding: '8px 16px', border: `3px solid ${P.green}`,
                 background: '#001a00', color: P.green,
                 fontFamily: FONT, fontSize: '7px', cursor: 'pointer',
                 boxShadow: `3px 3px 0 ${P.green}66`,
+              }}>
+                ✓ BACK TO MAP
+              </button>
+              <button onClick={startGame} style={{
+                padding: '8px 20px', border: `3px solid ${P.dgray}`,
+                background: 'transparent', color: P.gray,
+                fontFamily: FONT, fontSize: '7px', cursor: 'pointer',
+                boxShadow: `3px 3px 0 ${P.dgray}44`,
               }}>
                 RETRY ↺
               </button>

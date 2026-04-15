@@ -1,7 +1,6 @@
 import type { Player, GameMode } from '../types'
 import type { CategoryStats } from '@/lib/performance'
-import { StaticCourseRecommendation } from '@/components/GameRecommendations'
-import { COURSE_MAP } from '@/lib/course-data'
+import { GameRecommendations } from '@/components/GameRecommendations'
 
 interface ResultsScreenProps {
   winner: 'p1' | 'p2'
@@ -72,7 +71,7 @@ export function ResultsScreen({
         <span>{p2.emoji} {p2.name}: cell {p2.position}</span>
       </div>
 
-      <StaticCourseRecommendation courses={COURSE_MAP.python} />
+      <GameRecommendations sessionStats={sessionStats} pinnedCategory="python" />
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">

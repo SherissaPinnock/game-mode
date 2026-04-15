@@ -1,11 +1,15 @@
 import { usePerformance, type CategoryStats } from '@/lib/performance'
 import { getRecommendations, CATEGORY_LABELS, type Recommendation } from '@/lib/recommendations'
+import { COURSE_MAP } from '@/lib/course-data'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import type { Category } from '@/lib/performance'
 import type { CourseLink } from '@/lib/course-data'
 
 interface GameRecommendationsProps {
   sessionStats?: CategoryStats[]
   showAllTime?: boolean
+  /** When set, always recommend this category's course instead of the dynamic worst-category logic */
+  pinnedCategory?: Category
 }
 
 function accuracyColor(accuracy: number): string {
@@ -34,14 +38,26 @@ const SECTION_LABEL: React.CSSProperties = {
   marginBottom: 4,
 }
 
-export function GameRecommendations({ sessionStats }: GameRecommendationsProps) {
+export function GameRecommendations({ sessionStats, pinnedCategory }: GameRecommendationsProps) {
   const { allStats } = usePerformance()
 
-  // ── Single worst-performing category from previous sessions ────────────────
+  // ── Pinned category (game-specific) always wins ────────────────────────────
+  const pinnedRec: Recommendation | null = pinnedCategory
+    ? {
+        category: pinnedCategory,
+        label: CATEGORY_LABELS[pinnedCategory],
+        accuracy: 0,
+        total: 0,
+        courses: COURSE_MAP[pinnedCategory] ?? [],
+      }
+    : null
+
+  // ── Fallback: worst-performing category from previous sessions ─────────────
   const previousStats = allStats()
   const worstRec: Recommendation | null = (() => {
+    if (pinnedCategory) return null          // pinned takes over
     const recs = getRecommendations(previousStats)
-    return recs.length > 0 ? recs[0] : null   // already sorted weakest-first
+    return recs.length > 0 ? recs[0] : null
   })()
 
   const chartStats = sessionStats?.length ? sessionStats : previousStats
@@ -115,11 +131,11 @@ export function GameRecommendations({ sessionStats }: GameRecommendationsProps) 
         </div>
       )}
 
-      {/* ── Single course recommendation (worst category, previous sessions) ── */}
-      {worstRec && worstRec.courses[0] && (
+      {/* ── Course recommendation — pinned (game-specific) or worst category ── */}
+      {(pinnedRec ?? worstRec)?.courses[0] && (
         <div style={{ ...SECTION, padding: '16px 18px', gap: 10 }}>
           <div style={SECTION_LABEL}>Recommended for You</div>
-          <RecCard rec={worstRec} />
+          <RecCard rec={(pinnedRec ?? worstRec)!} pinned={!!pinnedRec} />
         </div>
       )}
 
@@ -135,7 +151,7 @@ export function GameRecommendations({ sessionStats }: GameRecommendationsProps) 
 
 // ─── RecCard ─────────────────────────────────────────────────────────────────
 
-function RecCard({ rec }: { rec: Recommendation }) {
+function RecCard({ rec, pinned = false }: { rec: Recommendation; pinned?: boolean }) {
   const course = rec.courses[0]
   const isWeak = rec.accuracy < 40
 
@@ -165,14 +181,16 @@ function RecCard({ rec }: { rec: Recommendation }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{
-            padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
-            background: isWeak ? '#fef2f2' : '#fffbeb',
-            color: isWeak ? '#dc2626' : '#d97706',
-            border: `1.5px solid ${isWeak ? '#fecaca' : '#fde68a'}`,
-          }}>
-            {rec.accuracy}% in {rec.label}
-          </span>
+          {!pinned && (
+            <span style={{
+              padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+              background: isWeak ? '#fef2f2' : '#fffbeb',
+              color: isWeak ? '#dc2626' : '#d97706',
+              border: `1.5px solid ${isWeak ? '#fecaca' : '#fde68a'}`,
+            }}>
+              {rec.accuracy}% in {rec.label}
+            </span>
+          )}
           <span style={{
             fontSize: 11, fontWeight: 600, color: '#306DF6',
             padding: '3px 9px', border: '1.5px solid #bfdbfe',

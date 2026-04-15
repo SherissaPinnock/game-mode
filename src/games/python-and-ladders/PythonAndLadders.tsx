@@ -262,7 +262,7 @@ export default function PythonAndLadders({ onExit, resumeState }: Props) {
         <button onClick={() => { playClick(); setShowExitModal(true) }} className={EXIT_BTN}>
           ← Exit
         </button>
-        <h1 className={`text-sm font-black ${TITLE}`}>🐍 Python & Ladders 🪜</h1>
+        <h1 className={`text-lg font-black ${TITLE}`}>🐍 Python & Ladders 🪜</h1>
         <div className="flex items-center gap-2">
           <span className={`text-xs font-mono px-2 py-1 rounded-full ${isDark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>Q{questionCount}</span>
           {ThemeToggle}

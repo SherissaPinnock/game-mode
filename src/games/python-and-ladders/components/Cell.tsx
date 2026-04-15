@@ -58,9 +58,14 @@ export function Cell({ cellNumber, players, isHighlighted, activeSlide, isDark }
         </span>
       )}
 
-      <div className="relative z-20 flex gap-0.5">
+      <div className="relative z-20 flex gap-0.5 items-center justify-center">
         {playersHere.map(p => (
-          <span key={p.id} className="text-base sm:text-lg drop-shadow-sm animate-bounce-subtle" title={p.name}>
+          <span
+            key={p.id}
+            className="text-2xl sm:text-3xl drop-shadow-lg animate-bounce-subtle leading-none"
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
+            title={p.name}
+          >
             {p.emoji}
           </span>
         ))}
