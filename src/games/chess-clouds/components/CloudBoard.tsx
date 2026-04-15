@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { Chess } from 'chess.js'
+import type { Square } from 'chess.js'
 import type { Level } from '../data/levels'
 import { QuestionModal } from './QuestionModal'
 
@@ -43,7 +44,7 @@ export function CloudBoard({ level, onComplete, onExit }: Props) {
   const [correct, setCorrect] = useState(0)
   const [total, setTotal] = useState(0)
   const [lastResult, setLastResult] = useState<'correct' | 'wrong' | null>(null)
-  const [blackThinking, setBlackThinking] = useState(false)
+  const [blackThinking] = useState(false)
 
   // After white moves, black plays: captures first, otherwise random.
   function playBlackRandom() {
@@ -67,8 +68,8 @@ export function CloudBoard({ level, onComplete, onExit }: Props) {
     }
   }, [capturedCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function sq(row: number, col: number) {
-    return `${FILES[col]}${8 - row}` as `${string}${number}`
+  function sq(row: number, col: number): Square {
+    return `${FILES[col]}${8 - row}` as Square
   }
 
   function handleSquareClick(row: number, col: number) {
