@@ -17,6 +17,7 @@ import CheckersGame          from '@/games/checkers/CheckersGame'
 import Hackgammon            from '@/games/hackgammon/Hackgammon'
 import MahjongGame           from './games/mahjong/MahjongGame'
 import ChessClouds           from '@/games/chess-clouds/ChessClouds'
+import DbQuest              from '@/games/db-quest/DbQuest'
 import { loadGame, clearGame } from '@/lib/resume'
 import type { SavedGame } from '@/lib/resume'
 import './App.css'
@@ -82,6 +83,7 @@ function App() {
   if (activeGame === 'hackgammon')         return <Hackgammon       onExit={exitGame} />
   if (activeGame === 'mahjong')            return <MahjongGame      onExit={exitGame} />
   if (activeGame === 'chess-clouds')       return <ChessClouds      onExit={exitGame} />
+  if (activeGame === 'db-quest')           return <DbQuest          onExit={exitGame} />
 
   return (
     <>

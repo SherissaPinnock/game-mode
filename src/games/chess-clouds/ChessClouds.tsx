@@ -59,6 +59,7 @@ export default function ChessClouds({ onExit }: Props) {
             <span className="cc-cloud cc-cloud-4">☁️</span>
           </div>
 
+          <div className="cc-title-ribbon">Sky Castle Circuit</div>
           <div className="cc-title-chess-icon">♛</div>
           <h1 className="cc-title-heading">Chess in the Clouds</h1>
           <p className="cc-title-sub">

@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, type LucideIcon } from 'lucide-react'
 
 import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.webp'
 import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.webp'
@@ -152,5 +152,14 @@ export const games: Game[] = [
     tag: 'Strategy',
     level: 'Intermediate',
     thumbnail: chessThumb
+  },
+  {
+    id: 'db-quest',
+    title: 'DB Quest',
+    description: 'A guided journey through database optimisation. Learn normalization, indexing, and CTEs through interactive animations and hands-on challenges.',
+    icon: Database,
+    tag: 'Simulation',
+    level: 'Intermediate',
+    thumbnailBg: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
   },
 ]

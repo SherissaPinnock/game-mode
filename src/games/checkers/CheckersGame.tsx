@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { playCorrect, playWrong, playComplete, playPop } from '@/lib/sounds'
 import { StaticCourseRecommendation } from '@/components/GameRecommendations'
 import { COURSE_MAP } from '@/lib/course-data'
+import './CheckersGame.css'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -294,12 +295,12 @@ const GIT_QUESTIONS: GitQuestion[] = [
 // ─── Colour palette ────────────────────────────────────────────────────────────
 
 const C = {
-  bg:          'radial-gradient(ellipse at 50% 0%, #1a0533 0%, #06040f 55%, #031020 100%)',
+  bg:          'radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 18%), linear-gradient(180deg, #58b88c 0%, #328764 48%, #184e3b 100%)',
   surface:     '#120a28',
   surfaceAlt:  '#1a1040',
   border:      '#3a2d6a',
-  boardDark:   '#1e0a3c',   // rich deep violet square
-  boardLight:  '#0a1e14',   // rich deep forest green square
+  boardDark:   '#6d5ba8',
+  boardLight:  '#ffe8b0',
   player:      '#ff6030',   // hot orange-red
   playerKing:  '#ffd700',   // gold king
   bot:         '#00d4ff',   // electric cyan
@@ -650,58 +651,42 @@ export default function CheckersGame({ onExit }: Props) {
   // ─── Render: game over ───────────────────────────────────────────────────────
   if (phase === 'game-over' && winner) {
     const won = winner === 'player'
-    const accentColor = won ? C.gold : C.red
-    const accentGlow  = won ? '#fbbf2444' : '#ff444444'
+    const gameOverVars = {
+      '--ck-accent': won ? C.gold : '#ef7f98',
+      '--ck-accent-soft': won ? '#fff0b9' : '#ffd7df',
+    } as CSSProperties
     return (
-      <div style={{
-        minHeight: '100vh', background: C.bg, overflowY: 'auto',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        fontFamily: 'system-ui, sans-serif', padding: 24, gap: 20,
-      }}>
-        <div style={{
-          background: 'linear-gradient(145deg, #160b30, #0d0820)',
-          border: `2px solid ${accentColor}`,
-          borderRadius: 20, padding: '40px 48px', maxWidth: 460, width: '100%',
-          textAlign: 'center',
-          boxShadow: `0 0 60px ${accentGlow}, 0 0 120px rgba(124,58,237,0.15), 0 20px 40px rgba(0,0,0,0.7)`,
-        }}>
-          <div style={{ fontSize: 64, marginBottom: 14, filter: `drop-shadow(0 0 20px ${accentColor})` }}>
+      <div className="ck-shell ck-shell-outcome">
+        <div className="ck-outcome-card" style={gameOverVars}>
+          <div className="ck-outcome-emoji">
             {won ? '🚀' : '💥'}
           </div>
-          <h2 style={{
-            margin: '0 0 8px', fontSize: 26, fontWeight: 900,
-            background: `linear-gradient(90deg, ${accentColor}, #fff)`,
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
+          <div className="ck-outcome-ribbon">{won ? 'Release Cleared' : 'Repo Trouble'}</div>
+          <h2 className="ck-outcome-title">
             {won ? 'Merged to Main!' : 'Merge Conflict!'}
           </h2>
-          <p style={{ color: C.muted, fontSize: 13, margin: '0 0 24px', lineHeight: 1.6 }}>
+          <p className="ck-outcome-subtitle">
             {won
               ? 'You defeated the bot and resolved all Git conflicts!'
               : 'The bot squashed all your commits. Better luck next time!'}
           </p>
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: 24,
-            background: 'rgba(255,255,255,0.04)', borderRadius: 12,
-            border: '1px solid #3a2d6a',
-            padding: '16px 24px', marginBottom: 28,
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 32, fontWeight: 900, color: C.gold, lineHeight: 1 }}>{score}</div>
-              <div style={{ fontSize: 10, color: C.muted, letterSpacing: '0.12em', marginTop: 4 }}>SCORE</div>
+          <div className="ck-outcome-stats">
+            <div className="ck-outcome-stat">
+              <div className="ck-outcome-stat-num">{score}</div>
+              <div className="ck-outcome-stat-label">Score</div>
             </div>
-            <div style={{ width: 1, background: '#3a2d6a' }} />
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 32, fontWeight: 900, color: C.green, lineHeight: 1 }}>{playerCaptures}</div>
-              <div style={{ fontSize: 10, color: C.muted, letterSpacing: '0.12em', marginTop: 4 }}>CAPTURED</div>
+            <div className="ck-outcome-divider" />
+            <div className="ck-outcome-stat">
+              <div className="ck-outcome-stat-num">{playerCaptures}</div>
+              <div className="ck-outcome-stat-label">Captured</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button onClick={onExit}  style={outlineBtn}>← Menu</button>
-            <button onClick={restart} style={primaryBtn}>Play Again ↺</button>
+          <div className="ck-outcome-actions">
+            <button onClick={onExit} className="ck-btn ck-btn-ghost">← Menu</button>
+            <button onClick={restart} className="ck-btn ck-btn-primary">Play Again ↺</button>
           </div>
         </div>
-        <div style={{ maxWidth: 460, width: '100%' }}>
+        <div className="ck-reco-wrap">
           <StaticCourseRecommendation courses={COURSE_MAP.git} />
         </div>
       </div>
@@ -720,43 +705,27 @@ export default function CheckersGame({ onExit }: Props) {
     : C.validMove
 
   return (
-    <div style={{
-      minHeight: '100vh', background: C.bg,
-      fontFamily: 'system-ui, sans-serif',
-      display: 'flex', flexDirection: 'column',
-    }}>
+    <div className="ck-shell">
       {/* Top bar */}
-      <div style={{
-        background: 'rgba(10,6,26,0.85)', backdropFilter: 'blur(12px)',
-        borderBottom: `1px solid #3a2d6a`,
-        padding: '10px 18px', display: 'flex',
-        alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
-        boxShadow: '0 2px 20px rgba(0,0,0,0.5)',
-      }}>
-        <button onClick={onExit} style={outlineBtn}>← Exit</button>
+      <div className="ck-topbar">
+        <button onClick={onExit} className="ck-btn ck-btn-ghost">← Exit</button>
 
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontSize: 17, fontWeight: 900,
-            background: 'linear-gradient(90deg, #c084fc, #67e8f9)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
+        <div className="ck-title-wrap">
+          <div className="ck-title-ribbon">Repository Arena</div>
+          <div className="ck-title">
             ♟ Git Checkers
           </div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: statusColor, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>
+          <div className="ck-status" style={{ color: statusColor }}>
             {statusLabel}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <div style={{
-            textAlign: 'center', background: 'rgba(251,191,36,0.1)',
-            border: `1px solid ${C.gold}44`, borderRadius: 8, padding: '4px 10px',
-          }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: C.gold, lineHeight: 1 }}>{score}</div>
-            <div style={{ fontSize: 9, color: C.muted, letterSpacing: '0.08em' }}>PTS</div>
+        <div className="ck-score-stack">
+          <div className="ck-score-badge">
+            <div className="ck-score-num">{score}</div>
+            <div className="ck-score-label">Pts</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="ck-piece-stack">
             <PieceCount color={C.player} count={countPieces(board, 'player')} label="You" />
             <PieceCount color={C.bot}    count={countPieces(board, 'bot')}    label="Bot" />
           </div>
@@ -764,13 +733,13 @@ export default function CheckersGame({ onExit }: Props) {
       </div>
 
       {/* Body */}
-      <div style={{
-        flex: 1, display: 'flex', gap: 16,
-        padding: '20px 16px', justifyContent: 'center', alignItems: 'flex-start',
-        flexWrap: 'wrap',
-      }}>
+      <div className="ck-body">
         {/* Board */}
-        <div>
+        <div className="ck-board-column">
+          <div className="ck-board-banner">
+            <span className="ck-board-banner-label">Board State</span>
+            <span className="ck-board-banner-text">Dark tiles are playable. Captures still trigger Git trivia.</span>
+          </div>
           <BoardGrid
             board={board}
             selected={selected}
@@ -782,16 +751,10 @@ export default function CheckersGame({ onExit }: Props) {
         </div>
 
         {/* Side panel: legend + log */}
-        <div style={{
-          minWidth: 200, maxWidth: 260, display: 'flex', flexDirection: 'column', gap: 12,
-        }}>
+        <div className="ck-side-column">
           {/* Legend */}
-          <div style={{
-            background: 'rgba(18,10,40,0.85)', backdropFilter: 'blur(8px)',
-            border: `1px solid #3a2d6a`,
-            borderRadius: 12, padding: '14px 16px',
-          }}>
-            <div style={{ fontSize: 10, color: C.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12, fontWeight: 700 }}>
+          <div className="ck-panel">
+            <div className="ck-panel-kicker">
               Legend
             </div>
             {[
@@ -800,49 +763,39 @@ export default function CheckersGame({ onExit }: Props) {
               { color: C.selected,  label: 'Selected',           glow: '#7c3aed40' },
               { color: C.capture,   label: 'Capture available',  glow: '#fb923c40' },
             ].map(({ color, label, glow }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <div style={{
-                  width: 14, height: 14, borderRadius: '50%',
-                  background: `radial-gradient(circle at 35% 35%, white, ${color})`,
-                  boxShadow: `0 0 6px ${glow}`, flexShrink: 0,
-                }} />
-                <span style={{ fontSize: 12, color: C.text }}>{label}</span>
+              <div key={label} className="ck-legend-row">
+                <div
+                  className="ck-legend-dot"
+                  style={{
+                    background: `radial-gradient(circle at 35% 35%, white, ${color})`,
+                    boxShadow: `0 0 6px ${glow}`,
+                  }}
+                />
+                <span className="ck-legend-text">{label}</span>
               </div>
             ))}
-            <div style={{ borderTop: `1px solid #3a2d6a`, marginTop: 10, paddingTop: 10 }}>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>Captures → trivia question</div>
-              <div style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>✓ Correct: +20 pts</div>
-              <div style={{ fontSize: 11, color: C.red, fontWeight: 700 }}>✗ Wrong: −5 pts</div>
+            <div className="ck-panel-sep">
+              <div className="ck-legend-sub">Captures → trivia question</div>
+              <div className="ck-legend-reward">✓ Correct: +20 pts</div>
+              <div className="ck-legend-penalty">✗ Wrong: −5 pts</div>
             </div>
           </div>
 
           {/* Git log */}
-          <div style={{
-            background: 'rgba(18,10,40,0.85)', backdropFilter: 'blur(8px)',
-            border: `1px solid #3a2d6a`,
-            borderRadius: 12, padding: '14px 16px', flex: 1,
-          }}>
-            <div style={{
-              fontSize: 10, color: C.muted, letterSpacing: '0.12em', fontWeight: 700,
-              textTransform: 'uppercase', marginBottom: 10,
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <span style={{ color: C.green, fontFamily: 'monospace' }}>$</span>
-              <span style={{ fontFamily: 'monospace', color: C.green }}>git log</span>
+          <div className="ck-panel ck-log-panel">
+            <div className="ck-log-head">
+              <span className="ck-log-prompt">$</span>
+              <span className="ck-log-title">git log</span>
             </div>
             {log.length === 0 ? (
-              <div style={{ fontSize: 11, color: C.muted, fontStyle: 'italic' }}>No moves yet…</div>
+              <div className="ck-log-empty">No moves yet…</div>
             ) : (
               log.map((entry, i) => (
-                <div key={i} style={{
-                  fontSize: 11,
-                  color: i === 0 ? C.text : C.muted,
-                  marginBottom: 6, lineHeight: 1.6,
-                  borderLeft: i === 0 ? `2px solid ${C.green}` : `2px solid #3a2d6a`,
-                  paddingLeft: 8,
-                  fontFamily: 'monospace',
-                  opacity: i === 0 ? 1 : Math.max(0.4, 1 - i * 0.12),
-                }}>
+                <div
+                  key={i}
+                  className={`ck-log-entry ${i === 0 ? 'is-latest' : ''}`}
+                  style={{ opacity: i === 0 ? 1 : Math.max(0.4, 1 - i * 0.12) }}
+                >
                   {entry}
                 </div>
               ))
@@ -878,15 +831,13 @@ function BoardGrid({
   const size = 'min(56px, calc((100vw - 48px) / 8))'
 
   return (
-    <div style={{
-      display: 'inline-grid',
-      gridTemplateColumns: `repeat(8, ${size})`,
-      gridTemplateRows:    `repeat(8, ${size})`,
-      border: `3px solid #4a3080`,
-      borderRadius: 10,
-      overflow: 'hidden',
-      boxShadow: '0 0 40px rgba(124,58,237,0.3), 0 8px 32px rgba(0,0,0,0.6)',
-    }}>
+    <div
+      className="ck-board-frame"
+      style={{
+        gridTemplateColumns: `repeat(8, ${size})`,
+        gridTemplateRows: `repeat(8, ${size})`,
+      }}
+    >
       {board.map((row, r) =>
         row.map((cell, c) => {
           const isDarkSq   = (r + c) % 2 === 1
@@ -897,8 +848,8 @@ function BoardGrid({
           const isForced   = forcedPiece?.[0] === r && forcedPiece?.[1] === c
 
           let bg = isDarkSq ? C.boardDark : C.boardLight
-          if (isSelected) bg = '#2d1060'
-          if (isForced)   bg = '#1a3010'
+          if (isSelected) bg = '#8f78da'
+          if (isForced)   bg = '#bff0bf'
 
           const playerGrad = cell.king
             ? 'radial-gradient(circle at 35% 35%, #ffe566, #fbbf24 60%, #b45309)'
@@ -915,49 +866,49 @@ function BoardGrid({
             <div
               key={key}
               onClick={() => onCellClick(r, c)}
+              className={[
+                'ck-square',
+                isDarkSq ? 'ck-square-dark' : 'ck-square-light',
+                isSelected ? 'is-selected' : '',
+                isForced ? 'is-forced' : '',
+              ].join(' ')}
               style={{
                 background: bg,
-                display:    'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 cursor: isDarkSq ? 'pointer' : 'default',
-                position: 'relative',
-                transition: 'background 0.15s',
-                boxShadow: isSelected ? `inset 0 0 0 2px ${C.selected}88` : undefined,
+                boxShadow: isSelected ? `inset 0 0 0 4px #2c2144` : undefined,
               }}
             >
               {/* Valid move dot */}
               {isValid && !cell.piece && (
-                <div style={{
-                  width: '32%', height: '32%',
-                  borderRadius: '50%',
-                  background: isCapture
-                    ? `radial-gradient(circle, #fde68a, ${C.capture})`
-                    : `radial-gradient(circle, #86efac, ${C.validMove})`,
-                  boxShadow: isCapture ? `0 0 8px ${C.capture}` : `0 0 8px ${C.validMove}`,
-                  opacity: 0.9,
-                }} />
+                <div
+                  className={`ck-move-dot ${isCapture ? 'is-capture' : ''}`}
+                  style={{
+                    background: isCapture
+                      ? `radial-gradient(circle, #fde68a, ${C.capture})`
+                      : `radial-gradient(circle, #86efac, ${C.validMove})`,
+                  }}
+                />
               )}
 
               {/* Piece */}
               {cell.piece && (
-                <div style={{
-                  width: '78%', height: '78%',
-                  borderRadius: '50%',
-                  background: cell.piece === 'player' ? playerGrad : botGrad,
-                  border: isSelected
-                    ? `2px solid rgba(255,255,255,0.9)`
-                    : isForced
-                      ? `2px solid ${C.gold}`
-                      : `2px solid rgba(255,255,255,0.2)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: pieceGlow,
-                  transition: 'all 0.15s',
-                  fontSize: '42%',
-                  fontWeight: 900,
-                  color: cell.piece === 'player' ? '#fff8e6' : '#e0f7ff',
-                  userSelect: 'none',
-                }}>
+                <div
+                  className={[
+                    'ck-piece',
+                    cell.piece === 'player' ? 'ck-piece-player' : 'ck-piece-bot',
+                    cell.king ? 'is-king' : '',
+                  ].join(' ')}
+                  style={{
+                    background: cell.piece === 'player' ? playerGrad : botGrad,
+                    border: isSelected
+                      ? '3px solid rgba(255,255,255,0.92)'
+                      : isForced
+                        ? `3px solid ${C.gold}`
+                        : '3px solid rgba(44,33,68,0.6)',
+                    boxShadow: pieceGlow,
+                    color: cell.piece === 'player' ? '#fff8e6' : '#e0f7ff',
+                  }}
+                >
                   {cell.king ? '♛' : ''}
                 </div>
               )}
@@ -979,55 +930,30 @@ function TriviaModal({
   onAnswer:   (idx: number) => void
 }) {
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      background: 'rgba(3,2,12,0.92)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 200, padding: 20,
-    }}>
-      <div style={{
-        background: 'linear-gradient(145deg, #160b30, #0d0820)',
-        border: `2px solid ${C.gold}`,
-        borderRadius: 18, padding: '28px 32px',
-        maxWidth: 540, width: '100%',
-        boxShadow: `0 0 60px ${C.gold}33, 0 0 120px rgba(124,58,237,0.2), 0 20px 40px rgba(0,0,0,0.8)`,
-      }}>
+    <div className="ck-modal-overlay">
+      <div className="ck-modal">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #78350f, #451a03)',
-            border: `1px solid ${C.gold}`,
-            borderRadius: 8, padding: '5px 14px',
-            fontSize: 11, fontWeight: 900, color: C.gold,
-            letterSpacing: '0.12em', textTransform: 'uppercase',
-          }}>
+        <div className="ck-modal-header">
+          <div className="ck-modal-chip">
             ⚡ Git Challenge
           </div>
-          <div style={{ fontSize: 11, color: C.muted }}>
+          <div className="ck-modal-sub">
             Answer correctly to confirm the capture!
           </div>
         </div>
 
         {/* Question box */}
-        <div style={{
-          background: 'rgba(255,255,255,0.04)', border: `1px solid #3a2d6a`,
-          borderRadius: 12, padding: '14px 18px', marginBottom: 18,
-          borderLeft: `3px solid ${C.gold}`,
-        }}>
-          <p style={{
-            margin: 0, fontSize: 14, fontWeight: 600, color: C.text,
-            lineHeight: 1.7, fontFamily: '"Fira Code", monospace',
-          }}>
+        <div className="ck-question-box">
+          <p className="ck-question-text">
             {question.text}
           </p>
         </div>
 
         {/* Options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        <div className="ck-options">
           {question.options.map((opt, idx) => {
             const isCorrect = answeredOk !== null && idx === question.correctIndex
-            const cursor: React.CSSProperties['cursor'] = answeredOk !== null ? 'default' : 'pointer'
+            const cursor: CSSProperties['cursor'] = answeredOk !== null ? 'default' : 'pointer'
             const bg = isCorrect ? 'rgba(34,214,90,0.12)' : 'rgba(255,255,255,0.04)'
             const border = isCorrect ? `2px solid ${C.green}` : `2px solid #3a2d6a`
             const color  = isCorrect ? '#86efac' : C.text
@@ -1038,22 +964,20 @@ function TriviaModal({
               <button
                 key={idx}
                 onClick={() => answeredOk === null && onAnswer(idx)}
+                className={`ck-option ${isCorrect ? 'is-correct' : ''}`}
                 style={{
                   background: bg, border, borderRadius: 10,
                   padding: '11px 16px', textAlign: 'left',
                   fontSize: 13, color, cursor,
                   fontFamily: 'inherit', fontWeight: 500, lineHeight: 1.5,
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
                   transition: 'all 0.2s',
                   boxShadow: isCorrect ? `0 0 12px ${C.green}44` : 'none',
                 }}
               >
-                <span style={{
-                  flexShrink: 0, width: 22, height: 22, borderRadius: 6,
-                  background: labelBg, display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 900, color: labelColor,
-                }}>
+                <span
+                  className="ck-option-letter"
+                  style={{ background: labelBg, color: labelColor }}
+                >
                   {String.fromCharCode(65 + idx)}
                 </span>
                 {opt}
@@ -1063,14 +987,7 @@ function TriviaModal({
         </div>
 
         {answeredOk !== null && (
-          <div style={{
-            marginTop: 16, padding: '12px 16px', borderRadius: 10, textAlign: 'center',
-            background: answeredOk ? 'rgba(34,214,90,0.1)' : 'rgba(255,68,68,0.1)',
-            border: `2px solid ${answeredOk ? C.green : C.red}`,
-            fontSize: 14, fontWeight: 800,
-            color: answeredOk ? '#86efac' : '#fca5a5',
-            boxShadow: answeredOk ? `0 0 20px ${C.green}33` : `0 0 20px ${C.red}33`,
-          }}>
+          <div className={`ck-answer-banner ${answeredOk ? 'is-correct' : 'is-wrong'}`}>
             {answeredOk ? '✅ Conflict resolved! +20 pts' : '❌ Merge failed! −5 pts'}
           </div>
         )}
@@ -1083,34 +1000,18 @@ function TriviaModal({
 
 function PieceCount({ color, count, label }: { color: string; count: number; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-      <div style={{
-        width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
-        background: `radial-gradient(circle at 35% 35%, white, ${color})`,
-        boxShadow: `0 0 6px ${color}88`,
-      }} />
-      <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{label}:</span>
-      <span style={{ fontSize: 13, fontWeight: 900, color: C.text }}>{count}</span>
+    <div className="ck-piece-count">
+      <div
+        className="ck-piece-count-dot"
+        style={{
+          background: `radial-gradient(circle at 35% 35%, white, ${color})`,
+          boxShadow: `0 0 6px ${color}88`,
+        }}
+      />
+      <span className="ck-piece-count-label">{label}:</span>
+      <span className="ck-piece-count-value">{count}</span>
     </div>
   )
 }
 
 // ─── Button styles ─────────────────────────────────────────────────────────────
-
-const primaryBtn: React.CSSProperties = {
-  padding: '10px 24px',
-  background: 'linear-gradient(to bottom, #fbbf24, #d97706)',
-  borderBottom: '4px solid #92400e',
-  border: 'none',
-  borderRadius: 50,
-  color: '#1c0a00', fontSize: 13, fontWeight: 900,
-  cursor: 'pointer', fontFamily: 'inherit',
-  boxShadow: '0 4px 16px rgba(251,191,36,0.3)',
-}
-
-const outlineBtn: React.CSSProperties = {
-  padding: '8px 18px', background: 'transparent',
-  border: `1px solid #3a2d6a`, borderRadius: 50,
-  color: '#8b7fb8', fontSize: 12, fontWeight: 700,
-  cursor: 'pointer', fontFamily: 'inherit',
-}
