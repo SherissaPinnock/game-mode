@@ -16,8 +16,8 @@ interface QuestionCardProps {
  */
 export function QuestionCard({ question, selectedAnswer, hasAnswered, onAnswer }: QuestionCardProps) {
   return (
-    <div className="sketch-card p-8 w-full max-w-2xl">
-      <h2 className="font-sketch text-2xl text-[#2d2d2d] mb-8 leading-snug">
+    <div className="aa-panel aa-question-card">
+      <h2 className="aa-question-title font-sketch">
         {question.question}
       </h2>
 
@@ -29,10 +29,10 @@ export function QuestionCard({ question, selectedAnswer, hasAnswered, onAnswer }
           // Colour feedback after answering
           const feedbackClass = hasAnswered
             ? isCorrect
-              ? 'bg-green-50 !border-green-500'
+              ? 'aa-option-correct'
               : isSelected
-                ? 'bg-red-50 !border-red-500'
-                : 'opacity-50'
+                ? 'aa-option-wrong'
+                : 'aa-option-muted'
             : ''
 
           return (
@@ -41,27 +41,26 @@ export function QuestionCard({ question, selectedAnswer, hasAnswered, onAnswer }
               onClick={() => onAnswer(index)}
               disabled={hasAnswered}
               className={cn(
-                'sketch-btn text-left px-5 py-4 font-sketch text-lg w-full flex items-center gap-3',
+                'aa-btn aa-option-btn font-sketch',
                 feedbackClass,
               )}
             >
-              <span className="font-bold text-[#6b7280] shrink-0">{LETTERS[index]}.</span>
-              <span className="text-[#2d2d2d] flex-1">{option}</span>
-              {hasAnswered && isCorrect  && <span className="text-green-600 font-bold">✓</span>}
-              {hasAnswered && isSelected && !isCorrect && <span className="text-red-600 font-bold">✗</span>}
+              <span className="aa-option-letter font-bold">{LETTERS[index]}.</span>
+              <span className="aa-option-text">{option}</span>
+              {hasAnswered && isCorrect && <span className="aa-option-mark aa-option-mark-good font-bold">✓</span>}
+              {hasAnswered && isSelected && !isCorrect && <span className="aa-option-mark aa-option-mark-bad font-bold">✗</span>}
             </button>
           )
         })}
       </div>
 
-      {/* Feedback banner */}
       {hasAnswered && (
         <div
           className={cn(
-            'mt-6 p-4 rounded-sm border-2 text-center font-sketch text-lg',
+            'aa-feedback-banner font-sketch text-lg',
             selectedAnswer === question.correctIndex
-              ? 'bg-green-50 border-green-400 text-green-700'
-              : 'bg-red-50 border-red-400 text-red-700',
+              ? 'aa-feedback-good'
+              : 'aa-feedback-bad',
           )}
         >
           {selectedAnswer === question.correctIndex

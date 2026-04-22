@@ -1,3 +1,5 @@
+import './ArcheryArena.css'
+
 interface ArrowSummaryProps {
   correctCount: number
   totalQuestions: number
@@ -16,30 +18,25 @@ export function ArrowSummary({ correctCount, totalQuestions, onStartArchery, onE
   const isConsolation = correctCount === 0
 
   return (
-    <div className="sketch-bg flex flex-1 flex-col items-center justify-center px-6 py-16 min-h-screen">
-      <div className="sketch-card p-10 max-w-md w-full flex flex-col items-center gap-6 text-center">
+    <div className="aa-shell aa-shell-center aa-shell-tall">
+      <div className="aa-panel aa-summary-card">
+        <h2 className="aa-heading aa-heading-large font-sketch">Quiz Complete!</h2>
 
-        <h2 className="font-sketch text-4xl text-[#2d2d2d]">Quiz Complete!</h2>
-
-        {/* Score */}
-        <p className="font-sketch text-xl text-[#6b7280]">
+        <p className="aa-summary-copy font-sketch text-xl">
           You got{' '}
-          <span className="text-[#2d2d2d] font-bold text-4xl">{correctCount}</span>
+          <span className="aa-summary-score">{correctCount}</span>
           {' '}out of{' '}
-          <span className="font-bold">{totalQuestions}</span> correct
+          <span className="aa-summary-total">{totalQuestions}</span> correct
         </p>
 
-        {/* Divider */}
-        <div className="w-full border-t-2 border-dashed border-[#2d2d2d]" />
+        <div className="aa-divider" />
 
-        {/* Arrow reward */}
-        <div className="flex flex-col items-center gap-3">
-          <p className="font-sketch text-lg text-[#6b7280]">
+        <div className="aa-summary-stack">
+          <p className="aa-summary-copy font-sketch text-lg">
             {isConsolation
               ? "No worries — you still get 1 consolation arrow!"
               : `You've earned ${arrowCount} arrow${arrowCount !== 1 ? 's' : ''}!`}
           </p>
-          {/* Arrow icons */}
           <div className="flex justify-center gap-2 flex-wrap">
             {Array.from({ length: arrowCount }, (_, i) => (
               <span key={i} className="text-4xl">🏹</span>
@@ -49,14 +46,14 @@ export function ArrowSummary({ correctCount, totalQuestions, onStartArchery, onE
 
         <button
           onClick={onStartArchery}
-          className="sketch-btn w-full py-4 font-sketch text-2xl font-bold"
+          className="aa-btn aa-btn-primary aa-btn-wide font-sketch text-2xl"
         >
           🎯 Head to the Range!
         </button>
 
         <button
           onClick={onExit}
-          className="font-sketch text-sm text-[#9ca3af] underline hover:text-[#2d2d2d]"
+          className="aa-link-btn font-sketch text-sm"
         >
           Return to menu
         </button>

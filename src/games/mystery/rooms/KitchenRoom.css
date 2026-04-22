@@ -1,0 +1,679 @@
+@import './mysteryRoomFoundation.css';
+
+/* ─── Root ──────────────────────────────────────────────────────── */
+.kitch-root {
+  --myst-display: 'Baskerville', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --myst-body: 'Georgia', 'Times New Roman', serif;
+  --myst-ui: 'Trebuchet MS', 'Gill Sans', 'Avenir Next', sans-serif;
+  --myst-accent: #9a6f4b;
+  --myst-accent-strong: #c69a6e;
+  --myst-gold: #d0aa67;
+  --myst-paper: #f3e7d8;
+  --myst-ink: #261913;
+  --myst-shadow: #140d09;
+  --myst-muted: #d2b897;
+  --myst-dim: #ab906f;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(225, 192, 132, 0.14), transparent 20%),
+    radial-gradient(circle at 84% 14%, rgba(154, 111, 75, 0.16), transparent 18%),
+    linear-gradient(180deg, #1c120d 0%, #120b07 52%, #090503 100%);
+  color: var(--myst-paper);
+  font-family: var(--myst-body);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.kitch-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 30%, rgba(255, 248, 237, 0.04) 0 18px, transparent 19px),
+    radial-gradient(circle at 78% 36%, rgba(255, 248, 237, 0.03) 0 22px, transparent 23px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.018) 25%, transparent 25%) 0 0 / 22px 22px;
+  opacity: 0.38;
+}
+
+/* ─── Topbar ────────────────────────────────────────────────────── */
+.kitch-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: rgba(6, 3, 1, 0.96);
+  border-bottom: 1px solid rgba(160, 120, 50, 0.25);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.kitch-back {
+  background: none;
+  border: 1px solid rgba(160, 120, 50, 0.35);
+  color: #8a6c2c;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.kitch-back:hover {
+  border-color: rgba(200, 150, 10, 0.6);
+  color: #c8960a;
+}
+
+.kitch-room-label {
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  color: #c8960a;
+  letter-spacing: 0.05em;
+}
+
+.kitch-step-hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #5a4218;
+  font-style: italic;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ─── Body ──────────────────────────────────────────────────────── */
+.kitch-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Scene background ──────────────────────────────────────────── */
+.kitch-scene-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.45;
+}
+.kitch-scene-bg.dim { opacity: 0.2; }
+
+/* ─── Dialogue scene (intro + confront) ────────────────────────── */
+.kitch-dialogue-scene {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  cursor: pointer;
+  user-select: none;
+}
+
+.kitch-dialogue-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  padding: 0 40px 28px 32px;
+  background: linear-gradient(to top, rgba(4, 2, 0, 0.97) 60%, transparent);
+}
+
+.kitch-portrait-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: -200px;
+  align-self: flex-end;
+}
+
+.kitch-portrait {
+  width: 290px;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  filter: drop-shadow(0 0 28px rgba(200, 120, 20, 0.45)) drop-shadow(0 0 60px rgba(100, 50, 5, 0.3));
+  transition: filter 0.3s;
+  animation: kitchFloat 5s ease-in-out infinite;
+}
+@keyframes kitchFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+.kitch-portrait.rattled {
+  filter: drop-shadow(0 0 32px rgba(220, 90, 10, 0.65)) brightness(0.75);
+  animation: rattleShake 0.4s ease-out;
+}
+@keyframes rattleShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px) rotate(-1deg); }
+  40%       { transform: translateX(4px) rotate(1deg); }
+  60%       { transform: translateX(-3px); }
+  80%       { transform: translateX(3px); }
+}
+
+.kitch-portrait-name {
+  font-size: 0.68rem;
+  color: #5a4218;
+  letter-spacing: 0.08em;
+  font-style: italic;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  position: relative;
+  z-index: 3;
+}
+
+.kitch-speech-box {
+  flex: 1;
+  background: rgba(8, 4, 1, 0.92);
+  border: 1px solid rgba(160, 120, 50, 0.3);
+  border-radius: 12px;
+  padding: 20px 24px 16px;
+  position: relative;
+  z-index: 3;
+  align-self: center;
+}
+.kitch-speech-box.confronting {
+  border-color: rgba(180, 80, 20, 0.5);
+  background: rgba(12, 4, 1, 0.95);
+}
+
+.kitch-evidence-tag {
+  font-size: 0.68rem;
+  color: #c8960a;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  font-family: 'Inter', sans-serif;
+}
+
+.kitch-speech-text {
+  font-size: 0.95rem;
+  color: #e8d5b0;
+  line-height: 1.7;
+  margin: 0 0 12px;
+  font-style: italic;
+}
+
+.kitch-speech-hint {
+  font-size: 0.68rem;
+  color: #4a3410;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Examine / Done card ───────────────────────────────────────── */
+.kitch-examine {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kitch-examine-card {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+  width: 90%;
+  background: rgba(8, 4, 1, 0.96);
+  border: 1px solid rgba(160, 120, 50, 0.3);
+  border-radius: 12px;
+  padding: 36px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.kitch-examine-title {
+  font-size: 1.4rem;
+  color: #c8960a;
+  margin: 0;
+  letter-spacing: 0.06em;
+}
+
+.kitch-examine-body {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: #b09060;
+  margin: 0;
+  font-style: italic;
+}
+.kitch-examine-body.secondary { color: #5a4218; font-size: 0.82rem; }
+
+.kitch-clue-icon { font-size: 2rem; }
+.kitch-clue-title-text {
+  font-size: 1rem;
+  color: #e8d5b0;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ─── Primary button ────────────────────────────────────────────── */
+.kitch-primary-btn {
+  background: rgba(160, 100, 8, 0.18);
+  border: 1px solid rgba(200, 150, 10, 0.5);
+  color: #c8960a;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  margin-top: 4px;
+}
+.kitch-primary-btn:hover:not(:disabled) {
+  background: rgba(200, 150, 10, 0.28);
+  border-color: rgba(200, 150, 10, 0.8);
+}
+.kitch-primary-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ─── Table scatter scene ───────────────────────────────────────── */
+.kitch-table-scene {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #120a02;
+}
+
+.kitch-table-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  opacity: 0.9;
+}
+
+/* ─── Scattered paper cards ─────────────────────────────────────── */
+.kitch-paper {
+  position: absolute;
+  width: 112px;
+  transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+  cursor: pointer;
+  z-index: 10;
+  border-radius: 3px;
+  box-shadow: 2px 4px 12px rgba(0,0,0,0.55);
+  transition: box-shadow 0.15s;
+  user-select: none;
+}
+
+/* Lift & glow on hover (face-up only) */
+.kitch-paper.face-up:hover:not(.selected) {
+  transform: translate(-50%, -56%) rotate(var(--rot, 0deg)) scale(1.04);
+  box-shadow: 4px 8px 20px rgba(0,0,0,0.7);
+  z-index: 25;
+}
+
+/* Selected: lifted, gold border */
+.kitch-paper.selected {
+  transform: translate(-50%, -60%) rotate(var(--rot, 0deg)) scale(1.07);
+  box-shadow:
+    0 0 0 2px rgba(200, 150, 10, 0.9),
+    4px 12px 28px rgba(0,0,0,0.8);
+  z-index: 30;
+}
+
+/* Error: red border + shake */
+.kitch-paper.error .kitch-paper-front {
+  border-color: rgba(200, 60, 20, 0.7) !important;
+  background: #f5e8d0 !important;
+}
+@keyframes kitchPaperErr {
+  0%, 100% { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)); }
+  20%       { transform: translate(-53%, -50%) rotate(calc(var(--rot, 0deg) - 2deg)); }
+  50%       { transform: translate(-47%, -50%) rotate(calc(var(--rot, 0deg) + 2deg)); }
+  75%       { transform: translate(-52%, -50%) rotate(var(--rot, 0deg)); }
+}
+.kitch-paper.error:not(.selected):not(.face-down) {
+  animation: kitchPaperErr 0.38s ease-out;
+}
+
+/* Flip animation: scaleX collapses then expands; content swaps mid-way */
+@keyframes kitchFlip {
+  0%   { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scaleX(1); }
+  44%  { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scaleX(0.03); }
+  56%  { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scaleX(0.03); }
+  100% { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scaleX(1); }
+}
+.kitch-paper.flipping {
+  animation: kitchFlip 0.34s ease-in-out;
+  z-index: 40;
+}
+
+/* ── Paper back (face-down) ───────────────────────────────────── */
+.kitch-paper-back {
+  width: 100%;
+  min-height: 72px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(110, 70, 20, 0.12) 0px,
+      rgba(110, 70, 20, 0.12) 1px,
+      transparent 1px,
+      transparent 9px
+    ),
+    #c5a268;
+  border: 1px solid #8a6830;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.kitch-paper-seal {
+  font-size: 1.3rem;
+  color: rgba(90, 55, 15, 0.45);
+}
+
+/* Hover hint on face-down */
+.kitch-paper.face-down:hover .kitch-paper-back {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(110, 70, 20, 0.12) 0px,
+      rgba(110, 70, 20, 0.12) 1px,
+      transparent 1px,
+      transparent 9px
+    ),
+    #d4b070;
+  border-color: #a07840;
+  box-shadow: inset 0 0 0 1px rgba(200, 150, 10, 0.3);
+}
+
+/* ── Paper front (face-up) ─────────────────────────────────────── */
+.kitch-paper-front {
+  background: #f7f0e2;
+  border: 1px solid #c8a868;
+  border-radius: 3px;
+  padding: 8px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kitch-frag-label {
+  font-size: 0.52rem;
+  color: #8a6030;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  border-bottom: 1px solid rgba(160, 120, 50, 0.25);
+  padding-bottom: 4px;
+}
+
+.kitch-frag-text {
+  font-size: 0.66rem;
+  color: #3a2a10;
+  line-height: 1.55;
+  font-family: 'Georgia', serif;
+}
+
+/* ─── Category strip ────────────────────────────────────────────── */
+.kitch-cat-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 132px;
+  background: rgba(4, 2, 0, 0.88);
+  border-top: 1px solid rgba(160, 120, 50, 0.3);
+  display: flex;
+  align-items: stretch;
+  z-index: 20;
+  backdrop-filter: blur(2px);
+}
+
+.kitch-cat-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 8px;
+  border-right: 1px solid rgba(160, 120, 50, 0.12);
+  transition: background 0.15s;
+  overflow: hidden;
+}
+.kitch-cat-zone:last-of-type { border-right: none; }
+
+.kitch-cat-zone.droppable {
+  cursor: pointer;
+}
+.kitch-cat-zone.droppable:hover {
+  background: rgba(160, 100, 8, 0.1);
+  border-color: rgba(200, 150, 10, 0.3);
+}
+
+.kitch-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.kitch-cat-icon { font-size: 0.9rem; }
+
+.kitch-cat-name {
+  flex: 1;
+  font-size: 0.72rem;
+  color: #c8b080;
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.04em;
+}
+
+.kitch-cat-count {
+  font-size: 0.6rem;
+  background: rgba(160, 100, 8, 0.2);
+  color: #c8960a;
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Stacked papers in category zone */
+.kitch-cat-papers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: flex-start;
+  overflow: hidden;
+}
+
+.kitch-stacked-paper {
+  background: #f2e8cc;
+  border: 1px solid #c0a050;
+  border-radius: 2px;
+  padding: 2px 7px;
+  font-size: 0.58rem;
+  color: #5a3a10;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.kitch-stacked-paper:hover { background: #fff5dc; }
+.kitch-stacked-paper.error {
+  background: #ffe0d8;
+  border-color: rgba(200, 60, 20, 0.6);
+  color: #a03010;
+}
+
+/* Validate / actions */
+.kitch-cat-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  gap: 6px;
+  border-left: 1px solid rgba(160, 120, 50, 0.12);
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.kitch-table-error {
+  font-size: 0.68rem;
+  color: #b04028;
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+}
+
+/* ─── Reveal ────────────────────────────────────────────────────── */
+.kitch-reveal {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 20px;
+}
+.kitch-reveal::-webkit-scrollbar { width: 4px; }
+.kitch-reveal::-webkit-scrollbar-thumb { background: rgba(160,120,50,0.2); border-radius: 2px; }
+
+.kitch-reveal-card {
+  max-width: 640px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kitch-reveal-title {
+  font-size: 1.3rem;
+  color: #c8960a;
+  margin: 0;
+  letter-spacing: 0.06em;
+}
+
+.kitch-reveal-intro {
+  font-size: 0.85rem;
+  color: #7a6040;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ── Timeline ──────────────────────────────────────────────────── */
+.kitch-timeline {
+  background: rgba(6, 3, 1, 0.9);
+  border: 1px solid rgba(160, 120, 50, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.kitch-tl-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 16px;
+  border-bottom: 1px solid rgba(160, 120, 50, 0.08);
+}
+.kitch-tl-entry:last-child { border-bottom: none; }
+
+.kitch-tl-time {
+  font-size: 0.72rem;
+  color: #7a5c1e;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  min-width: 64px;
+}
+
+.kitch-tl-text {
+  font-size: 0.82rem;
+  color: #c8b08a;
+  line-height: 1.5;
+}
+
+.kitch-tl-gap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(180, 80, 10, 0.12);
+  border-top: 1px dashed rgba(200, 80, 10, 0.4);
+  border-bottom: 1px dashed rgba(200, 80, 10, 0.4);
+  gap: 4px;
+}
+
+.kitch-tl-gap-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c84010;
+  letter-spacing: 0.08em;
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+}
+
+.kitch-tl-gap-sub {
+  font-size: 0.7rem;
+  color: #7a4028;
+  font-style: italic;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Findings ──────────────────────────────────────────────────── */
+.kitch-reveal-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kitch-finding {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(6, 3, 1, 0.8);
+  border: 1px solid rgba(160, 120, 50, 0.18);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.kitch-finding-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.kitch-finding p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #b09060;
+  line-height: 1.65;
+}
+.kitch-finding strong { color: #dfc99a; }
+
+/* ── RAG note ──────────────────────────────────────────────────── */
+.kitch-rag-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(20, 12, 0, 0.9);
+  border: 1px solid rgba(200, 150, 10, 0.25);
+  border-left: 3px solid rgba(200, 150, 10, 0.6);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+}
+
+.kitch-rag-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.kitch-rag-note p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #7a6040;
+  line-height: 1.75;
+}
+.kitch-rag-note strong { color: #c8960a; }

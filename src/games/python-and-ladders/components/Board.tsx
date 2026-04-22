@@ -2,6 +2,7 @@ import type { Player, SnakeOrLadder } from '../types'
 import { GRID_COLS, GRID_ROWS, BOARD_SIZE } from '../data/board'
 import { Cell } from './Cell'
 import { BoardOverlay } from './BoardOverlay'
+import '../PythonAndLadders.css'
 
 interface BoardProps {
   players: Player[]
@@ -22,28 +23,18 @@ export function Board({ players, highlightedCell, activeSlide, isDark }: BoardPr
     rows.push(cells)
   }
 
-  const finishLabel = isDark
-    ? 'text-rose-400 bg-rose-500/20 border border-rose-500/30'
-    : 'text-rose-600 bg-rose-100 border border-rose-300'
-
-  const startLabel = isDark
-    ? 'text-emerald-400 bg-emerald-500/20 border border-emerald-500/30'
-    : 'text-emerald-600 bg-emerald-100 border border-emerald-300'
-
-  const boardWrap = isDark
-    ? 'bg-slate-900/40 border border-white/[0.07] rounded-xl p-2 shadow-2xl'
-    : 'bg-white border border-slate-200 rounded-xl p-2 shadow-lg'
+  const boardTone = isDark ? 'opacity-95' : ''
 
   return (
     <div className="w-full max-w-[360px] lg:max-w-[520px] mx-auto">
       <div className="flex justify-start mb-1.5">
-        <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${finishLabel}`}>
+        <span className="pal-board-badge">
           Finish {BOARD_SIZE}
         </span>
       </div>
 
-      <div className={`relative ${boardWrap}`}>
-        <div className="grid grid-rows-6 gap-1">
+      <div className={`pal-board-wrap ${boardTone}`}>
+        <div className="pal-board-grid grid grid-rows-6 gap-1">
           {rows.map((row, ri) => (
             <div key={ri} className="grid grid-cols-6 gap-1">
               {row.map(cellNum => (
@@ -63,7 +54,7 @@ export function Board({ players, highlightedCell, activeSlide, isDark }: BoardPr
       </div>
 
       <div className="flex justify-start mt-1.5">
-        <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full ${startLabel}`}>
+        <span className="pal-board-badge">
           Start
         </span>
       </div>

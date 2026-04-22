@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { QuestionCard } from './QuestionCard'
 import type { Question } from './types'
+import './ArcheryArena.css'
 
 interface QuizPhaseProps {
   questions: Question[]
@@ -43,34 +44,30 @@ export function QuizPhase({ questions, onComplete, onExit }: QuizPhaseProps) {
   }
 
   return (
-    <div className="sketch-bg flex flex-1 flex-col items-center px-6 py-12 gap-8 min-h-screen">
-
-      {/* Header bar */}
-      <div className="w-full max-w-2xl flex items-center justify-between">
-        <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
+    <div className="aa-shell aa-shell-center">
+      <div className="aa-header aa-header-narrow">
+        <button onClick={onExit} className="aa-btn aa-btn-ghost px-4 py-2 text-sm font-sketch">
           ← Exit
         </button>
-        <span className="font-sketch text-[#6b7280] text-lg">
+        <span className="aa-heading aa-heading-small font-sketch">
           Question {currentIndex + 1} / {questions.length}
         </span>
-        {/* Progress dots */}
-        <div className="flex gap-2">
+        <div className="aa-progress-dots">
           {questions.map((_, i) => (
             <div
               key={i}
-              className={`w-3 h-3 rounded-full border-2 border-[#2d2d2d] transition-colors ${
+              className={`aa-dot ${
                 i < currentIndex
-                  ? 'bg-green-500'
+                  ? 'aa-dot-correct'
                   : i === currentIndex
-                    ? 'bg-amber-400'
-                    : 'bg-transparent'
+                    ? 'aa-dot-active'
+                    : ''
               }`}
             />
           ))}
         </div>
       </div>
 
-      {/* Question card */}
       <QuestionCard
         question={currentQuestion}
         selectedAnswer={selectedAnswer}
@@ -78,11 +75,10 @@ export function QuizPhase({ questions, onComplete, onExit }: QuizPhaseProps) {
         onAnswer={handleSelectAnswer}
       />
 
-      {/* Next button — only appears after answering */}
       {hasAnswered && (
         <button
           onClick={handleNext}
-          className="sketch-btn px-10 py-4 font-sketch text-xl font-bold"
+          className="aa-btn aa-btn-primary px-10 py-4 font-sketch text-xl"
         >
           {isLastQuestion ? '🏹 Head to the Range!' : 'Next Question →'}
         </button>

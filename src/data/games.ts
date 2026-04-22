@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, Search, type LucideIcon } from 'lucide-react'
 
 import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.webp'
 import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.webp'
@@ -161,5 +161,14 @@ export const games: Game[] = [
     tag: 'Simulation',
     level: 'Intermediate',
     thumbnailBg: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+  },
+  {
+    id: 'mystery',
+    title: 'Blackwood Manor',
+    description: 'A murder mystery RPG set in a pixel-art mansion. Investigate rooms, question suspects, and uncover the truth before the killer destroys the evidence.',
+    icon: Search,
+    tag: 'RPG',
+    level: 'Intermediate',
+    thumbnailBg: 'linear-gradient(135deg, #0a0805 0%, #1a0d04 100%)',
   },
 ]

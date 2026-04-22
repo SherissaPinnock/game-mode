@@ -1,0 +1,446 @@
+@import '../../styles/arcadeFoundation.css';
+
+.bas-screen-shell,
+.bas-game-shell {
+  --bas-ink: #322844;
+  --bas-shadow: #241c31;
+  --bas-panel: #6f6386;
+  --bas-panel-dark: #5c526f;
+  --bas-paper: #f4ece0;
+  --bas-paper-deep: #e7dbc9;
+  --bas-gold: #be9c63;
+  --bas-cream: #fbf4e8;
+  --bas-sage: #6b9d7f;
+  --bas-rose: #b07872;
+}
+
+.bas-screen-shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 18px;
+}
+
+.bas-complete-shell {
+  align-items: flex-start;
+}
+
+.bas-hero-card,
+.bas-result-card,
+.bas-modal-card {
+  padding: 34px 36px;
+}
+
+.bas-hero-card {
+  max-width: 560px;
+  width: min(100%, 560px);
+  text-align: center;
+}
+
+.bas-complete-card {
+  width: min(100%, 920px);
+  padding: 40px 42px;
+}
+
+.bas-hero-title {
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  margin-top: 12px;
+}
+
+.bas-topbar-name {
+  font-size: 1.45rem;
+}
+
+.bas-result-title {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+}
+
+.bas-modal-title {
+  font-size: 1.7rem;
+}
+
+.bas-difficulty {
+  display: inline-flex;
+  margin: 16px 0 18px;
+  padding: 5px 12px;
+  border: 3px solid;
+  border-radius: 999px;
+  background: rgba(244, 236, 224, 0.14);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.bas-stat-strip,
+.bas-outline-card,
+.bas-summary-card,
+.bas-guide-item,
+.bas-users-pill,
+.bas-mobile-selected {
+  border: 3px solid var(--bas-ink);
+  box-shadow: 0 5px 0 rgba(50, 40, 68, 0.78);
+}
+
+.bas-stat-strip {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 20px 0 22px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(244, 236, 224, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
+}
+
+.bas-stat-cell {
+  min-width: 92px;
+}
+
+.bas-stat-num,
+.bas-complete-score {
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: var(--bas-gold);
+  text-shadow: 0 2px 0 rgba(50, 40, 68, 0.75);
+}
+
+.bas-stat-label,
+.bas-summary-label,
+.bas-guide-name,
+.bas-reveal-title {
+  font-weight: 800;
+}
+
+.bas-stat-label {
+  font-size: 0.72rem;
+  color: #efe6da;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bas-hero-actions,
+.bas-result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.bas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(18, 14, 25, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.bas-modal-card {
+  width: min(100%, 520px);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.bas-modal-header,
+.bas-reveal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.bas-modal-header {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.bas-guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bas-guide-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f4ece0 0%, #e9ddcc 100%);
+  border-left-width: 6px;
+  border-left-style: solid;
+}
+
+.bas-guide-name,
+.bas-summary-label {
+  color: #3a304c;
+  font-size: 0.92rem;
+}
+
+.bas-guide-body {
+  margin-top: 4px;
+  color: #61566c;
+  font-size: 0.84rem;
+}
+
+.bas-reveal-row {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+.bas-reveal-title {
+  color: var(--bas-cream);
+  font-size: 1.1rem;
+}
+
+.bas-reveal-sub {
+  font-size: 0.78rem;
+  margin-top: 3px;
+}
+
+.bas-complete-head {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.bas-complete-emoji {
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 12px;
+  border-radius: 28px;
+  border: 4px solid var(--bas-ink);
+  background: linear-gradient(180deg, #dbc8a0 0%, var(--bas-gold) 100%);
+  box-shadow: 0 6px 0 rgba(50, 40, 68, 0.88);
+  display: grid;
+  place-items: center;
+  font-size: 2.9rem;
+}
+
+.bas-complete-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.bas-summary-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(244, 236, 224, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
+}
+
+.bas-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px;
+}
+
+.bas-game-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+.bas-topbar {
+  width: min(1200px, calc(100% - 28px));
+  margin: 16px auto 0;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.bas-topbar-title {
+  text-align: center;
+}
+
+.bas-topbar-kicker {
+  margin-bottom: 8px;
+}
+
+.bas-topbar-meta {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.bas-topbar-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bas-tries-label {
+  font-size: 0.82rem;
+  color: #efe6da;
+  font-weight: 700;
+}
+
+.bas-heart {
+  font-size: 1.2rem;
+}
+
+.bas-theme-toggle {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  border: 3px solid var(--bas-ink);
+  box-shadow: 0 4px 0 rgba(50, 40, 68, 0.84);
+  cursor: pointer;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.bas-theme-toggle-knob {
+  position: absolute;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fffaf1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: left 0.3s;
+}
+
+.bas-main-area {
+  position: relative;
+  z-index: 1;
+}
+
+.bas-mobile-wrap {
+  width: 100%;
+  padding: 0 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.bas-mobile-selected {
+  text-align: center;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #e6dfcf 0%, #d8cfbe 100%);
+  color: #4c425a;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.bas-mobile-tray {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bas-mobile-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.bas-grow-1 { flex: 1; }
+.bas-grow-2 { flex: 2; }
+
+.bas-diagram-shell {
+  position: relative;
+  background:
+    linear-gradient(rgba(108, 100, 123, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(108, 100, 123, 0.25) 1px, transparent 1px),
+    linear-gradient(180deg, #f4ece0 0%, #e6dccc 100%);
+  background-size: 24px 24px, 24px 24px, auto;
+  overflow: visible;
+}
+
+.bas-users-pill {
+  position: absolute;
+  width: 110px;
+  height: 40px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #9d90b0 0%, #817493 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--bas-cream);
+  font-weight: 800;
+  font-size: 0.88rem;
+  z-index: 3;
+}
+
+.bas-tray-shell {
+  width: clamp(170px, 22vw, 220px);
+  margin-left: 10px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bas-tray-title {
+  text-align: center;
+  color: var(--bas-gold);
+  font-size: 1.15rem;
+  font-weight: 900;
+  text-shadow: 0 2px 0 rgba(50, 40, 68, 0.82);
+}
+
+.bas-tray-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.bas-tray-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (max-width: 760px) {
+  .bas-hero-card,
+  .bas-complete-card,
+  .bas-result-card,
+  .bas-modal-card {
+    padding: 24px 20px;
+  }
+
+  .bas-topbar {
+    width: calc(100% - 18px);
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bas-topbar-side,
+  .bas-hero-actions,
+  .bas-result-actions {
+    justify-content: center;
+  }
+
+  .bas-complete-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bas-btn {
+    width: 100%;
+  }
+
+  .bas-hero-actions,
+  .bas-result-actions {
+    flex-direction: column;
+  }
+}

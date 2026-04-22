@@ -1,5 +1,6 @@
 import type { Player } from '../types'
 import { BOARD_SIZE } from '../data/board'
+import '../PythonAndLadders.css'
 
 interface PlayerInfoProps {
   player: Player
@@ -23,34 +24,23 @@ const PLAYER_COLORS = {
 export function PlayerInfo({ player, isActive, isDark, playerIndex }: PlayerInfoProps) {
   const progress = Math.round((player.position / BOARD_SIZE) * 100)
   const pc = PLAYER_COLORS[playerIndex][isDark ? 'dark' : 'light']
-
-  const inactiveBg     = isDark ? 'border-white/10 bg-white/[0.04]' : 'border-slate-200 bg-white'
-  const inactiveName   = isDark ? 'text-slate-400' : 'text-slate-600'
-  const inactiveBar    = isDark ? '#334155' : '#e2e8f0'
-  const progressColor  = isActive ? pc.bar : inactiveBar
-  const posColor       = isDark ? 'text-slate-500' : 'text-slate-400'
-  const trackBg        = isDark ? 'bg-white/10' : 'bg-slate-100'
+  const progressColor  = isActive ? pc.bar : (isDark ? '#4f5969' : '#c7c1b8')
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 rounded-xl border-2 transition-all duration-300
-      ${isActive
-        ? `${pc.border} ${pc.bg} shadow-lg ${pc.shadow}`
-        : inactiveBg
-      }`}
-    >
+    <div className={`pal-player-card flex items-center gap-3 ${isActive ? `is-active is-active-${playerIndex}` : 'is-inactive'}`}>
       <span className="text-xl">{player.emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <span className={`text-sm font-semibold truncate transition-colors ${isActive ? pc.name : inactiveName}`}>
+          <span className={`pal-player-name text-sm truncate transition-colors ${isActive ? pc.name : 'text-[#efe6da]'}`}>
             {player.name}
           </span>
-          <span className={`text-xs font-mono ml-2 ${posColor}`}>
+          <span className="text-xs font-mono ml-2 opacity-70">
             {player.position}/{BOARD_SIZE}
           </span>
         </div>
-        <div className={`mt-1 h-1.5 rounded-full overflow-hidden ${trackBg}`}>
+        <div className="pal-progress-track">
           <div
-            className="h-full rounded-full transition-all duration-500 ease-out"
+            className="pal-progress-fill"
             style={{ width: `${progress}%`, backgroundColor: progressColor }}
           />
         </div>

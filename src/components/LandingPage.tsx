@@ -3,6 +3,8 @@ import { HeroBanner } from '@/components/HeroBanner'
 import { GameCard } from '@/components/GameCard'
 import { games } from '@/data/games'
 import { Button } from '@/components/ui/button'
+import pythonLaddersPreviewThumb from '@/assets/python ladders game.webp'
+import pythonPlayGif from '@/assets/python play.gif'
 import { FaPython } from "react-icons/fa";
 import { FaGitAlt } from "react-icons/fa";
 import { FaDocker } from "react-icons/fa";
@@ -11,10 +13,27 @@ import { FaCogs } from "react-icons/fa";
 import { FaProjectDiagram } from "react-icons/fa";
 import { FaRobot } from "react-icons/fa";
 import { FaChartBar } from "react-icons/fa";
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 // ── Featured games (4 picks) ────────────────────────────────────────────────
 const FEATURED_IDS = ['python-and-ladders', 'checkers', 'memory-match', 'devops-dynamo']
 const featuredGames = FEATURED_IDS.map(id => games.find(g => g.id === id)!).filter(Boolean)
+const pythonLaddersGame = games.find(game => game.id === 'python-and-ladders')
+
+const PREVIEW_SLIDES = [
+  {
+    id: pythonLaddersGame?.id ?? 'python-and-ladders',
+    eyebrow: 'Live preview',
+    title: pythonLaddersGame?.title ?? 'Python & Ladders',
+    description:
+      pythonLaddersGame?.description ??
+      'Climb the corporate ladder by answering Python questions. Avoid pitfalls and reach the top!',
+    thumbnail: pythonLaddersPreviewThumb,
+    thumbnailAlt: 'Python & Ladders game thumbnail',
+    previewMedia: pythonPlayGif,
+    previewAlt: 'Python & Ladders gameplay preview',
+  },
+]
 
 // ── Tech topics ─────────────────────────────────────────────────────────────
 const TOPICS = [
@@ -61,8 +80,25 @@ export function LandingPage({ onBrowseGames, onPlay }: LandingPageProps) {
   const browse = () => { window.scrollTo(0, 0); onBrowseGames() }
 
   // ── Leaderboard live animation ──────────────────────────────────────────────
+  const [activePreview, setActivePreview] = useState(0)
   const [board, setBoard] = useState<LeaderEntry[]>(() => INITIAL_BOARD.map(e => ({ ...e })))
   const [risingName, setRisingName] = useState<string | null>(null)
+  const previewCount = PREVIEW_SLIDES.length
+
+  const goToPreview = (index: number) => {
+    if (!previewCount) return
+    setActivePreview((index + previewCount) % previewCount)
+  }
+
+  const showPreviousPreview = () => {
+    if (!previewCount) return
+    setActivePreview(prev => (prev - 1 + previewCount) % previewCount)
+  }
+
+  const showNextPreview = () => {
+    if (!previewCount) return
+    setActivePreview(prev => (prev + 1) % previewCount)
+  }
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -130,6 +166,87 @@ export function LandingPage({ onBrowseGames, onPlay }: LandingPageProps) {
           <div className="lp-featured-grid">
             {featuredGames.map(game => (
               <GameCard key={game.id} game={game} onPlay={onPlay} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Preview carousel ── */}
+      <section className="lp-section lp-preview-section">
+        <div className="lp-section-inner">
+          <div className="lp-preview-nav-wrap" aria-label="Game preview controls">
+            <button
+              type="button"
+              className="lp-preview-nav"
+              onClick={showPreviousPreview}
+              aria-label="Show previous game preview"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              className="lp-preview-nav"
+              onClick={showNextPreview}
+              aria-label="Show next game preview"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          <div
+            className="lp-preview-carousel"
+            aria-roledescription="carousel"
+            aria-label="Game preview carousel"
+          >
+            <div
+              className="lp-preview-track"
+              style={{ transform: `translateX(-${activePreview * 100}%)` }}
+            >
+              {PREVIEW_SLIDES.map((slide, index) => (
+                <article
+                  key={slide.id}
+                  className="lp-preview-slide"
+                  aria-hidden={index !== activePreview}
+                >
+                  <div className="lp-preview-card">
+                    <div className="lp-preview-aside">
+                      <div className="lp-preview-copy-block">
+                        <p className="lp-preview-eyebrow">{slide.eyebrow}</p>
+                        <h3 className="lp-preview-title">{slide.title}</h3>
+                        <p className="lp-preview-description">{slide.description}</p>
+                      </div>
+
+                      <img
+                        src={slide.thumbnail}
+                        alt={slide.thumbnailAlt}
+                        className="lp-preview-thumbnail"
+                      />
+                    </div>
+
+                    <div className="lp-preview-stage">
+                      <div className="lp-preview-demo-label">Gameplay preview</div>
+                      <img
+                        src={slide.previewMedia}
+                        alt={slide.previewAlt}
+                        className="lp-preview-demo-media"
+                      />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="lp-preview-dots" aria-label="Select game preview">
+            {PREVIEW_SLIDES.map((slide, index) => (
+              <button
+                key={slide.id}
+                type="button"
+                className={`lp-preview-dot ${index === activePreview ? 'is-active' : ''}`}
+                onClick={() => goToPreview(index)}
+                aria-label={`Show ${slide.title} preview`}
+                aria-pressed={index === activePreview}
+              />
             ))}
           </div>
         </div>

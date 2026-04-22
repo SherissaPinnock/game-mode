@@ -106,24 +106,21 @@ export function PowerMeter({ arrowIndex, totalArrows, onShoot }: PowerMeterProps
   }, [handleShoot])
 
   return (
-    <div className="flex flex-col gap-5 w-full">
-      <p className="font-sketch text-sm text-center text-[#6b7280]">
+    <div className="aa-meter-wrap">
+      <p className="aa-caption aa-caption-center font-sketch">
         Arrow {arrowIndex + 1} of {totalArrows} — tap at the right moment!
       </p>
 
-      {/* Live zone label — updated directly via zoneLabelRef */}
       <p
         ref={zoneLabelRef}
-        className="font-sketch text-2xl font-bold text-center"
+        className="aa-zone-readout font-sketch"
         style={{ color: ZONE_META['miss'].color }}
       >
         {ZONE_META['miss'].emoji} {ZONE_META['miss'].label}
       </p>
 
-      {/* Power bar */}
       <div
-        className="relative h-14 w-full overflow-hidden"
-        style={{ border: '2px solid #2d2d2d', borderRadius: 3, boxShadow: '3px 3px 0 #2d2d2d' }}
+        className="aa-meter-bar"
       >
         {ZONE_BANDS.map((band, i) => (
           <div
@@ -133,13 +130,11 @@ export function PowerMeter({ arrowIndex, totalArrows, onShoot }: PowerMeterProps
           />
         ))}
 
-        {/* Bullseye zone dashed marker */}
         <div
           className="absolute top-0 bottom-0 border-l-2 border-r-2 border-dashed border-amber-700 opacity-60"
           style={{ left: '45%', width: '10%' }}
         />
 
-        {/* Needle — position updated directly via needleRef */}
         <div
           ref={needleRef}
           className="absolute top-0 bottom-0 w-[3px] bg-white"
@@ -150,7 +145,7 @@ export function PowerMeter({ arrowIndex, totalArrows, onShoot }: PowerMeterProps
       <button
         onClick={handleShoot}
         disabled={hasShot}
-        className="sketch-btn w-full py-5 font-sketch text-2xl font-bold tracking-wide"
+        className="aa-btn aa-btn-primary aa-btn-wide aa-meter-btn font-sketch"
       >
         {hasShot ? '✓ Arrow released!' : '🏹  SHOOT!  (or press Space)'}
       </button>

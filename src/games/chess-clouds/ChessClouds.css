@@ -1260,3 +1260,135 @@
     transform: none;
   }
 }
+
+@media (min-width: 1024px) and (min-height: 720px) {
+  .cc-title-screen,
+  .cc-intro-screen {
+    overflow: hidden;
+  }
+
+  .cc-title-inner {
+    width: min(1100px, calc(100vw - 48px));
+    max-width: none;
+    max-height: calc(100vh - 40px);
+    padding: 58px 28px 24px;
+    display: grid;
+    grid-template-columns: minmax(300px, 0.88fr) minmax(420px, 1.12fr);
+    grid-template-areas:
+      'ribbon cards'
+      'icon cards'
+      'heading cards'
+      'sub cards'
+      'play cards';
+    align-content: center;
+    align-items: center;
+    justify-items: start;
+    row-gap: 10px;
+    column-gap: 26px;
+    text-align: left;
+  }
+
+  .cc-title-ribbon { grid-area: ribbon; }
+  .cc-title-chess-icon { grid-area: icon; width: 84px; height: 84px; font-size: 52px; }
+  .cc-title-heading { grid-area: heading; font-size: clamp(2rem, 3.2vw, 3rem); }
+  .cc-title-sub {
+    grid-area: sub;
+    max-width: 32rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .cc-level-cards {
+    grid-area: cards;
+    width: 100%;
+    gap: 10px;
+    align-self: center;
+  }
+
+  .cc-level-card {
+    padding: 12px 14px;
+    min-height: 76px;
+  }
+
+  .cc-lc-num { font-size: 1.15rem; width: 28px; }
+  .cc-lc-title { font-size: 0.9rem; }
+  .cc-lc-topic { font-size: 0.74rem; }
+
+  .cc-play-btn {
+    grid-area: play;
+    width: auto;
+    min-width: 220px;
+    padding: 12px 24px;
+    justify-self: start;
+  }
+
+  .cc-intro-screen {
+    align-items: center;
+  }
+
+  .cc-intro-inner {
+    width: min(1080px, calc(100vw - 48px));
+    max-width: none;
+    max-height: calc(100vh - 40px);
+    padding: 52px 24px 22px;
+    display: grid;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(380px, 1.1fr);
+    grid-template-areas:
+      'badge concepts'
+      'title concepts'
+      'body concepts'
+      'mission concepts'
+      'start concepts';
+    align-content: center;
+    gap: 12px 22px;
+  }
+
+  .cc-level-badge { grid-area: badge; }
+  .cc-intro-title {
+    grid-area: title;
+    font-size: clamp(2rem, 3vw, 2.8rem);
+  }
+  .cc-intro-body {
+    grid-area: body;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    max-width: 34rem;
+  }
+  .cc-concepts-grid {
+    grid-area: concepts;
+    align-self: center;
+    gap: 10px;
+  }
+  .cc-concept-card {
+    padding: 12px 14px;
+    min-height: 104px;
+  }
+  .cc-concept-icon {
+    font-size: 20px;
+  }
+  .cc-concept-title {
+    font-size: 0.8rem;
+    margin-bottom: 3px;
+  }
+  .cc-concept-body {
+    font-size: 0.74rem;
+    line-height: 1.45;
+  }
+
+  .cc-mission-brief {
+    grid-area: mission;
+    padding: 14px 16px;
+  }
+  .cc-mission-brief-text {
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .cc-start-btn {
+    grid-area: start;
+    width: auto;
+    min-width: 220px;
+    justify-self: start;
+    padding: 12px 22px;
+  }
+}
