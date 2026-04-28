@@ -5,6 +5,8 @@ import { playCorrect, playGameOver, playIntro, playPop, playWarning, playWrong }
 import { GameRecommendations } from '@/components/GameRecommendations'
 import { LearningRoadmap, type RoadmapLevel } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
+import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
+import { useAuth } from '@/lib/auth'
 
 // ─── Journey roadmap levels ────────────────────────────────────────────────────
 const ROADMAP_ID = 'scale-or-die'
@@ -57,18 +59,69 @@ const SCALE_LEVELS: RoadmapLevel[] = [
   },
 ]
 
-// Level configs: { waveCount, peakCap } — filters which scenarios are eligible
-interface ScaleLevelConfig { waveCount: number; peakCap: number }
+// Level configs: filters which scenarios are eligible for each level
+interface ScaleLevelConfig { waveCount: number; minPeak: number; peakCap: number }
 const LEVEL_CONFIGS: ScaleLevelConfig[] = [
-  { waveCount: 1, peakCap: 80  },   // level-1: easy 1-wave
-  { waveCount: 1, peakCap: 130 },   // level-2: medium 1-wave
-  { waveCount: 2, peakCap: 130 },   // level-3: medium 2-wave
-  { waveCount: 2, peakCap: 999 },   // level-4: hard 2-wave
-  { waveCount: 3, peakCap: 999 },   // level-5: full game
+  { waveCount: 1, minPeak: 70,  peakCap: 80  },   // level-1: easy, but still needs action
+  { waveCount: 1, minPeak: 95,  peakCap: 130 },   // level-2: medium 1-wave
+  { waveCount: 2, minPeak: 85,  peakCap: 130 },   // level-3: medium 2-wave
+  { waveCount: 2, minPeak: 100, peakCap: 999 },   // level-4: hard 2-wave
+  { waveCount: 3, minPeak: 120, peakCap: 999 },   // level-5: full game
 ]
 
 // ─── Question bank ────────────────────────────────────────────────────────────
 interface Question { q: string; options: string[]; answer: number; category: Category }
+type ActionId = 'ec2' | 'cdn' | 'lb' | 'as' | 'mq'
+
+interface ScenarioDef {
+  subtitle: string
+  peak: number
+  duration: number
+  staticShare: number
+  globalReach: number
+  burstiness: number
+  attack: number
+  queueable: number
+  description: string
+  tags: string[]
+  strongActions: ActionId[]
+}
+
+interface ScenarioWave extends ScenarioDef {
+  label: string
+}
+
+interface ActionDef {
+  id: ActionId
+  label: string
+  cost: number
+  cap: number
+  hint: string
+}
+
+interface UpgradeState {
+  ec2: number
+  cdn: number
+  lb: number
+  as: number
+  mq: number
+}
+
+interface RuntimeEffects {
+  rawTraffic: number
+  edgeBlocked: number
+  queueBlocked: number
+  liveTraffic: number
+  baseCapacity: number
+  lbBonus: number
+  autoBonus: number
+  totalCapacity: number
+  queueBacklog: number
+  queueCapacity: number
+  queueDrain: number
+  overload: number
+  loadSpread: number
+}
 
 const QUESTIONS: Question[] = [
   { q: 'EC2 stands for?', options: ['Elastic Compute Cloud','Extended Cloud Computing','Edge Cache Container','Elastic Container Cluster'], answer: 0, category: 'cloud-aws' },
@@ -87,24 +140,135 @@ const QUESTIONS: Question[] = [
 const UI_INTERVAL_MS = 600
 const GRAPH_H        = 100
 const HISTORY_LEN    = 100
-const BREATHER_MS    = 5_000
+const BREATHER_MS    = 7_000
+const INITIAL_PREP_MS = 14_000
+const INITIAL_CAPACITY = 40
 
-const ALL_SCENARIOS = [
-  { subtitle: 'LAUNCH DAY',     peak: 55,  duration: 18_000 },
-  { subtitle: 'VIRAL SPIKE',    peak: 110, duration: 20_000 },
-  { subtitle: 'DDOS ATTACK',    peak: 195, duration: 22_000 },
-  { subtitle: 'PRODUCT HUNT',   peak: 75,  duration: 16_000 },
-  { subtitle: 'FLASH SALE',     peak: 130, duration: 15_000 },
-  { subtitle: 'BOT SWARM',      peak: 180, duration: 21_000 },
-  { subtitle: 'MORNING RUSH',   peak: 45,  duration: 14_000 },
-  { subtitle: 'STREAMING DROP', peak: 100, duration: 18_000 },
-  { subtitle: 'CRYPTO CRASH',   peak: 210, duration: 25_000 },
+const ALL_SCENARIOS: ScenarioDef[] = [
+  {
+    subtitle: 'LAUNCH DAY',
+    peak: 55,
+    duration: 18_000,
+    staticShare: 0.26,
+    globalReach: 0.18,
+    burstiness: 0.42,
+    attack: 0,
+    queueable: 0.18,
+    description: 'A steady launch surge. More compute and a little edge caching go a long way.',
+    tags: ['STEADY', 'COMPUTE', 'LIGHT STATIC'],
+    strongActions: ['ec2', 'as', 'cdn'],
+  },
+  {
+    subtitle: 'VIRAL SPIKE',
+    peak: 110,
+    duration: 20_000,
+    staticShare: 0.33,
+    globalReach: 0.26,
+    burstiness: 0.65,
+    attack: 0,
+    queueable: 0.28,
+    description: 'Real users arrive in bursts. Scale out and smooth the origin before the spike crests.',
+    tags: ['BURSTY', 'GLOBAL', 'REAL USERS'],
+    strongActions: ['ec2', 'lb', 'as'],
+  },
+  {
+    subtitle: 'DDOS ATTACK',
+    peak: 195,
+    duration: 22_000,
+    staticShare: 0.04,
+    globalReach: 0.08,
+    burstiness: 0.34,
+    attack: 1,
+    queueable: 0.5,
+    description: 'Malicious traffic is hammering the edge. Filtering and buffering matter more than raw servers.',
+    tags: ['ATTACK', 'EDGE FILTER', 'SUSTAINED'],
+    strongActions: ['cdn', 'mq'],
+  },
+  {
+    subtitle: 'PRODUCT HUNT',
+    peak: 75,
+    duration: 16_000,
+    staticShare: 0.3,
+    globalReach: 0.36,
+    burstiness: 0.44,
+    attack: 0,
+    queueable: 0.16,
+    description: 'A wide audience is loading pages from everywhere. Edge delivery plus even routing feels great here.',
+    tags: ['GLOBAL', 'STATIC', 'DISCOVERY'],
+    strongActions: ['cdn', 'lb', 'ec2'],
+  },
+  {
+    subtitle: 'FLASH SALE',
+    peak: 130,
+    duration: 15_000,
+    staticShare: 0.24,
+    globalReach: 0.14,
+    burstiness: 0.82,
+    attack: 0,
+    queueable: 0.64,
+    description: 'Checkout traffic hits in sharp bursts. Compute, auto-scaling, and a queue can save the cart rush.',
+    tags: ['BURSTY', 'WRITES', 'CHECKOUT'],
+    strongActions: ['as', 'mq', 'ec2'],
+  },
+  {
+    subtitle: 'BOT SWARM',
+    peak: 180,
+    duration: 21_000,
+    staticShare: 0.02,
+    globalReach: 0.06,
+    burstiness: 0.28,
+    attack: 0.88,
+    queueable: 0.45,
+    description: 'Bad actors are flooding endpoints. Blocking them upstream beats paying for more boxes.',
+    tags: ['ATTACK', 'BOTS', 'ABUSE'],
+    strongActions: ['cdn', 'mq'],
+  },
+  {
+    subtitle: 'MORNING RUSH',
+    peak: 45,
+    duration: 14_000,
+    staticShare: 0.18,
+    globalReach: 0.1,
+    burstiness: 0.3,
+    attack: 0,
+    queueable: 0.12,
+    description: 'Traffic ramps in predictably. Cheap scaling wins; heavy async buffering is overkill.',
+    tags: ['PREDICTABLE', 'LIGHT BURST', 'COMMUTE'],
+    strongActions: ['ec2', 'as', 'cdn'],
+  },
+  {
+    subtitle: 'STREAMING DROP',
+    peak: 100,
+    duration: 18_000,
+    staticShare: 0.54,
+    globalReach: 0.58,
+    burstiness: 0.24,
+    attack: 0,
+    queueable: 0.04,
+    description: 'Users are far from your origin. CDN offload is the star; more origin compute barely helps.',
+    tags: ['GLOBAL', 'EDGE HEAVY', 'LATENCY'],
+    strongActions: ['cdn'],
+  },
+  {
+    subtitle: 'CRYPTO CRASH',
+    peak: 210,
+    duration: 25_000,
+    staticShare: 0.02,
+    globalReach: 0.08,
+    burstiness: 0.92,
+    attack: 0,
+    queueable: 0.84,
+    description: 'Expensive compute and write-heavy requests are exploding. Burst capacity and a deep queue are crucial.',
+    tags: ['COMPUTE', 'WRITE HEAVY', 'EXTREME'],
+    strongActions: ['as', 'mq', 'ec2'],
+  },
 ]
 
-function pickScenarios(cfg?: ScaleLevelConfig) {
+function pickScenarios(cfg?: ScaleLevelConfig): ScenarioWave[] {
   const count = cfg?.waveCount ?? 3
+  const minPeak = cfg?.minPeak ?? 0
   const maxPeak = cfg?.peakCap ?? 999
-  const pool = [...ALL_SCENARIOS].filter(s => s.peak <= maxPeak)
+  const pool = [...ALL_SCENARIOS].filter(s => s.peak >= minPeak && s.peak <= maxPeak)
   // If not enough scenarios for this peak cap, fall back to all
   const eligible = pool.length >= count ? pool : [...ALL_SCENARIOS]
   for (let i = eligible.length - 1; i > 0; i--) {
@@ -118,13 +282,33 @@ function pickScenarios(cfg?: ScaleLevelConfig) {
 
 const WAVES = pickScenarios()
 
-const ACTIONS = [
-  { id: 'ec2', label: 'EC2',          cost: 80,  cap: 25 },
-  { id: 'cdn', label: 'CDN',          cost: 120, cap: 15 },
-  { id: 'lb',  label: 'LOAD BAL',     cost: 100, cap: 20 },
-  { id: 'as',  label: 'AUTO-SCALE',   cost: 150, cap: 40 },
-  { id: 'mq',  label: 'MSG QUEUE',    cost: 90,  cap: 20 },
+const ACTIONS: ActionDef[] = [
+  { id: 'ec2', label: 'EC2',        cost: 80,  cap: 25, hint: '+25 base CAP' },
+  { id: 'cdn', label: 'CDN',        cost: 120, cap: 18, hint: 'cuts edge traffic' },
+  { id: 'lb',  label: 'LOAD BAL',   cost: 100, cap: 12, hint: 'smooths hot servers' },
+  { id: 'as',  label: 'AUTO-SCALE', cost: 150, cap: 20, hint: 'adds burst CAP' },
+  { id: 'mq',  label: 'MSG QUEUE',  cost: 90,  cap: 30, hint: 'buffers overflow' },
 ]
+
+const INITIAL_UPGRADES: UpgradeState = { ec2: 0, cdn: 0, lb: 0, as: 0, mq: 0 }
+
+function makeRuntimeEffects(): RuntimeEffects {
+  return {
+    rawTraffic: 0,
+    edgeBlocked: 0,
+    queueBlocked: 0,
+    liveTraffic: 0,
+    baseCapacity: INITIAL_CAPACITY,
+    lbBonus: 0,
+    autoBonus: 0,
+    totalCapacity: INITIAL_CAPACITY,
+    queueBacklog: 0,
+    queueCapacity: 0,
+    queueDrain: 0,
+    overload: 0,
+    loadSpread: 0.34,
+  }
+}
 
 // ─── Action feedback by scenario ─────────────────────────────────────────────
 type FeedbackEntry = { bad?: string; good?: string }
@@ -204,13 +388,70 @@ const P = {
 }
 
 function pickQuestion() { return QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)] }
-function getGrade(h: number, b: number) {
-  const s = h + Math.max(0, b / 10)
-  if (s > 130) return { g: 'S', color: P.yellow,  label: 'LEGENDARY!' }
-  if (s > 100) return { g: 'A', color: P.lime,    label: 'EXCELLENT!' }
-  if (s > 70)  return { g: 'B', color: P.cyan,    label: 'GOOD JOB!' }
-  if (s > 40)  return { g: 'C', color: P.orange,  label: 'SURVIVED.' }
-  return             { g: 'D', color: P.red,     label: 'GAME OVER.' }
+function getGrade(h: number, b: number, deployments: number) {
+  const score =
+    h * 0.82 +
+    Math.max(0, Math.min(25, b / 20)) +
+    Math.min(36, deployments * 12)
+  let grade = { g: 'D', color: P.red, label: 'GAME OVER.' }
+  if (score > 118) grade = { g: 'S', color: P.yellow, label: 'LEGENDARY!' }
+  else if (score > 96) grade = { g: 'A', color: P.lime, label: 'EXCELLENT!' }
+  else if (score > 74) grade = { g: 'B', color: P.cyan, label: 'GOOD JOB!' }
+  else if (score > 52) grade = { g: 'C', color: P.orange, label: 'SURVIVED.' }
+
+  if (deployments === 0 && (grade.g === 'S' || grade.g === 'A' || grade.g === 'B')) {
+    return { g: 'C', color: P.orange, label: 'COASTED THROUGH.' }
+  }
+
+  return grade
+}
+
+function getScenarioContext(wave?: ScenarioWave | null) {
+  return wave ?? {
+    ...ALL_SCENARIOS[0],
+    label: 'WAVE 1',
+  }
+}
+
+function getActionDeployCopy(action: ActionDef, nextLevel: number, scenario?: ScenarioWave | null) {
+  const subtitle = scenario?.subtitle
+  const prefix = subtitle ? `${action.label} ONLINE FOR ${subtitle}.` : `${action.label} ONLINE.`
+  switch (action.id) {
+    case 'ec2':
+      return `${prefix} Base capacity is now ${INITIAL_CAPACITY + nextLevel * 25}.`
+    case 'cdn':
+      return `${prefix} Edge cache is offloading more traffic before it hits origin.`
+    case 'lb':
+      return `${prefix} Servers are sharing load more evenly and taking less spike damage.`
+    case 'as':
+      return `${prefix} Burst capacity will climb automatically when traffic outruns your rack.`
+    case 'mq':
+      return `${prefix} Overflow now spills into a queue instead of slamming the app instantly.`
+    default:
+      return prefix
+  }
+}
+
+function getActionEffectSummary(actionId: ActionId, level: number, fx: RuntimeEffects) {
+  if (level <= 0) return 'offline'
+  switch (actionId) {
+    case 'ec2':
+      return `+${level * 25} base cap`
+    case 'cdn':
+      return `-${Math.round(fx.edgeBlocked)} traffic now`
+    case 'lb':
+      return `+${Math.round(fx.lbBonus)} stable cap`
+    case 'as':
+      return `+${Math.round(fx.autoBonus)} burst live`
+    case 'mq':
+      return `${Math.round(fx.queueBacklog)}/${Math.round(fx.queueCapacity)} queued`
+    default:
+      return ''
+  }
+}
+
+function getBreatherMs(waveIndex: number) {
+  return waveIndex === 0 ? INITIAL_PREP_MS : BREATHER_MS
 }
 
 // ─── Pixel Art SVG Components ─────────────────────────────────────────────────
@@ -882,6 +1123,9 @@ function TutorialOverlay({ stepIndex, targetRefs, onNext, onSkip }: TutorialOver
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UIState {
   health: number; budget: number; traffic: number; capacity: number
+  rawTraffic: number; edgeBlocked: number; queueBlocked: number
+  baseCapacity: number; autoCapacity: number; lbBonus: number
+  queueBacklog: number; queueCapacity: number; loadSpread: number
   wave: number; phase: 'playing' | 'breather' | 'done'; message: string; overloaded: boolean
 }
 interface ResultState { health: number; budget: number }
@@ -929,23 +1173,42 @@ function Blink({ children }: { children: React.ReactNode }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
+  const { userId } = useAuth()
+
   // ── Roadmap state ──────────────────────────────────────────────────────────
   const [view, setView] = useState<'roadmap' | 'game'>('roadmap')
   const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(
     () => getCompletedLevels(ROADMAP_ID)
   )
+
+  // Merge in remote completed levels once userId is available
+  useEffect(() => {
+    if (!userId) return
+    remoteGetCompletedLevels(userId, ROADMAP_ID).then(remote => {
+      if (remote.size > 0) {
+        setCompletedLevelIds(prev => new Set([...prev, ...remote]))
+      }
+    })
+  }, [userId])
   const activeLevelIdxRef = useRef(0)
   // ── Game refs (60fps loop) ────────────────────────────────────────────────
   const healthRef      = useRef(100)
   const budgetRef      = useRef(500)
+  const rawTrafficRef  = useRef(0)
   const trafficRef     = useRef(0)
-  const capacityRef    = useRef(50)
+  const capacityRef    = useRef(INITIAL_CAPACITY)
+  const edgeBlockedRef = useRef(0)
+  const queueBlockedRef = useRef(0)
+  const queueBacklogRef = useRef(0)
+  const autoCapacityRef = useRef(0)
+  const upgradesRef    = useRef<UpgradeState>({ ...INITIAL_UPGRADES })
+  const runtimeEffectsRef = useRef<RuntimeEffects>(makeRuntimeEffects())
   const wasOverloadedRef = useRef(false)
   const waveRef        = useRef(0)
   const phaseRef       = useRef<'playing' | 'breather' | 'done'>('breather')
   const waveTimerRef   = useRef(0)
   const trafficHistRef = useRef<number[]>(Array(HISTORY_LEN).fill(0))
-  const capHistRef     = useRef<number[]>(Array(HISTORY_LEN).fill(50))
+  const capHistRef     = useRef<number[]>(Array(HISTORY_LEN).fill(INITIAL_CAPACITY))
   const rafRef         = useRef<number | null>(null)
   const uiIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastTickRef    = useRef(0)
@@ -953,9 +1216,13 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const wavesRef       = useRef(WAVES)   // overridden when level starts
 
   const [activeWaves, setActiveWaves] = useState(WAVES)
+  const [upgradeLevels, setUpgradeLevels] = useState<UpgradeState>({ ...INITIAL_UPGRADES })
   const [ui, setUi] = useState<UIState>({
-    health: 100, budget: 500, traffic: 0, capacity: 50,
-    wave: 0, phase: 'breather', message: 'WAVE 1 IN 5s...', overloaded: false,
+    health: 100, budget: 500, traffic: 0, capacity: INITIAL_CAPACITY,
+    rawTraffic: 0, edgeBlocked: 0, queueBlocked: 0,
+    baseCapacity: INITIAL_CAPACITY, autoCapacity: 0, lbBonus: 0,
+    queueBacklog: 0, queueCapacity: 0, loadSpread: 0.34,
+    wave: 0, phase: 'breather', message: `WAVE 1 IN ${Math.ceil(INITIAL_PREP_MS / 1000)}s...`, overloaded: false,
   })
   const [showQuestion, setShowQuestion] = useState(false)
   const [question, setQuestion]         = useState<Question | null>(null)
@@ -964,11 +1231,24 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   const [result, setResult]             = useState<ResultState | null>(null)
   const [actionFeedback, setActionFeedback] = useState<{ message: string; good: boolean } | null>(null)
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const showQuestionRef = useRef(false)
 
   // ── Performance tracking ─────────────────────────────────────────────────
   const { report } = usePerformance()
   const perfEntries = useRef<PerformanceEntry[]>([])
   const hasReported = useRef(false)
+
+  useEffect(() => {
+    showQuestionRef.current = showQuestion
+  }, [showQuestion])
+
+  // Report performance when the game ends — must be in useEffect, not JSX render
+  useEffect(() => {
+    if (result && !hasReported.current) {
+      hasReported.current = true
+      report(perfEntries.current, 'scale-or-die')
+    }
+  }, [result, report])
 
   // ── Tutorial ──────────────────────────────────────────────────────────────
   const [tutStep, setTutStep] = useState<number | null>(0) // 0=splash, null=done
@@ -1001,16 +1281,97 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     })
   }
 
+  function showActionToast(message: string, good: boolean) {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
+    setActionFeedback({ message, good })
+    feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4200)
+  }
+
+  function stopSimulation() {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+    if (uiIntervalRef.current) {
+      clearInterval(uiIntervalRef.current)
+      uiIntervalRef.current = null
+    }
+  }
+
+  function resetRunState(newWaves: ScenarioWave[]) {
+    stopSimulation()
+    wavesRef.current = newWaves
+    setActiveWaves(newWaves)
+    healthRef.current = 100
+    budgetRef.current = 500
+    rawTrafficRef.current = 0
+    trafficRef.current = 0
+    capacityRef.current = INITIAL_CAPACITY
+    edgeBlockedRef.current = 0
+    queueBlockedRef.current = 0
+    queueBacklogRef.current = 0
+    autoCapacityRef.current = 0
+    runtimeEffectsRef.current = makeRuntimeEffects()
+    upgradesRef.current = { ...INITIAL_UPGRADES }
+    setUpgradeLevels({ ...INITIAL_UPGRADES })
+    wasOverloadedRef.current = false
+    waveRef.current = 0
+    phaseRef.current = 'breather'
+    waveTimerRef.current = 0
+    trafficHistRef.current = Array(HISTORY_LEN).fill(0)
+    capHistRef.current = Array(HISTORY_LEN).fill(INITIAL_CAPACITY)
+    lastTickRef.current = performance.now()
+    setResult(null)
+    setShowQuestion(false)
+    setQuestion(null)
+    setPendingAction(null)
+    setAnswered(null)
+    setActionFeedback(null)
+    perfEntries.current = []
+    hasReported.current = false
+    setUi({
+      health: 100,
+      budget: 500,
+      traffic: 0,
+      capacity: INITIAL_CAPACITY,
+      rawTraffic: 0,
+      edgeBlocked: 0,
+      queueBlocked: 0,
+      baseCapacity: INITIAL_CAPACITY,
+      autoCapacity: 0,
+      lbBonus: 0,
+      queueBacklog: 0,
+      queueCapacity: 0,
+      loadSpread: 0.34,
+      wave: 0,
+      phase: 'breather',
+      message: `WAVE 1 IN ${Math.ceil(INITIAL_PREP_MS / 1000)}s...`,
+      overloaded: false,
+    })
+  }
+
   // ── Simulation ────────────────────────────────────────────────────────────
   function tick(now: number) {
     const dt = Math.min(now - lastTickRef.current, 200)
+    const dtSec = Math.max(0.001, dt / 1000)
     lastTickRef.current = now
     if (phaseRef.current === 'done') return
+    if (showQuestionRef.current) return
     waveTimerRef.current += dt
 
+    const playingWave = phaseRef.current === 'playing'
+      ? wavesRef.current[waveRef.current - 1]
+      : wavesRef.current[Math.min(waveRef.current, wavesRef.current.length - 1)]
+    const scenario = getScenarioContext(playingWave)
+    let rawTraffic = 0
+
     if (phaseRef.current === 'breather') {
-      trafficRef.current = Math.max(0, trafficRef.current - 3 * (dt / 1000))
-      if (waveTimerRef.current >= BREATHER_MS) {
+      rawTrafficRef.current = 0
+      trafficRef.current = Math.max(0, trafficRef.current - 28 * dtSec)
+      edgeBlockedRef.current = Math.max(0, edgeBlockedRef.current - 18 * dtSec)
+      queueBlockedRef.current = 0
+      autoCapacityRef.current = Math.max(0, autoCapacityRef.current - 24 * dtSec)
+      if (waveTimerRef.current >= getBreatherMs(waveRef.current)) {
         waveTimerRef.current = 0
         waveRef.current += 1
         if (waveRef.current > wavesRef.current.length) {
@@ -1022,23 +1383,107 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       }
     } else {
       const wave = wavesRef.current[waveRef.current - 1]
-      trafficRef.current = wave.peak * Math.sin((waveTimerRef.current / wave.duration) * Math.PI)
+      rawTraffic = wave.peak * Math.sin((waveTimerRef.current / wave.duration) * Math.PI)
+      rawTrafficRef.current = rawTraffic
       if (waveTimerRef.current >= wave.duration) { waveTimerRef.current = 0; phaseRef.current = 'breather' }
     }
 
-    const overflow = Math.max(0, trafficRef.current - capacityRef.current)
-    if (overflow > 0) {
-      healthRef.current = Math.max(0, healthRef.current - (overflow / capacityRef.current) * (dt / 1000) * 15)
+    const upgrades = upgradesRef.current
+    const baseCapacity = INITIAL_CAPACITY + upgrades.ec2 * 25
+    const lbBonus = upgrades.lb * (8 + scenario.burstiness * 8 + scenario.attack * 3)
+
+    const cdnEffectiveness = Math.min(
+      0.6,
+      upgrades.cdn * (
+        0.04 +
+        scenario.staticShare * 0.24 +
+        scenario.globalReach * 0.08 +
+        scenario.attack * 0.1
+      )
+    )
+    const edgeBlocked = rawTrafficRef.current * cdnEffectiveness
+    edgeBlockedRef.current = edgeBlocked
+    const postEdgeTraffic = Math.max(0, rawTrafficRef.current - edgeBlocked)
+
+    const baseRackCapacity = baseCapacity + lbBonus
+    if (upgrades.as > 0 && phaseRef.current === 'playing') {
+      const trigger = 0.7 - upgrades.as * 0.03
+      const ratio = baseRackCapacity > 0 ? postEdgeTraffic / baseRackCapacity : 0
+      const maxBurst = upgrades.as * (16 + scenario.burstiness * 18 + scenario.attack * 8)
+      const desiredBurst = ratio > trigger
+        ? Math.min(maxBurst, Math.max(0, postEdgeTraffic - baseRackCapacity + 6))
+        : 0
+      const ramp = desiredBurst > autoCapacityRef.current ? 22 : 16
+      autoCapacityRef.current += Math.sign(desiredBurst - autoCapacityRef.current) * Math.min(Math.abs(desiredBurst - autoCapacityRef.current), ramp * dtSec)
     } else {
-      healthRef.current = Math.min(100, healthRef.current + 0.5 * (dt / 1000))
+      autoCapacityRef.current = Math.max(0, autoCapacityRef.current - 18 * dtSec)
     }
+
+    const totalCapacity = baseRackCapacity + autoCapacityRef.current
+
+    const queueCapacity = upgrades.mq * (22 + scenario.queueable * 44 + scenario.attack * 16)
+    const queueDrain = upgrades.mq * (7 + scenario.queueable * 16)
+    if (queueBacklogRef.current > 0) {
+      queueBacklogRef.current = Math.max(0, queueBacklogRef.current - queueDrain * dtSec)
+    }
+
+    const preQueueOverflow = Math.max(0, postEdgeTraffic - totalCapacity)
+    let queueBlocked = 0
+    if (queueCapacity > 0 && preQueueOverflow > 0) {
+      const incomingOverflow = preQueueOverflow * dtSec
+      const headroom = Math.max(0, queueCapacity - queueBacklogRef.current)
+      const absorbedAmount = Math.min(headroom, incomingOverflow)
+      queueBacklogRef.current += absorbedAmount
+      queueBlocked = absorbedAmount / dtSec
+    }
+    queueBlockedRef.current = queueBlocked
+
+    const liveTraffic = Math.max(0, postEdgeTraffic - queueBlocked)
+    trafficRef.current = liveTraffic
+    capacityRef.current = totalCapacity
+
+    const overflow = Math.max(0, liveTraffic - totalCapacity)
+    const lbMitigation = Math.max(0.55, 1 - upgrades.lb * (0.1 + scenario.burstiness * 0.04))
+    if (overflow > 0) {
+      healthRef.current = Math.max(0, healthRef.current - (overflow / Math.max(1, totalCapacity)) * dtSec * 15 * lbMitigation)
+    } else if (queueBacklogRef.current > 0) {
+      healthRef.current = Math.min(100, healthRef.current + 0.2 * dtSec)
+    } else {
+      healthRef.current = Math.min(100, healthRef.current + 0.5 * dtSec)
+    }
+
+    runtimeEffectsRef.current = {
+      rawTraffic: rawTrafficRef.current,
+      edgeBlocked: edgeBlockedRef.current,
+      queueBlocked: queueBlockedRef.current,
+      liveTraffic,
+      baseCapacity,
+      lbBonus,
+      autoBonus: autoCapacityRef.current,
+      totalCapacity,
+      queueBacklog: queueBacklogRef.current,
+      queueCapacity,
+      queueDrain,
+      overload: overflow,
+      loadSpread: Math.max(0.06, 0.38 - upgrades.lb * 0.12),
+    }
+
     if (healthRef.current <= 0) {
       phaseRef.current = 'done'
       playGameOver()
       setResult({ health: 0, budget: Math.round(budgetRef.current) })
       return
     }
-    budgetRef.current = Math.max(0, budgetRef.current - (capacityRef.current / 50) * (dt / 1000) * 0.4)
+    budgetRef.current = Math.max(
+      0,
+      budgetRef.current - (
+        (baseCapacity / INITIAL_CAPACITY) * 0.24 +
+        upgrades.cdn * 0.06 +
+        upgrades.lb * 0.05 +
+        upgrades.mq * 0.05 +
+        (autoCapacityRef.current / INITIAL_CAPACITY) * 0.16
+      ) * dtSec
+    )
 
     trafficHistRef.current.push(trafficRef.current)
     if (trafficHistRef.current.length > HISTORY_LEN) trafficHistRef.current.shift()
@@ -1139,29 +1584,19 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
 
   function startGame() {
     playIntro()
-    const newWaves = pickScenarios()
-    wavesRef.current = newWaves
-    setActiveWaves(newWaves)
-    healthRef.current = 100; budgetRef.current = 500; trafficRef.current = 0; wasOverloadedRef.current = false
-    capacityRef.current = 50; waveRef.current = 0; phaseRef.current = 'breather'
-    waveTimerRef.current = 0
-    trafficHistRef.current = Array(HISTORY_LEN).fill(0)
-    capHistRef.current     = Array(HISTORY_LEN).fill(50)
-    lastTickRef.current    = performance.now()
-    setResult(null); setShowQuestion(false); setAnswered(null)
-    perfEntries.current = []; hasReported.current = false
-    setUi({ health: 100, budget: 500, traffic: 0, capacity: 50, wave: 0, phase: 'breather', message: 'WAVE 1 IN 5s...', overloaded: false })
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    if (uiIntervalRef.current) clearInterval(uiIntervalRef.current)
+    const cfg = LEVEL_CONFIGS[activeLevelIdxRef.current]
+    const newWaves = pickScenarios(cfg)
+    resetRunState(newWaves)
     rafRef.current = requestAnimationFrame(loop)
     uiIntervalRef.current = setInterval(() => {
       const w = waveRef.current, p = phaseRef.current
-      const overloaded = trafficRef.current > capacityRef.current
+      const fx = runtimeEffectsRef.current
+      const overloaded = fx.overload > 0
       if (overloaded && !wasOverloadedRef.current) playWarning()
       wasOverloadedRef.current = overloaded
       let message = ''
       if (p === 'breather') {
-        const rem = Math.max(0, Math.ceil((BREATHER_MS - waveTimerRef.current) / 1000))
+        const rem = Math.max(0, Math.ceil((getBreatherMs(w) - waveTimerRef.current) / 1000))
         const next = w + 1
         message = next <= wavesRef.current.length ? `${wavesRef.current[next - 1].subtitle} IN ${rem}s` : 'ALL CLEAR!'
       } else {
@@ -1169,6 +1604,15 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       }
       setUi({ health: Math.round(healthRef.current), budget: Math.round(budgetRef.current),
         traffic: Math.round(trafficRef.current), capacity: Math.round(capacityRef.current),
+        rawTraffic: Math.round(fx.rawTraffic),
+        edgeBlocked: Math.round(fx.edgeBlocked),
+        queueBlocked: Math.round(fx.queueBlocked),
+        baseCapacity: Math.round(fx.baseCapacity),
+        autoCapacity: Math.round(fx.autoBonus),
+        lbBonus: Math.round(fx.lbBonus),
+        queueBacklog: Math.round(fx.queueBacklog),
+        queueCapacity: Math.round(fx.queueCapacity),
+        loadSpread: fx.loadSpread,
         wave: w, phase: p, message, overloaded })
     }, UI_INTERVAL_MS)
   }
@@ -1176,6 +1620,10 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   // Start the game only once the tutorial is dismissed
   const hasStartedRef = useRef(false)
   useEffect(() => {
+    if (tutStep !== null) {
+      stopSimulation()
+      return
+    }
     if (tutStep === null && !hasStartedRef.current) {
       hasStartedRef.current = true
       lastTickRef.current = performance.now()
@@ -1187,29 +1635,13 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      if (uiIntervalRef.current) clearInterval(uiIntervalRef.current)
+      stopSimulation()
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
     }
   }, [])
 
   function handleAction(action: typeof ACTIONS[0]) {
     if (showQuestion || result) return
-
-    // Show contextual feedback if we're in an active wave
-    if (phaseRef.current === 'playing') {
-      const subtitle = wavesRef.current[waveRef.current - 1]?.subtitle ?? ''
-      const entry = ACTION_FEEDBACK[subtitle]?.[action.id]
-      if (entry?.bad) {
-        if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
-        setActionFeedback({ message: entry.bad, good: false })
-        feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000)
-      } else if (entry?.good) {
-        if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
-        setActionFeedback({ message: entry.good, good: true })
-        feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), 4000)
-      }
-    }
-
     setQuestion(pickQuestion()); setPendingAction(action); setAnswered(null); setShowQuestion(true)
   }
 
@@ -1226,24 +1658,54 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
     })
     setTimeout(() => {
       if (correct) {
-        capacityRef.current += pendingAction.cap
+        const nextUpgrades: UpgradeState = {
+          ...upgradesRef.current,
+          [pendingAction.id]: upgradesRef.current[pendingAction.id] + 1,
+        }
+        upgradesRef.current = nextUpgrades
+        setUpgradeLevels(nextUpgrades)
+        const scenario = phaseRef.current === 'playing' ? wavesRef.current[waveRef.current - 1] : wavesRef.current[waveRef.current]
+        const deployCopy = getActionDeployCopy(pendingAction, nextUpgrades[pendingAction.id], scenario)
+        const contextual = scenario ? ACTION_FEEDBACK[scenario.subtitle]?.[pendingAction.id] : undefined
+        const tail = contextual?.good ?? contextual?.bad
+        showActionToast(tail ? `${deployCopy} ${tail}` : deployCopy, !contextual?.bad)
       } else {
         budgetRef.current = Math.max(0, budgetRef.current - pendingAction.cost)
+        showActionToast(`DEPLOY FAILED. -$${pendingAction.cost} and no infrastructure change landed.`, false)
       }
       setShowQuestion(false); setAnswered(null); setPendingAction(null); setQuestion(null)
     }, 1400)
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const isDDoS      = ui.wave === 3 && ui.phase === 'playing'
+  const currentScenario = ui.phase === 'playing'
+    ? activeWaves[ui.wave - 1] ?? null
+    : activeWaves[ui.wave] ?? activeWaves[activeWaves.length - 1] ?? null
+  const isDDoS      = ui.phase === 'playing' && !!currentScenario && currentScenario.attack > 0.55
   const serverCount = Math.min(6, Math.max(2, Math.ceil(ui.capacity / 15)))
   const serverLoad  = ui.capacity > 0 ? ui.traffic / ui.capacity : 0
   const hearts      = Math.ceil(ui.health / 20) // 0–5 hearts
-  const gradeInfo   = result ? getGrade(result.health, result.budget) : null
+  const deployedCount = Object.values(upgradeLevels).reduce((sum, level) => sum + level, 0)
+  const gradeInfo   = result ? getGrade(result.health, result.budget, deployedCount) : null
+  const liveEffects: RuntimeEffects = {
+    rawTraffic: ui.rawTraffic,
+    edgeBlocked: ui.edgeBlocked,
+    queueBlocked: ui.queueBlocked,
+    liveTraffic: ui.traffic,
+    baseCapacity: ui.baseCapacity,
+    lbBonus: ui.lbBonus,
+    autoBonus: ui.autoCapacity,
+    totalCapacity: ui.capacity,
+    queueBacklog: ui.queueBacklog,
+    queueCapacity: ui.queueCapacity,
+    queueDrain: 0,
+    overload: Math.max(0, ui.traffic - ui.capacity),
+    loadSpread: ui.loadSpread,
+  }
 
   const FONT = '"Press Start 2P", monospace'
 
-  const actionIcons: Record<string, React.ReactNode> = {
+  const actionIcons: Record<ActionId, React.ReactNode> = {
     ec2: <PixelServer s={3} />,
     cdn: <PixelGlobe  s={3} />,
     lb:  <PixelScales s={3} />,
@@ -1264,26 +1726,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
           activeLevelIdxRef.current = levelIdx
           const cfg = LEVEL_CONFIGS[levelIdx]
           const newWaves = pickScenarios(cfg)
-          wavesRef.current = newWaves
-          setActiveWaves(newWaves)
-          // Reset game state
-          healthRef.current = 100
-          budgetRef.current = 500
-          trafficRef.current = 0
-          capacityRef.current = 50
-          waveRef.current = 0
-          phaseRef.current = 'breather'
-          waveTimerRef.current = 0
-          trafficHistRef.current = Array(HISTORY_LEN).fill(0)
-          capHistRef.current = Array(HISTORY_LEN).fill(50)
-          setUi({ health: 100, budget: 500, traffic: 0, capacity: 50, wave: 0, phase: 'breather', message: 'WAVE 1 IN 5s...', overloaded: false })
-          setResult(null)
-          setShowQuestion(false)
-          setQuestion(null)
-          setPendingAction(null)
-          setAnswered(null)
-          perfEntries.current = []
-          hasReported.current = false
+          resetRunState(newWaves)
           setTutStep(levelIdx === 0 ? 0 : null) // show tutorial only on first level
           hasStartedRef.current = false
           setView('game')
@@ -1400,7 +1843,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
         </div>
         {ui.phase === 'playing' && (
           <div style={{ display: 'flex', gap: '8px', fontSize: '10px' }}>
-            <span style={{ color: P.red }}>TRF:<strong style={{ color: P.white }}> {ui.traffic}</strong></span>
+            <span style={{ color: P.red }}>RAW:<strong style={{ color: P.white }}> {ui.rawTraffic}</strong></span>
+            <span style={{ color: P.cyan }}>LIVE:<strong style={{ color: P.white }}> {ui.traffic}</strong></span>
             <span style={{ color: P.green }}>CAP:<strong style={{ color: P.white }}> {ui.capacity}</strong></span>
             {ui.overloaded && (
               <span style={{ color: P.red, animation: 'sod-wave-flash 0.4s infinite' }}>OVERLOADED!</span>
@@ -1408,6 +1852,25 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
           </div>
         )}
       </div>
+
+      {currentScenario && (
+        <PixelBox
+          color={ui.phase === 'playing' ? P.yellow : P.cyan}
+          title={ui.phase === 'playing' ? 'LIVE SCENARIO' : 'NEXT WAVE'}
+          style={{ width: '100%', maxWidth: 'min(700px, 100%)', padding: '12px 10px 10px' }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '10px', color: P.white, letterSpacing: '0.06em' }}>
+                {currentScenario.description}
+              </span>
+              <span style={{ fontSize: '8px', color: P.gray }}>
+                {currentScenario.tags.join('  ·  ')}
+              </span>
+            </div>
+          </div>
+        </PixelBox>
+      )}
 
       {/* ── Main game area: server rack + graph ─────────────────────────────── */}
       <div style={{ width: '100%', maxWidth: 'min(700px, 100%)', display: 'flex', gap: '8px', alignItems: 'stretch', flexWrap: 'wrap' }}>
@@ -1420,7 +1883,8 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
           style={{ width: 'clamp(130px, 25vw, 170px)', flexShrink: 0, padding: '12px 8px 8px', display: 'flex', flexDirection: 'column', gap: '6px' }}
         >
           {Array.from({ length: serverCount }).map((_, i) => {
-            const load   = serverLoad - i * (1 / serverCount)
+            const center = serverCount === 1 ? 0 : (i / (serverCount - 1)) - 0.5
+            const load   = Math.max(0, serverLoad * (1 + center * ui.loadSpread * 2.2))
             const isHot  = load > 0.85
             const isMed  = load > 0.55
             const isDead = ui.health < 15 && i >= serverCount - 1
@@ -1481,9 +1945,48 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
               <span style={{ color: P.red }}>TRAFFIC</span>
             </span>
           </div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '6px', fontSize: '8px', color: P.gray, flexWrap: 'wrap' }}>
+            <span>RAW {ui.rawTraffic}</span>
+            <span style={{ color: P.cyan }}>EDGE -{ui.edgeBlocked}</span>
+            <span style={{ color: P.orange }}>QUEUE -{ui.queueBlocked}</span>
+            <span style={{ color: P.lime }}>AUTO +{ui.autoCapacity}</span>
+          </div>
         </PixelBox>
         </div>{/* /tutGraphRef */}
       </div>
+
+      <PixelBox color={P.green} title="LIVE INFRA EFFECTS" style={{ width: '100%', maxWidth: 'min(700px, 100%)', padding: '10px 8px 8px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {ACTIONS.map(action => {
+            const level = upgradeLevels[action.id]
+            const active = level > 0
+            return (
+              <div key={action.id} style={{
+                flex: '1 1 125px',
+                minWidth: '125px',
+                border: `2px solid ${active ? P.green : P.dgray}`,
+                background: active ? '#001300' : '#0a0a0a',
+                color: active ? P.white : P.gray,
+                padding: '6px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {actionIcons[action.id]}
+                    <span style={{ fontSize: '8px', color: active ? P.cyan : P.gray }}>{action.label}</span>
+                  </div>
+                  <span style={{ fontSize: '8px', color: active ? P.yellow : P.dgray }}>x{level}</span>
+                </div>
+                <span style={{ fontSize: '8px', color: active ? P.green : P.gray }}>
+                  {getActionEffectSummary(action.id, level, liveEffects)}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </PixelBox>
 
       {/* ── Scaling actions ──────────────────────────────────────────────────── */}
       <div ref={tutActionsRef} style={{ width: '100%', maxWidth: 'min(700px, 100%)' }}>
@@ -1513,7 +2016,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 {actionIcons[action.id]}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
                   <span>{action.label}</span>
-                  <span style={{ color: P.yellow, fontSize: '8px' }}>${action.cost} · +{action.cap} CAP</span>
+                  <span style={{ color: P.yellow, fontSize: '8px' }}>${action.cost} · {action.hint}</span>
                 </div>
               </button>
             )
@@ -1551,7 +2054,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                   DEPLOY {pendingAction.label}
                 </div>
                 <div style={{ fontSize: '9px', color: P.gray, marginTop: '4px' }}>
-                  CORRECT=FREE UPGRADE  WRONG=-${pendingAction.cost} NO DEPLOY
+                  {pendingAction.hint.toUpperCase()}  ·  CORRECT=FREE  WRONG=-${pendingAction.cost}
                 </div>
               </div>
             </div>
@@ -1597,7 +2100,7 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 letterSpacing: '0.04em',
               }}>
                 {answered === question.answer
-                  ? `> CORRECT! +${pendingAction.cap} CAPACITY DEPLOYED FREE`
+                  ? `> CORRECT! ${getActionDeployCopy(pendingAction, upgradeLevels[pendingAction.id] + 1, currentScenario).toUpperCase()}`
                   : `> WRONG! -$${pendingAction.cost} WASTED — NO UPGRADE DEPLOYED`}
               </div>
             )}
@@ -1606,7 +2109,6 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
       )}
 
       {/* ── Result screen ─────────────────────────────────────────────────────── */}
-      {result && !hasReported.current && (() => { hasReported.current = true; report(perfEntries.current); return null })()}
       {result && gradeInfo && (
         <div style={{
           position: 'fixed', inset: 0,
@@ -1679,7 +2181,9 @@ export default function ScaleOrDie({ onExit }: ScaleOrDieProps) {
                 const levelId = SCALE_LEVELS[activeLevelIdxRef.current]?.id
                 if (levelId) {
                   markLevelComplete(ROADMAP_ID, levelId)
-                  setCompletedLevelIds(getCompletedLevels(ROADMAP_ID))
+                  const updated = getCompletedLevels(ROADMAP_ID)
+                  setCompletedLevelIds(updated)
+                  if (userId) remoteMarkLevelComplete(userId, ROADMAP_ID, levelId, updated)
                 }
                 setView('roadmap')
               }} style={{

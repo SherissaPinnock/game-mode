@@ -103,10 +103,12 @@ export function MemoryMatch({ onExit }: MemoryMatchProps) {
     startPeek()
   }
 
-  if (isWon && !hasReported.current) {
-    hasReported.current = true
-    report(perfEntries.current)
-  }
+  useEffect(() => {
+    if (isWon && !hasReported.current) {
+      hasReported.current = true
+      report(perfEntries.current)
+    }
+  }, [isWon, report])
 
   // ── Theme ────────────────────────────────────────────────────────────────
   const BG = isDark

@@ -1,11 +1,14 @@
-import { useEffect, useState, type ComponentProps } from 'react'
+import { useEffect, useRef, useState, type ComponentProps } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { LandingPage } from '@/components/LandingPage'
 import { GamesPage } from '@/components/GamesPage'
+import AdminPage from '@/pages/AdminPage'
 import { ResumeModal } from '@/components/ResumeModal'
-import { loadGame, clearGame } from '@/lib/resume'
+import { loadGameWithSync, clearGameWithSync } from '@/lib/resume'
 import type { SavedGame } from '@/lib/resume'
+import { useAuth } from '@/lib/auth'
+import { fetchGameConfig, type GameConfigEntry } from '@/lib/supabaseApi'
 import { ArcheryQuiz } from '@/games/archery-quiz/ArcheryQuiz'
 import { TechConnections } from '@/games/connections/TechConnections'
 import { MemoryMatch } from '@/games/memory-match/MemoryMatch'
@@ -22,6 +25,7 @@ import Hackgammon from '@/games/hackgammon/Hackgammon'
 import MahjongGame from '@/games/mahjong/MahjongGame'
 import ChessClouds from '@/games/chess-clouds/ChessClouds'
 import DbQuest from '@/games/db-quest/DbQuest'
+import GameBoy from '@/games/game-boy/GameBoy'
 import MysteryGame from '@/games/mystery/MysteryGame'
 import './App.css'
 
@@ -121,6 +125,9 @@ function GameRoute() {
   if (gameId === 'db-quest') {
     return <DbQuest key={componentKey} onExit={handleExit} />
   }
+  if (gameId === 'game-boy') {
+    return <GameBoy key={componentKey} onExit={handleExit} />
+  }
   if (gameId === 'mystery') {
     return <MysteryGame key={componentKey} onExit={handleExit} />
   }
@@ -129,12 +136,25 @@ function GameRoute() {
 }
 
 function AppRoutes() {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const location   = useLocation()
+  const { userId } = useAuth()
   const [pendingGame, setPendingGame] = useState<PendingGame | null>(null)
+  const [gameConfig, setGameConfig]   = useState<Map<string, GameConfigEntry>>(new Map())
 
-  function handlePlayGame(id: string, from: string) {
+  // Fetch on mount and whenever leaving /admin so toggles apply immediately
+  const prevPath = useRef(location.pathname)
+  useEffect(() => {
+    const leaving = prevPath.current === '/admin' && location.pathname !== '/admin'
+    prevPath.current = location.pathname
+    if (gameConfig.size === 0 || leaving) {
+      fetchGameConfig().then(cfg => setGameConfig(cfg))
+    }
+  }, [location.pathname])
+
+  async function handlePlayGame(id: string, from: string) {
     if (RESUMABLE_GAMES.has(id)) {
-      const saved = loadGame(id)
+      const saved = await loadGameWithSync(id, userId)
       if (saved) {
         setPendingGame({ id, from, saved })
         return
@@ -156,10 +176,10 @@ function AppRoutes() {
     setPendingGame(null)
   }
 
-  function handleStartFresh() {
+  async function handleStartFresh() {
     if (!pendingGame) return
 
-    clearGame(pendingGame.id)
+    await clearGameWithSync(pendingGame.id, userId)
     navigate(`/games/${pendingGame.id}`, {
       state: { from: pendingGame.from } satisfies GameRouteLocationState,
     })
@@ -186,6 +206,7 @@ function AppRoutes() {
             <LandingPage
               onBrowseGames={() => navigate('/games')}
               onPlay={(id) => handlePlayGame(id, '/')}
+              gameConfig={gameConfig}
             />
           }
         />
@@ -195,10 +216,12 @@ function AppRoutes() {
             <GamesPage
               onPlay={(id) => handlePlayGame(id, '/games')}
               onBack={() => navigate('/')}
+              gameConfig={gameConfig}
             />
           }
         />
         <Route path="/games/:gameId" element={<GameRoute />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

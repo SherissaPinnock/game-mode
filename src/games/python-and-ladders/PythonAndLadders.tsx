@@ -9,7 +9,8 @@ import { useGameLogic } from './hooks/useGameLogic'
 import { useGameTheme } from '@/lib/useGameTheme'
 import type { GameMode, Player } from './types'
 import { playClick } from '@/lib/sounds'
-import { saveGame, clearGame } from '@/lib/resume'
+import { saveGameWithSync, clearGameWithSync } from '@/lib/resume'
+import { useAuth } from '@/lib/auth'
 import { ExitConfirmModal } from '@/components/ExitConfirmModal'
 import './PythonAndLadders.css'
 
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export default function PythonAndLadders({ onExit, resumeState }: Props) {
+  const { userId } = useAuth()
   const [selectedMode, setSelectedMode] = useState<GameMode>(resumeState?.gameMode ?? 'vs-bot')
   const [friendName, setFriendName] = useState(resumeState?.friendName ?? '')
   const [showExitModal, setShowExitModal] = useState(false)
@@ -64,12 +66,12 @@ export default function PythonAndLadders({ onExit, resumeState }: Props) {
       gameMode, players, activePlayer, questionCount, correctCount,
       friendName: gameMode === 'vs-friend' ? p2.name : '',
     }
-    saveGame(GAME_ID, save, `${p1.name} on cell ${p1.position} vs ${p2.name} on cell ${p2.position}`)
+    saveGameWithSync(GAME_ID, save, `${p1.name} on cell ${p1.position} vs ${p2.name} on cell ${p2.position}`, userId)
     onExit()
   }
 
   function handleQuitToMenu() {
-    clearGame(GAME_ID)
+    clearGameWithSync(GAME_ID, userId)
     onExit()
   }
 

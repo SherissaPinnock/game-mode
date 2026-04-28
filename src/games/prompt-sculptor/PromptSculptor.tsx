@@ -6,6 +6,8 @@ import { CHALLENGES } from './challenges'
 import type { Challenge, TechniqueOption, GamePhase, TechniqueType } from './types'
 import { playCorrect, playWrong } from '@/lib/sounds'
 import { useGameTheme } from '@/lib/useGameTheme'
+import { useAuth } from '@/lib/auth'
+import { persistSession } from '@/lib/supabaseApi'
 import './PromptSculptor.css'
 
 // ─── Tutorial Content ────────────────────────────────────────────────────────
@@ -95,6 +97,7 @@ interface PromptSculptorProps {
 }
 
 export function PromptSculptor({ onExit }: PromptSculptorProps) {
+  const { userId } = useAuth()
   const { isDark, toggle } = useGameTheme()
 
   const [phase, setPhase] = useState<GamePhase>('tutorial')
@@ -115,6 +118,13 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
   const outputRef = useRef<HTMLDivElement>(null)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Persist score to Supabase when all challenges are complete
+  useEffect(() => {
+    if (phase !== 'complete' || !userId) return
+    persistSession({ userId, gameId: 'prompt-sculptor', score, entries: [],
+      metadata: { challenges: CHALLENGES.length } })
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentChallenge: Challenge = CHALLENGES[currentChallengeIndex]
 

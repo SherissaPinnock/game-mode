@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LearningRoadmap } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
+import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
+import { useAuth } from '@/lib/auth'
 import { DB_LEVELS, GAME_ID } from './data/roadmap'
 import NormalizationLevel from './levels/NormalizationLevel'
 import IndexingLevel from './levels/IndexingLevel'
@@ -9,9 +11,17 @@ import './DbQuest.css'
 interface Props { onExit: () => void }
 
 export default function DbQuest({ onExit }: Props) {
+  const { userId } = useAuth()
   const [view, setView] = useState<'roadmap' | 'game'>('roadmap')
   const [activeLevelIdx, setActiveLevelIdx] = useState(0)
   const [completedIds, setCompletedIds] = useState(() => getCompletedLevels(GAME_ID))
+
+  useEffect(() => {
+    if (!userId) return
+    remoteGetCompletedLevels(userId, GAME_ID).then(remote => {
+      if (remote.size > 0) setCompletedIds(prev => new Set([...prev, ...remote]))
+    })
+  }, [userId])
 
   function handlePlay(idx: number) {
     setActiveLevelIdx(idx)
@@ -22,7 +32,9 @@ export default function DbQuest({ onExit }: Props) {
     const levelId = DB_LEVELS[activeLevelIdx]?.id
     if (levelId) {
       markLevelComplete(GAME_ID, levelId)
-      setCompletedIds(getCompletedLevels(GAME_ID))
+      const updated = getCompletedLevels(GAME_ID)
+      setCompletedIds(updated)
+      if (userId) remoteMarkLevelComplete(userId, GAME_ID, levelId, updated)
     }
     setView('roadmap')
   }

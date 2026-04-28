@@ -12,6 +12,7 @@ import nextLevelSrc from '@/assets/sounds/next level.mp3'
 import voiceOverSrc from '@/assets/sounds/tutorial voice over.mp3'
 import wasCorrectSrc from '@/assets/sounds/was correct voice over.mp3'
 import wasWrongSrc from '@/assets/sounds/was wrong voice over.mp3'
+import vintageGameSrc from '@/assets/sounds/vintage game sound.mp3'
 /**
  * Play a short sound effect. Creates a fresh Audio each time
  * so overlapping plays don't cut each other off.
@@ -66,6 +67,10 @@ export function playComplete() {
 
 export function playNextLevel() {
   play(nextLevelSrc)
+}
+
+export function playVintageGame() {
+  play(vintageGameSrc)
 }
 
 export function playVoiceOver(): HTMLAudioElement {

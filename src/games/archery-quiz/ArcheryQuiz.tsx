@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { QuestionCard }  from './QuestionCard'
 import { PowerMeter }    from './PowerMeter'
 import { TargetCanvas }  from './TargetCanvas'
@@ -133,13 +133,15 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   }, [])
 
   // ── Results screen ────────────────────────────────────────────────────────
-  // Report performance when entering results
+  // Report performance when entering results — must be in useEffect, not render body
   const hasReported = useRef(false)
-  if (subPhase === 'results' && !hasReported.current) {
-    playComplete()
-    hasReported.current = true
-    report(perfEntries.current)
-  }
+  useEffect(() => {
+    if (subPhase === 'results' && !hasReported.current) {
+      hasReported.current = true
+      playComplete()
+      report(perfEntries.current, 'archery-quiz')
+    }
+  }, [subPhase, report])
 
   if (subPhase === 'results') {
     return (

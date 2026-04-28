@@ -30,9 +30,10 @@ interface Props {
   level: Level
   onComplete: (correct: number, total: number) => void
   onExit: () => void
+  onAnswer?: (correct: boolean) => void
 }
 
-export function CloudBoard({ level, onComplete, onExit }: Props) {
+export function CloudBoard({ level, onComplete, onExit, onAnswer }: Props) {
   const chessRef = useRef<Chess>(new Chess(level.fen))
   const [boardState, setBoardState] = useState(() => chessRef.current.board())
   const [selected, setSelected] = useState<string | null>(null)
@@ -123,6 +124,7 @@ export function CloudBoard({ level, onComplete, onExit }: Props) {
   function handleAnswer(isCorrect: boolean) {
     if (!pendingCapture) return
     setTotal(t => t + 1)
+    onAnswer?.(isCorrect)
 
     if (isCorrect) {
       setCorrect(c => c + 1)

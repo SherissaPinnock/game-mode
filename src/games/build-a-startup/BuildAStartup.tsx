@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, useCallback, type CSSProperties, type Drag
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
 import { GameRecommendations } from '@/components/GameRecommendations'
 import { playCorrect, playWrong, playClick, playNextLevel, playPop} from '@/lib/sounds'
-import { saveGame, clearGame } from '@/lib/resume'
+import { saveGameWithSync, clearGameWithSync } from '@/lib/resume'
+import { useAuth } from '@/lib/auth'
 import { ExitConfirmModal } from '@/components/ExitConfirmModal'
 import { useGameTheme } from '@/lib/useGameTheme'
 import './BuildAStartup.css'
@@ -728,6 +729,7 @@ function GameComplete({
 // ─── Main Game Component ─────────────────────────────────────────────────────
 
 export default function BuildAStartup({ onExit, resumeState }: { onExit: () => void; resumeState?: BuildAStartupSave | null }) {
+  const { userId } = useAuth()
   const { isDark, toggle: toggleTheme } = useGameTheme()
 
   const [phase, setPhase] = useState<Phase>(resumeState ? 'playing' : 'intro')
@@ -793,13 +795,13 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
   }, [])
 
   function handleSaveAndExit() {
-    saveGame(GAME_ID, { levelIdx, results } satisfies BuildAStartupSave,
-      `Level ${levelIdx + 1} of ${LEVELS.length}`)
+    saveGameWithSync(GAME_ID, { levelIdx, results } satisfies BuildAStartupSave,
+      `Level ${levelIdx + 1} of ${LEVELS.length}`, userId)
     onExit()
   }
 
   function handleQuit() {
-    clearGame(GAME_ID)
+    clearGameWithSync(GAME_ID, userId)
     onExit()
   }
 
@@ -927,6 +929,15 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
     setPhase('intro')
   }
 
+  // ── Report performance on game over ──────────────────────────────────────
+  useEffect(() => {
+    if (phase === 'game-over' && !hasReported.current) {
+      hasReported.current = true
+      report(perfEntries.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
   // ── Render phases ─────────────────────────────────────────────────────────
 
   if (phase === 'intro') {
@@ -944,10 +955,6 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
   }
 
   if (phase === 'game-over') {
-    if (!hasReported.current) {
-      hasReported.current = true
-      report(perfEntries.current)
-    }
     return (
       <GameComplete
         results={results}

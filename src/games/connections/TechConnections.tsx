@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConnectionsCard } from './ConnectionsCard'
 import { SolvedRow }       from './SolvedRow'
 import { StrikesDisplay }  from './StrikesDisplay'
@@ -159,20 +159,23 @@ export function TechConnections({ onExit }: TechConnectionsProps) {
   }, [])
 
   // ── Report performance on game end ────────────────────────────────────────
-  if ((phase === 'won' || phase === 'lost') && !hasReported.current) {
-    hasReported.current = true
-    // Record unsolved groups as incorrect
-    const unsolvedForReport = round.groups.filter(g => !solved.find(s => s.id === g.id))
-    for (const g of unsolvedForReport) {
-      perfEntries.current.push({
-        category: g.topic,
-        correct: false,
-        gameId: 'connections',
-        timestamp: Date.now(),
-      })
+  useEffect(() => {
+    if ((phase === 'won' || phase === 'lost') && !hasReported.current) {
+      hasReported.current = true
+      // Record unsolved groups as incorrect
+      const unsolvedForReport = round.groups.filter(g => !solved.find(s => s.id === g.id))
+      for (const g of unsolvedForReport) {
+        perfEntries.current.push({
+          category: g.topic,
+          correct: false,
+          gameId: 'connections',
+          timestamp: Date.now(),
+        })
+      }
+      report(perfEntries.current)
     }
-    report(perfEntries.current)
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
 
   const sessionStats = (phase === 'won' || phase === 'lost')
     ? computeStats(perfEntries.current) : undefined

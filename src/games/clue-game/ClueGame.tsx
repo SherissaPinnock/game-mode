@@ -1,5 +1,7 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { playCorrect, playWrong, playPop } from '@/lib/sounds'
+import { useAuth } from '@/lib/auth'
+import { persistSession } from '@/lib/supabaseApi'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -257,6 +259,8 @@ function CluePanel({
 interface ClueGameProps { onExit: () => void }
 
 export default function ClueGame({ onExit }: ClueGameProps) {
+  const { userId } = useAuth()
+
   const [gameKey,   setGameKey]   = useState(0) // bump to restart
   const [deck]                    = useState(() => shuffle(TECHNOLOGIES).slice(0, ROUNDS_PER_GAME))
   const [round,     setRound]     = useState(0)
@@ -266,6 +270,14 @@ export default function ClueGame({ onExit }: ClueGameProps) {
   const [roundOver, setRoundOver] = useState(false)  // correct or gave-up
   const [scores,    setScores]    = useState<number[]>([])
   const [gameOver,  setGameOver]  = useState(false)
+
+  // Persist score to Supabase when game ends
+  useEffect(() => {
+    if (!gameOver || !userId) return
+    const finalScore = scores.reduce((a, b) => a + b, 0)
+    persistSession({ userId, gameId: 'clue-game', score: finalScore, entries: [],
+      metadata: { rounds: scores.length } })
+  }, [gameOver]) // eslint-disable-line react-hooks/exhaustive-deps
   const inputRef = useRef<HTMLInputElement>(null)
   const fbTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 

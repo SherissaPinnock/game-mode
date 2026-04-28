@@ -5,7 +5,7 @@ import { CLUES }                 from './data/clues'
 import { INITIAL_GAME_STATE, applyClue } from './data/gameState'
 import type { GameState }        from './data/gameState'
 
-const DEV = import.meta.env.VITE_DEV_SKIP === 'true'
+const DEV = import.meta.env.DEV
 
 const DEV_ALL_UNLOCKED: GameState = {
   unlockedRooms:  ['kitchen', 'library', 'bedroom', 'living', 'study'],

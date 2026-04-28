@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { SymptomBoard } from './SymptomBoard'
 import { InvestigationPanel } from './InvestigationPanel'
 import { ActionPanel } from './ActionPanel'
@@ -7,11 +7,13 @@ import { DialogueBox } from './DialogueBox'
 import { incidents as allIncidents } from './data/incidents'
 import { usePerformance, type PerformanceEntry } from '@/lib/performance'
 import { playCorrect, playWrong, playWasCorrectVoiceOver, playWasWrongVoiceOver } from '@/lib/sounds'
-import { saveGame, clearGame } from '@/lib/resume'
+import { saveGameWithSync, clearGameWithSync } from '@/lib/resume'
+import { useAuth } from '@/lib/auth'
 import { ExitConfirmModal } from '@/components/ExitConfirmModal'
 import { useGameTheme } from '@/lib/useGameTheme'
 import { LearningRoadmap, type RoadmapLevel } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
+import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
 import type { Action, GamePhase, Incident, InvestigationLog, Investigation } from './types'
 
 // ── Journey levels — one incident each, concept taught before play ────────────
@@ -128,12 +130,22 @@ interface DevOpsDynamoProps {
 }
 
 export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps) {
+  const { userId } = useAuth()
+
   // ── Roadmap state ───────────────────────────────────────────────────────────
   const [view, setView] = useState<'roadmap' | 'game'>('roadmap')
   const [activeLevelIdx, setActiveLevelIdx] = useState(0)
   const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(
     () => getCompletedLevels(ROADMAP_ID)
   )
+
+  // Merge remote completed levels on mount
+  useEffect(() => {
+    if (!userId) return
+    remoteGetCompletedLevels(userId, ROADMAP_ID).then(remote => {
+      if (remote.size > 0) setCompletedLevelIds(prev => new Set([...prev, ...remote]))
+    })
+  }, [userId])
 
   function handlePlayLevel(levelIdx: number) {
     setActiveLevelIdx(levelIdx)
@@ -144,7 +156,7 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
     if (inc) {
       setIncidents([inc])
       setIncidentIndex(0)
-      setPhase('intro')
+      setPhase('briefing')
       setSlaRemaining(inc.slaTotal)
       setCompletedInvestigations(new Set())
       setInvestigationLog([])
@@ -157,14 +169,16 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
     }
   }
 
-  function handleLevelFinished() {
+  const handleLevelFinished = useCallback(() => {
     const levelId = DYNAMO_LEVELS[activeLevelIdx]?.id
     if (levelId) {
       markLevelComplete(ROADMAP_ID, levelId)
-      setCompletedLevelIds(getCompletedLevels(ROADMAP_ID))
+      const updated = getCompletedLevels(ROADMAP_ID)
+      setCompletedLevelIds(updated)
+      if (userId) remoteMarkLevelComplete(userId, ROADMAP_ID, levelId, updated)
     }
     setView('roadmap')
-  }
+  }, [activeLevelIdx, userId])
   const { isDark, toggle } = useGameTheme()
 
   // ── Session state (hydrated from save if present) ────────────────────────
@@ -225,12 +239,12 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
       correctCount,
       lastWasCorrect,
     }
-    saveGame(GAME_ID, save, `Incident ${incidentIndex + 1} of ${incidents.length}`)
+    saveGameWithSync(GAME_ID, save, `Incident ${incidentIndex + 1} of ${incidents.length}`, userId)
     setView('roadmap')
   }
 
   function handleQuit() {
-    clearGame(GAME_ID)
+    clearGameWithSync(GAME_ID, userId)
     setView('roadmap')
   }
 
@@ -290,8 +304,7 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
       // Go to transition dialogue before next incident
       setPhase('transition')
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLastIncident, resetIncidentState])
+  }, [isLastIncident, handleLevelFinished])
 
   const handleTransitionDone = useCallback(() => {
     const nextIdx = incidentIndex + 1
@@ -302,10 +315,13 @@ export default function DevOpsDynamo({ onExit, resumeState }: DevOpsDynamoProps)
   }, [incidentIndex, incidents, resetIncidentState])
 
   // ── Report performance on final outcome ──────────────────────────────────
-  if (phase === 'outcome' && isLastIncident && !hasReported.current) {
-    hasReported.current = true
-    report(perfEntries.current)
-  }
+  useEffect(() => {
+    if (phase === 'outcome' && isLastIncident && !hasReported.current) {
+      hasReported.current = true
+      report(perfEntries.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, isLastIncident])
 
   // ── Theme tokens ────────────────────────────────────────────────────────
   const BG = isDark
