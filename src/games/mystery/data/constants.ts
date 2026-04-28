@@ -1,0 +1,9 @@
+export const TICK_MS      = 50    // game loop interval (ms)
+export const WALK_SPEED   = 3     // % units per second
+export const FRAME_MS     = 170   // ms per sprite frame
+export const PAUSE_MIN    = 1800  // ms idle between waypoints (min)
+export const PAUSE_MAX    = 4500  // ms idle between waypoints (max)
+export const FRAME_COUNT  = 4     // frames per sprite sheet row
+export const SPRITE_SCALE = 0.9   // render multiplier on natural sprite size
+export const ROOM_MARGIN  = 6     // % kept away from room edges on spawn
+export const MAX_WANDER_DIST = 22 // max % distance per waypoint hop

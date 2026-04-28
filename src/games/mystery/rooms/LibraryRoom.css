@@ -1,0 +1,640 @@
+@import './mysteryRoomFoundation.css';
+
+/* ─── Root ──────────────────────────────────────────────────────── */
+.lib-root {
+  --myst-display: 'Baskerville', 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --myst-body: 'Georgia', 'Times New Roman', serif;
+  --myst-ui: 'Trebuchet MS', 'Gill Sans', 'Avenir Next', sans-serif;
+  --myst-accent: #8f76ab;
+  --myst-accent-strong: #b19bc9;
+  --myst-gold: #c8a56d;
+  --myst-paper: #f2e6d7;
+  --myst-ink: #21161f;
+  --myst-shadow: #120c11;
+  --myst-muted: #ceb9dd;
+  --myst-dim: #a98db9;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(214, 186, 133, 0.1), transparent 18%),
+    radial-gradient(circle at 82% 18%, rgba(143, 118, 171, 0.18), transparent 20%),
+    linear-gradient(180deg, #1a1220 0%, #100b15 48%, #09060d 100%);
+  color: var(--myst-paper);
+  font-family: var(--myst-body);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.lib-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 24%, rgba(255, 248, 237, 0.04) 0 18px, transparent 19px),
+    radial-gradient(circle at 80% 40%, rgba(255, 248, 237, 0.03) 0 24px, transparent 25px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%) 0 0 / 24px 24px;
+  opacity: 0.45;
+}
+
+/* ─── Topbar ────────────────────────────────────────────────────── */
+.lib-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: rgba(4, 2, 7, 0.96);
+  border-bottom: 1px solid rgba(120, 80, 160, 0.2);
+  flex-shrink: 0;
+}
+
+.lib-back {
+  background: none;
+  border: 1px solid rgba(120, 80, 160, 0.3);
+  color: #6a4c8a;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.lib-back:hover {
+  border-color: rgba(160, 100, 200, 0.6);
+  color: #b080d8;
+}
+
+.lib-room-label {
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  color: #b080d8;
+  letter-spacing: 0.05em;
+}
+
+.lib-step-hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #4a3465;
+  font-style: italic;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ─── Body ──────────────────────────────────────────────────────── */
+.lib-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Scene ─────────────────────────────────────────────────────── */
+.lib-scene {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lib-scene-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.5;
+}
+.lib-scene-bg.dim { opacity: 0.18; cursor: default; }
+
+.lib-scene-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgba(4, 2, 8, 0.7) 100%);
+  pointer-events: none;
+}
+
+/* ─── Intro narration ────────────────────────────────────────────── */
+.lib-narration-panel {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 0 60px 36px;
+  background: linear-gradient(to top, rgba(4, 2, 8, 0.97) 55%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 200px;
+  justify-content: flex-end;
+}
+
+.lib-narration-text {
+  font-size: 0.9rem;
+  color: #c8b8e0;
+  line-height: 1.85;
+  margin: 0;
+  font-style: italic;
+  max-width: 680px;
+}
+
+.lib-narration-hint {
+  font-size: 0.68rem;
+  color: #4a3465;
+  letter-spacing: 0.08em;
+  font-family: 'Inter', sans-serif;
+  margin-top: 4px;
+}
+
+/* ─── Cipher letter card ─────────────────────────────────────────── */
+.lib-letter-card {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 580px;
+  margin: auto;
+  background: rgba(6, 3, 12, 0.97);
+  border: 1px solid rgba(120, 80, 160, 0.3);
+  border-radius: 10px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  max-height: calc(100% - 40px);
+  cursor: default;
+}
+
+.lib-letter-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.lib-letter-icon { font-size: 1.8rem; flex-shrink: 0; }
+
+.lib-letter-title {
+  font-size: 1.3rem;
+  color: #b080d8;
+  margin: 0 0 4px;
+  letter-spacing: 0.04em;
+}
+
+.lib-letter-sub {
+  font-size: 0.75rem;
+  color: #4a3465;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.lib-letter-text {
+  font-size: 0.85rem;
+  color: #8070a0;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.7;
+}
+
+.lib-letter-quote {
+  margin: 0;
+  padding: 16px 20px;
+  background: rgba(120, 80, 160, 0.06);
+  border-left: 3px solid rgba(120, 80, 160, 0.35);
+  border-radius: 0 6px 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lib-letter-quote p {
+  font-size: 0.88rem;
+  color: #d0c0e8;
+  line-height: 1.85;
+  font-style: italic;
+  margin: 0;
+}
+
+.lib-letter-sig {
+  font-size: 0.72rem !important;
+  color: #6a5080 !important;
+  letter-spacing: 0.06em;
+}
+
+.lib-letter-flags {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lib-flag {
+  font-size: 0.72rem;
+  color: #b08020;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Primary button ─────────────────────────────────────────────── */
+.lib-primary-btn {
+  background: rgba(100, 60, 140, 0.18);
+  border: 1px solid rgba(160, 100, 200, 0.45);
+  color: #b080d8;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  align-self: flex-start;
+}
+.lib-primary-btn.full { align-self: stretch; margin-top: 12px; text-align: center; }
+.lib-primary-btn:hover {
+  background: rgba(140, 80, 180, 0.28);
+  border-color: rgba(180, 120, 220, 0.7);
+}
+
+/* ─── Archive layout ─────────────────────────────────────────────── */
+.lib-archive {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  overflow: hidden;
+}
+
+/* ── Query sidebar ──────────────────────────────────────────────── */
+.lib-query-sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  border-right: 1px solid rgba(120, 80, 160, 0.15);
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.lib-sidebar-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #4a3465;
+  font-family: 'Inter', sans-serif;
+  margin: 0 0 4px;
+}
+
+.lib-query-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(6, 3, 12, 0.7);
+  border: 1px solid rgba(120, 80, 160, 0.15);
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+.lib-query-btn:hover { border-color: rgba(160, 100, 200, 0.35); }
+.lib-query-btn.active {
+  border-color: rgba(160, 100, 200, 0.55);
+  background: rgba(100, 60, 140, 0.12);
+}
+.lib-query-btn.done { border-color: rgba(60, 160, 100, 0.3); }
+
+.lib-query-status {
+  font-size: 0.7rem;
+  color: #4a3465;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+.lib-query-btn.done .lib-query-status { color: #4aaa70; }
+
+.lib-query-label {
+  font-size: 0.78rem;
+  color: #a090c0;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.4;
+}
+.lib-query-btn.done .lib-query-label { color: #4aaa70; }
+
+/* ── Results pane ───────────────────────────────────────────────── */
+.lib-results-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  overflow-y: auto;
+  gap: 14px;
+}
+.lib-results-pane::-webkit-scrollbar { width: 4px; }
+.lib-results-pane::-webkit-scrollbar-thumb { background: rgba(120,80,160,0.2); border-radius: 2px; }
+
+.lib-query-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(120, 80, 160, 0.15);
+}
+
+.lib-query-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+.lib-query-text {
+  font-size: 0.88rem;
+  color: #c8b8e0;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.lib-results-instr {
+  font-size: 0.75rem;
+  color: #4a3465;
+  font-style: italic;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.lib-resolved-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #4aaa70;
+  font-family: 'Inter', sans-serif;
+}
+.lib-resolved-check { font-size: 0.9rem; }
+
+.lib-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Result card ────────────────────────────────────────────────── */
+.lib-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  background: rgba(6, 3, 12, 0.8);
+  border: 1px solid rgba(120, 80, 160, 0.15);
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+}
+.lib-result:hover:not(:disabled) {
+  border-color: rgba(160, 100, 200, 0.4);
+  background: rgba(80, 40, 120, 0.1);
+}
+.lib-result:disabled { cursor: default; opacity: 0.5; }
+
+.lib-result.correct {
+  border-color: rgba(60, 160, 100, 0.5);
+  background: rgba(20, 80, 50, 0.12);
+  cursor: default;
+  opacity: 1;
+}
+.lib-result.wrong {
+  border-color: rgba(180, 60, 40, 0.5);
+  background: rgba(120, 30, 20, 0.1);
+  animation: libWrongShake 0.35s ease-out;
+}
+@keyframes libWrongShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-4px); }
+  50%       { transform: translateX(4px); }
+  75%       { transform: translateX(-2px); }
+}
+
+.lib-result-source {
+  font-size: 0.65rem;
+  color: #6a4c8a;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+}
+.lib-result.correct .lib-result-source { color: #3a9060; }
+
+.lib-result-excerpt {
+  font-size: 0.8rem;
+  color: #c0a8d8;
+  line-height: 1.65;
+  margin: 0;
+  font-style: italic;
+}
+
+.lib-result-note {
+  font-size: 0.72rem;
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  margin-top: 2px;
+  display: flex;
+  gap: 6px;
+}
+.lib-result-note span { flex-shrink: 0; font-weight: 600; }
+.lib-result-note.relevant {
+  background: rgba(20, 80, 50, 0.15);
+  color: #5aaa80;
+  border-left: 2px solid rgba(60, 160, 100, 0.4);
+}
+.lib-result-note.irrelevant {
+  background: rgba(120, 30, 20, 0.12);
+  color: #a06050;
+  border-left: 2px solid rgba(180, 60, 40, 0.3);
+}
+
+/* ─── Reveal ─────────────────────────────────────────────────────── */
+.lib-reveal {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 28px 20px;
+}
+.lib-reveal::-webkit-scrollbar { width: 4px; }
+.lib-reveal::-webkit-scrollbar-thumb { background: rgba(120,80,160,0.2); border-radius: 2px; }
+
+.lib-reveal-card {
+  max-width: 640px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lib-reveal-title {
+  font-size: 1.3rem;
+  color: #b080d8;
+  margin: 0;
+  letter-spacing: 0.06em;
+}
+
+.lib-reveal-intro {
+  font-size: 0.85rem;
+  color: #6a5080;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* Evidence chain */
+.lib-evidence-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.lib-evidence-item {
+  display: flex;
+  gap: 14px;
+  background: rgba(6, 3, 12, 0.9);
+  border: 1px solid rgba(120, 80, 160, 0.2);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.lib-evidence-num {
+  width: 24px;
+  height: 24px;
+  background: rgba(120, 80, 160, 0.2);
+  border: 1px solid rgba(160, 100, 200, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #b080d8;
+  font-family: 'Inter', sans-serif;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lib-evidence-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lib-evidence-source {
+  font-size: 0.65rem;
+  color: #6a4c8a;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+.lib-evidence-text {
+  font-size: 0.82rem;
+  color: #c0a8d8;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.lib-chain-arrow {
+  text-align: center;
+  color: rgba(120, 80, 160, 0.3);
+  font-size: 1rem;
+  padding: 2px 0;
+  line-height: 1;
+}
+
+/* Conclusion */
+.lib-conclusion {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(80, 40, 120, 0.1);
+  border: 1px solid rgba(160, 100, 200, 0.3);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.lib-conclusion-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+.lib-conclusion p {
+  font-size: 0.85rem;
+  color: #d0b8f0;
+  line-height: 1.75;
+  margin: 0;
+  font-style: italic;
+}
+
+/* RAG note */
+.lib-rag-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(12, 8, 20, 0.9);
+  border: 1px solid rgba(160, 120, 40, 0.25);
+  border-left: 3px solid rgba(200, 150, 10, 0.5);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+}
+
+.lib-rag-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.lib-rag-note p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #7a6840;
+  line-height: 1.8;
+}
+.lib-rag-note strong { color: #c8960a; }
+
+/* ─── Done card ──────────────────────────────────────────────────── */
+.lib-done-card {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 500px;
+  margin: auto;
+  background: rgba(6, 3, 12, 0.97);
+  border: 1px solid rgba(120, 80, 160, 0.3);
+  border-radius: 12px;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  cursor: default;
+}
+
+.lib-clue-icon { font-size: 2.2rem; }
+
+.lib-done-title {
+  font-size: 1.3rem;
+  color: #b080d8;
+  margin: 0;
+  letter-spacing: 0.06em;
+}
+
+.lib-done-clue-name {
+  font-size: 1rem;
+  color: #e8d5b0;
+  font-style: italic;
+  margin: 0;
+}
+
+.lib-done-summary {
+  font-size: 0.85rem;
+  color: #8070a0;
+  line-height: 1.7;
+  margin: 0;
+  font-style: italic;
+}
+
+.lib-done-unlock {
+  font-size: 0.78rem;
+  color: #4a3465;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}

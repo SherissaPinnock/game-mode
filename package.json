@@ -7,10 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
+    "@supabase/supabase-js": "^2.104.0",
     "chess.js": "^1.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -19,6 +22,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",
+    "react-router-dom": "^7.14.1",
     "recharts": "^3.8.1",
     "roughjs": "^4.6.6",
     "shadcn": "^4.0.8",
@@ -41,6 +45,7 @@
     "tailwindcss": "^3.4.19",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.5"
   }
 }

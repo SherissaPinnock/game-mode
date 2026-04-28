@@ -1,3 +1,5 @@
+import '../PythonAndLadders.css'
+
 interface DiceProps {
   value: number | null
   rolling?: boolean
@@ -19,8 +21,7 @@ export function Dice({ value, rolling }: DiceProps) {
   return (
     <div
       className={`
-        w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl border-2 border-slate-300
-        shadow-lg p-2 grid grid-cols-3 grid-rows-3 gap-0
+        pal-dice w-14 h-14 sm:w-16 sm:h-16 p-2 grid grid-cols-3 grid-rows-3 gap-0
         ${rolling ? 'animate-spin' : 'animate-bounce-once'}
       `}
     >
@@ -31,7 +32,7 @@ export function Dice({ value, rolling }: DiceProps) {
         return (
           <div key={i} className="flex items-center justify-center">
             {hasDot && (
-              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-slate-800" />
+              <div className="pal-die-dot w-2.5 h-2.5 sm:w-3 sm:h-3" />
             )}
           </div>
         )

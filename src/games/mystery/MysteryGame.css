@@ -1,0 +1,16 @@
+/* ══════════════════════════════════════════════════════════════════
+   MysteryGame root — shared base only.
+   Phase-specific styles live in phases/ and components/.
+   ══════════════════════════════════════════════════════════════════ */
+
+.mys-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #060402;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: #e8d5b0;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}

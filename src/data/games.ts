@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, Search, Box, type LucideIcon } from 'lucide-react'
 
 import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.webp'
 import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.webp'
@@ -14,6 +14,9 @@ import sudokuThumb from '@/assets/game thumbnails/sudoku thumbnail.webp'
 import hackgammonThumb from '@/assets/game thumbnails/hackgammon thumbnail.webp'
 import chessThumb from '@/assets/game thumbnails/cloud chess.webp'
 import mahjongThumb from '@/assets/game thumbnails/mahjong.webp'
+import mysteryThumb from '@/assets/game thumbnails/blackwoon manor.webp'
+import dbThumb from '@/assets/game thumbnails/db quest.webp'
+import gameBoyThumb from '@/assets/game thumbnails/docker ds.webp'
 
 export interface Game {
   id: string
@@ -152,5 +155,32 @@ export const games: Game[] = [
     tag: 'Strategy',
     level: 'Intermediate',
     thumbnail: chessThumb
+  },
+  {
+    id: 'db-quest',
+    title: 'DB Quest',
+    description: 'A guided journey through database optimisation. Learn normalization, indexing, and CTEs through interactive animations and hands-on challenges.',
+    icon: Database,
+    tag: 'Simulation',
+    level: 'Intermediate',
+    thumbnail: dbThumb
+  },
+  {
+    id: 'game-boy',
+    title: 'Docker DS',
+    description: 'Learn Docker through a retro handheld analogy. Drag cartridges, boot images, and work through containers, Dockerfiles, volumes, and Docker Compose.',
+    icon: Box,
+    tag: 'Simulation',
+    level: 'Beginner',
+    thumbnail: gameBoyThumb
+  },
+  {
+    id: 'mystery',
+    title: 'Blackwood Manor',
+    description: 'A murder mystery RPG set in a pixel-art mansion. Investigate rooms, question suspects, and uncover the truth before the killer destroys the evidence.',
+    icon: Search,
+    tag: 'RPG',
+    level: 'Intermediate',
+    thumbnail: mysteryThumb
   },
 ]

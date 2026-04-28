@@ -3,6 +3,7 @@ import { TargetCanvas } from './TargetCanvas'
 import { PowerMeter } from './PowerMeter'
 import { ZONE_META } from './utils'
 import type { ArrowShot } from './types'
+import './ArcheryArena.css'
 
 type ShotPhase = 'aiming' | 'feedback'
 
@@ -50,40 +51,31 @@ export function ArcheryPhase({ arrowCount, onShotFired, onComplete, onExit }: Ar
   const resultMeta = latestShot ? ZONE_META[latestShot.zone] : null
 
   return (
-    <div className="sketch-bg flex flex-1 flex-col items-center px-6 py-12 gap-8 min-h-screen">
-
-      {/* Header */}
-      <div className="w-full max-w-3xl flex items-center justify-between">
-        <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
+    <div className="aa-shell aa-shell-center">
+      <div className="aa-header">
+        <button onClick={onExit} className="aa-btn aa-btn-ghost px-4 py-2 text-sm font-sketch">
           ← Exit
         </button>
-        <h2 className="font-sketch text-2xl text-[#2d2d2d]">🏹 Archery Range</h2>
-        {/* Arrow progress dots */}
-        <div className="flex gap-2">
+        <h2 className="aa-heading aa-heading-center aa-heading-small font-sketch">🏹 Archery Range</h2>
+        <div className="aa-progress-dots">
           {Array.from({ length: arrowCount }, (_, i) => (
             <div
               key={i}
-              className={`w-3 h-3 rounded-full border-2 border-[#2d2d2d] transition-colors ${
-                i < shots.length ? 'bg-[#2d2d2d]' : 'bg-transparent'
-              }`}
+              className={`aa-dot ${i < shots.length ? 'aa-dot-done' : ''}`}
             />
           ))}
         </div>
       </div>
 
-      {/* Main layout: target left, controls right */}
-      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-8 items-center justify-center">
-
-        {/* Target canvas */}
+      <div className="aa-main-row">
         <div className="flex flex-col items-center gap-3 shrink-0">
           <TargetCanvas shots={shots} latestShot={latestShot} />
-          <p className="font-sketch text-sm text-[#9ca3af]">
+          <p className="aa-caption aa-caption-center font-sketch">
             {shots.length} / {arrowCount} arrows shot
           </p>
         </div>
 
-        {/* Right panel: power meter OR feedback */}
-        <div className="sketch-card p-6 flex-1 w-full flex flex-col gap-4">
+        <div className="aa-panel aa-side-panel">
           {shotPhase === 'aiming' ? (
             <PowerMeter
               arrowIndex={currentArrow}
@@ -91,21 +83,17 @@ export function ArcheryPhase({ arrowCount, onShotFired, onComplete, onExit }: Ar
               onShoot={handleShoot}
             />
           ) : resultMeta && latestShot ? (
-            /* Result feedback */
-            <div className="flex flex-col items-center gap-5 text-center py-4">
+            <div className="aa-feedback-stack">
               <span className="text-6xl">{resultMeta.emoji}</span>
-              <p
-                className="font-sketch text-3xl font-bold"
-                style={{ color: resultMeta.color }}
-              >
+              <p className="aa-zone-title font-sketch" style={{ color: resultMeta.color }}>
                 {resultMeta.label}
               </p>
-              <p className="font-sketch text-xl text-[#2d2d2d]">
+              <p className="aa-points-text font-sketch">
                 +{latestShot.score} point{latestShot.score !== 1 ? 's' : ''}
               </p>
               <button
                 onClick={handleNextArrow}
-                className="sketch-btn px-8 py-3 font-sketch text-lg font-bold"
+                className="aa-btn aa-btn-primary aa-btn-wide font-sketch"
               >
                 {isLastArrow ? '📊 See Results' : '➡ Next Arrow'}
               </button>

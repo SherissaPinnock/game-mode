@@ -1126,6 +1126,179 @@
 }
 
 /* =============================================
+   Game preview carousel
+   ============================================= */
+
+.lp-preview-section {
+  background:
+    radial-gradient(circle at top left, rgba(79,110,245,0.12), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  border-bottom: 1px solid #dbe4ff;
+}
+
+.lp-preview-nav-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.lp-preview-nav {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #d5ddf4;
+  background: rgba(255,255,255,0.9);
+  color: #1e293b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease;
+}
+
+.lp-preview-nav:hover {
+  transform: translateY(-1px);
+  border-color: #4f6ef5;
+  box-shadow: 0 10px 24px rgba(79,110,245,0.16);
+}
+
+.lp-preview-carousel {
+  overflow: hidden;
+}
+
+.lp-preview-track {
+  display: flex;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lp-preview-slide {
+  flex: 0 0 100%;
+  min-width: 100%;
+}
+
+.lp-preview-card {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 0;
+  border-radius: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.12);
+  background:
+    radial-gradient(circle at top left, rgba(147,197,253,0.24), transparent 24%),
+    linear-gradient(135deg, #16213e 0%, #1d2d69 54%, #2754d8 100%);
+  box-shadow: 0 24px 50px rgba(15,23,42,0.16);
+}
+
+.lp-preview-aside {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px 26px 32px 32px;
+  background: linear-gradient(180deg, rgba(8,15,34,0.26), rgba(8,15,34,0.12));
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.lp-preview-copy-block {
+  margin: 0;
+}
+
+.lp-preview-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #bfdbfe;
+  margin: 0 0 10px;
+}
+
+.lp-preview-title {
+  font-size: clamp(24px, 2.8vw, 34px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.lp-preview-description {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(226,232,240,0.92);
+  margin: 0;
+}
+
+.lp-preview-thumbnail {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  border-radius: 22px;
+  box-shadow: 0 14px 32px rgba(2,6,23,0.24);
+  background: rgba(255,255,255,0.06);
+}
+
+.lp-preview-stage {
+  position: relative;
+  min-width: 0;
+  padding: 14px 14px 14px 8px;
+  display: flex;
+  align-items: center;
+}
+
+.lp-preview-demo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 26px;
+  left: 26px;
+  z-index: 1;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.72);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lp-preview-demo-media {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 24px;
+  background: rgba(2,6,23,0.56);
+  display: block;
+  object-fit: contain;
+}
+
+.lp-preview-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.lp-preview-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  border: none;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, width 0.15s ease;
+}
+
+.lp-preview-dot.is-active {
+  width: 32px;
+  background: #4f6ef5;
+}
+
+/* =============================================
    Topics section — carousel
    ============================================= */
 
@@ -1441,6 +1614,17 @@
   .lp-featured-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .lp-preview-card {
+    grid-template-columns: 1fr;
+  }
+  .lp-preview-aside {
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 28px 28px 22px;
+  }
+  .lp-preview-stage {
+    padding: 10px 12px 12px;
+  }
   .lp-lb-inner {
     flex-direction: column;
     gap: 40px;
@@ -1463,6 +1647,14 @@
   .lp-section-sub { font-size: 14px; }
   .lp-footer { padding: 20px; }
   .lp-footer-inner { flex-direction: column; gap: 8px; text-align: center; }
+  .lp-preview-nav-wrap { margin-bottom: 14px; }
+  .lp-preview-card { border-radius: 24px; }
+  .lp-preview-aside { padding: 22px 22px 18px; gap: 14px; }
+  .lp-preview-stage { padding: 8px; }
+  .lp-preview-demo-label { top: 18px; left: 18px; }
+  .lp-preview-title { font-size: 32px; }
+  .lp-preview-thumbnail { border-radius: 18px; }
+  .lp-preview-demo-media { border-radius: 18px; }
 
   /* Leaderboard table: hide games col, tighten */
   .lp-lb-col-games { display: none; }
@@ -1485,5 +1677,7 @@
   .hero-inner { padding: 32px 0 40px; }
   .hero-cta-row { gap: 12px; }
   .hero-btn-primary { width: 100% !important; justify-content: center; }
+  .lp-preview-title { font-size: 26px; }
+  .lp-preview-description { font-size: 14px; }
+  .lp-preview-aside { padding: 18px 18px 14px; }
 }
-

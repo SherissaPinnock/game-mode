@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { QuestionCard }  from './QuestionCard'
 import { PowerMeter }    from './PowerMeter'
 import { TargetCanvas }  from './TargetCanvas'
@@ -8,6 +8,7 @@ import { questions as allQuestions } from './data/questions'
 import { usePerformance, type PerformanceEntry } from '@/lib/performance'
 import { playCorrect, playWrong, playArrow, playComplete } from '@/lib/sounds'
 import type { Question, ArrowShot } from './types'
+import './ArcheryArena.css'
 
 const QUESTIONS_PER_GAME = 5
 
@@ -132,13 +133,15 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   }, [])
 
   // ── Results screen ────────────────────────────────────────────────────────
-  // Report performance when entering results
+  // Report performance when entering results — must be in useEffect, not render body
   const hasReported = useRef(false)
-  if (subPhase === 'results' && !hasReported.current) {
-    playComplete()
-    hasReported.current = true
-    report(perfEntries.current)
-  }
+  useEffect(() => {
+    if (subPhase === 'results' && !hasReported.current) {
+      hasReported.current = true
+      playComplete()
+      report(perfEntries.current, 'archery-quiz')
+    }
+  }, [subPhase, report])
 
   if (subPhase === 'results') {
     return (
@@ -156,18 +159,18 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
 
   // ── Progress dots ─────────────────────────────────────────────────────────
   const progressDots = (
-    <div className="flex gap-2">
+    <div className="aa-progress-dots">
       {sessionQuestions.map((_, i) => {
         const result = questionResults[i]
-        let bgClass = 'bg-transparent'
-        if (result === 'correct') bgClass = 'bg-green-500'
-        else if (result === 'wrong') bgClass = 'bg-red-400'
-        else if (i === qIndex) bgClass = 'bg-amber-400'
+        let stateClass = ''
+        if (result === 'correct') stateClass = 'aa-dot-correct'
+        else if (result === 'wrong') stateClass = 'aa-dot-wrong'
+        else if (i === qIndex) stateClass = 'aa-dot-active'
 
         return (
           <div
             key={i}
-            className={`w-3 h-3 rounded-full border-2 border-[#2d2d2d] transition-colors ${bgClass}`}
+            className={`aa-dot ${stateClass}`}
           />
         )
       })}
@@ -179,33 +182,30 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
   // ── Aiming / Shot feedback: show target + controls ────────────────────────
   if (subPhase === 'aiming' || subPhase === 'shot-feedback') {
     return (
-      <div className="sketch-bg flex flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-12 gap-4 sm:gap-8 min-h-screen">
-        {/* Header */}
-        <div className="w-full max-w-3xl flex items-center justify-between">
-          <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
+      <div className="aa-shell aa-shell-center">
+        <div className="aa-header">
+          <button onClick={onExit} className="aa-btn aa-btn-ghost px-4 py-2 text-sm font-sketch">
             ← Exit
           </button>
-          <h2 className="font-sketch text-base sm:text-2xl text-[#2d2d2d]">🏹 Take Your Shot!</h2>
+          <h2 className="aa-heading aa-heading-center aa-heading-small font-sketch">🏹 Take Your Shot!</h2>
           {progressDots}
         </div>
 
-        {/* Earned shot banner */}
-        <div className="sketch-card px-6 py-3 text-center bg-green-50 border-green-400">
-          <p className="font-sketch text-lg text-green-700">
+        <div className="aa-banner aa-banner-good">
+          <p className="font-sketch text-lg">
             ✓ Correct answer! Arrow #{shots.length + (subPhase === 'aiming' ? 1 : 0)} earned
           </p>
         </div>
 
-        {/* Main layout: target left, controls right */}
-        <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 sm:gap-8 items-center justify-center">
+        <div className="aa-main-row">
           <div className="flex flex-col items-center gap-3 shrink-0">
             <TargetCanvas shots={shots} latestShot={latestShot} />
-            <p className="font-sketch text-sm text-[#9ca3af]">
+            <p className="aa-caption aa-caption-center font-sketch">
               {shots.length} arrow{shots.length !== 1 ? 's' : ''} on target
             </p>
           </div>
 
-          <div className="sketch-card p-4 sm:p-6 flex-1 w-full flex flex-col gap-4">
+          <div className="aa-panel aa-side-panel">
             {subPhase === 'aiming' ? (
               <PowerMeter
                 arrowIndex={shots.length}
@@ -213,17 +213,17 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
                 onShoot={handleShoot}
               />
             ) : resultMeta && latestShot ? (
-              <div className="flex flex-col items-center gap-5 text-center py-4">
+              <div className="aa-feedback-stack">
                 <span className="text-6xl">{resultMeta.emoji}</span>
-                <p className="font-sketch text-3xl font-bold" style={{ color: resultMeta.color }}>
+                <p className="aa-zone-title font-sketch" style={{ color: resultMeta.color }}>
                   {resultMeta.label}
                 </p>
-                <p className="font-sketch text-xl text-[#2d2d2d]">
+                <p className="aa-points-text font-sketch">
                   +{latestShot.score} point{latestShot.score !== 1 ? 's' : ''}
                 </p>
                 <button
                   onClick={handleAfterShot}
-                  className="sketch-btn px-8 py-3 font-sketch text-lg font-bold"
+                  className="aa-btn aa-btn-primary aa-btn-wide font-sketch"
                 >
                   {isLastQuestion ? '📊 See Results' : '➡ Next Question'}
                 </button>
@@ -237,31 +237,27 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
 
   // ── Question / Answered: show quiz card ───────────────────────────────────
   return (
-    <div className="sketch-bg flex flex-1 flex-col items-center px-4 py-6 sm:px-6 sm:py-12 gap-4 sm:gap-8 min-h-screen">
-      {/* Header */}
-      <div className="w-full max-w-3xl flex items-center justify-between">
-        <button onClick={onExit} className="sketch-btn px-4 py-2 text-sm font-sketch">
+    <div className="aa-shell aa-shell-center">
+      <div className="aa-header">
+        <button onClick={onExit} className="aa-btn aa-btn-ghost px-4 py-2 text-sm font-sketch">
           ← Exit
         </button>
-        <h2 className="font-sketch text-base sm:text-2xl text-[#2d2d2d]">
+        <h2 className="aa-heading aa-heading-center aa-heading-small font-sketch">
           🎯 Q{qIndex + 1}/{sessionQuestions.length}
         </h2>
         {progressDots}
       </div>
 
-      {/* Target preview (small) + question side by side */}
-      <div className="w-full max-w-3xl flex flex-col sm:flex-row gap-4 sm:gap-8 items-center justify-center">
-        {/* Small target preview showing accumulated shots */}
+      <div className="aa-main-row">
         {shots.length > 0 && (
           <div className="flex flex-col items-center gap-2 shrink-0">
             <TargetCanvas shots={shots} />
-            <p className="font-sketch text-sm text-[#9ca3af]">
+            <p className="aa-caption aa-caption-center font-sketch">
               {shots.length} arrow{shots.length !== 1 ? 's' : ''} landed
             </p>
           </div>
         )}
 
-        {/* Question card + action button */}
         <div className="flex flex-col gap-4 flex-1 w-full">
           <QuestionCard
             question={question}
@@ -273,7 +269,7 @@ export function ArcheryQuiz({ onExit }: ArcheryQuizProps) {
           {subPhase === 'answered' && (
             <button
               onClick={handleProceed}
-              className="sketch-btn w-full py-4 font-sketch text-xl font-bold tracking-wide"
+              className="aa-btn aa-btn-primary aa-btn-wide font-sketch"
             >
               {wasCorrect
                 ? '🏹 Take Your Shot!'

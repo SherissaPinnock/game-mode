@@ -1,0 +1,154 @@
+.clp-root {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: stretch;
+  pointer-events: all;
+}
+
+/* ── Toggle tab ────────────────────────────────────────────────── */
+.clp-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 44px;
+  padding: 16px 0;
+  background: rgba(10, 6, 2, 0.92);
+  border: 1px solid rgba(160, 120, 50, 0.35);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  cursor: pointer;
+  color: #c8960a;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.2s;
+  position: relative;
+}
+.clp-toggle:hover { background: rgba(20, 12, 4, 0.98); }
+
+.clp-toggle-icon  { font-size: 1.1rem; }
+.clp-toggle-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  color: #7a5c1e;
+}
+
+.clp-badge {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  background: #c8960a;
+  color: #0a0602;
+  font-size: 0.6rem;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ── Slide-out panel ───────────────────────────────────────────── */
+.clp-panel {
+  width: 0;
+  overflow: hidden;
+  background: rgba(6, 3, 1, 0.97);
+  border: 1px solid rgba(160, 120, 50, 0.3);
+  border-right: none;
+  transition: width 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+.clp-root.open .clp-panel {
+  width: 320px;
+  overflow-y: auto;
+}
+
+.clp-heading {
+  font-family: 'Georgia', serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c8960a;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(160, 120, 50, 0.2);
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.clp-empty {
+  padding: 20px;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #3a2c10;
+  font-family: 'Georgia', serif;
+}
+
+/* ── Clue list ─────────────────────────────────────────────────── */
+.clp-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.clp-item {
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(160, 120, 50, 0.1);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.clp-item:hover { background: rgba(200, 150, 10, 0.05); }
+.clp-item.new   { animation: clpGlow 1.5s ease-out; }
+
+@keyframes clpGlow {
+  0%   { background: rgba(200, 150, 10, 0.2); }
+  100% { background: transparent; }
+}
+
+.clp-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.clp-item-icon  { font-size: 1rem; }
+.clp-item-title {
+  flex: 1;
+  font-family: 'Georgia', serif;
+  font-size: 0.85rem;
+  color: #dfc99a;
+}
+.clp-item-chevron {
+  font-size: 0.6rem;
+  color: #5a4218;
+}
+
+.clp-item-summary {
+  margin: 8px 0 0 0;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: #7a6040;
+  line-height: 1.6;
+  font-family: 'Georgia', serif;
+}
+
+.clp-item-detail {
+  margin: 10px 0 4px;
+  font-size: 0.75rem;
+  color: #a08050;
+  line-height: 1.7;
+  font-family: 'Georgia', serif;
+  border-left: 2px solid rgba(160,120,50,0.3);
+  padding-left: 12px;
+}

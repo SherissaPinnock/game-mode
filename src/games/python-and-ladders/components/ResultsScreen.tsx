@@ -1,6 +1,7 @@
 import type { Player, GameMode } from '../types'
 import type { CategoryStats } from '@/lib/performance'
 import { GameRecommendations } from '@/components/GameRecommendations'
+import '../PythonAndLadders.css'
 
 interface ResultsScreenProps {
   winner: 'p1' | 'p2'
@@ -32,58 +33,55 @@ export function ResultsScreen({
   const vsBot = gameMode === 'vs-bot'
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-6 text-center py-4">
-      {/* Trophy / Result */}
+    <div className="pal-results-card w-full mx-auto space-y-6">
       <div className="space-y-2">
         <div className="text-5xl">{p1Won ? '🏆' : vsBot ? '😤' : '🎉'}</div>
-        <h2 className="text-2xl font-bold text-slate-800">
+        <div className="pal-kicker">Match Complete</div>
+        <h2 className="pal-title text-2xl">
           {p1Won
             ? vsBot ? 'You Won!' : `${winnerName} Wins!`
             : vsBot ? 'PyBot Wins!' : `${winnerName} Wins!`
           }
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="pal-body-copy text-sm">
           {p1Won && vsBot && 'Your Python knowledge carried you to the top!'}
           {!p1Won && vsBot && 'PyBot slithered to the finish first. Try again!'}
           {!vsBot && `${winnerName} reached cell 36 first. Great game!`}
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-xl border-2 border-slate-200 p-3">
-          <div className="text-2xl font-bold text-blue-600">{correctCount}</div>
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Correct</div>
+      <div className="pal-results-grid">
+        <div className="pal-stat-card">
+          <div className="pal-stat-value text-[#355c46]">{correctCount}</div>
+          <div className="pal-stat-label">Correct</div>
         </div>
-        <div className="bg-white rounded-xl border-2 border-slate-200 p-3">
-          <div className="text-2xl font-bold text-slate-700">{questionCount}</div>
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Questions</div>
+        <div className="pal-stat-card">
+          <div className="pal-stat-value">{questionCount}</div>
+          <div className="pal-stat-label">Questions</div>
         </div>
-        <div className="bg-white rounded-xl border-2 border-slate-200 p-3">
-          <div className="text-2xl font-bold text-green-600">{accuracy}%</div>
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Accuracy</div>
+        <div className="pal-stat-card">
+          <div className="pal-stat-value text-[#4d3821]">{accuracy}%</div>
+          <div className="pal-stat-label">Accuracy</div>
         </div>
       </div>
 
-      {/* Final positions */}
-      <div className="flex justify-center gap-6 text-sm text-slate-600">
+      <div className="pal-position-row text-sm">
         <span>{p1.emoji} {p1.name}: cell {p1.position}</span>
         <span>{p2.emoji} {p2.name}: cell {p2.position}</span>
       </div>
 
       <GameRecommendations sessionStats={sessionStats} pinnedCategory="python" />
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-2">
+      <div className="pal-actions pt-2">
         <button
           onClick={onExit}
-          className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+          className="pal-btn pal-btn-ghost flex-1 px-4 py-3 text-sm"
         >
           Exit
         </button>
         <button
           onClick={onPlayAgain}
-          className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm"
+          className="pal-btn pal-btn-primary flex-1 px-4 py-3 text-sm"
         >
           Play Again
         </button>

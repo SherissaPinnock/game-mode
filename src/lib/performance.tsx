@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
+import { useAuth } from './auth'
+import { persistSession } from './supabaseApi'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -90,8 +92,8 @@ export function computeSessionStats(
 
 interface PerformanceContextValue {
   entries: PerformanceEntry[]
-  /** Report a batch of results from a game session. */
-  report: (entries: PerformanceEntry[]) => void
+  /** Report a batch of results from a game session. Pass gameId to sync remotely. */
+  report: (entries: PerformanceEntry[], gameId?: string) => void
   /** Get overall stats across all games. */
   allStats: () => CategoryStats[]
   /** Get stats for a specific game. */
@@ -104,14 +106,25 @@ const PerformanceContext = createContext<PerformanceContextValue | null>(null)
 
 export function PerformanceProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<PerformanceEntry[]>(loadEntries)
+  const { userId } = useAuth()
 
-  const report = useCallback((newEntries: PerformanceEntry[]) => {
+  const report = useCallback((newEntries: PerformanceEntry[], gameId?: string) => {
     setEntries(prev => {
       const updated = [...prev, ...newEntries]
       saveEntries(updated)
       return updated
     })
-  }, [])
+
+    // Fire-and-forget remote sync — does not block the UI
+    if (userId && newEntries.length > 0) {
+      const gId = gameId ?? newEntries[0]?.gameId
+      if (gId) {
+        persistSession({ userId, gameId: gId, entries: newEntries }).catch(
+          err => console.error('[Performance] remote sync failed:', err),
+        )
+      }
+    }
+  }, [userId])
 
   const allStats = useCallback(() => computeStats(entries), [entries])
   const gameStats = useCallback(

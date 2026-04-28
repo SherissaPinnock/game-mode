@@ -1,9 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { LEVELS } from './data/levels'
 import { LevelIntro } from './components/LevelIntro'
 import { CloudBoard } from './components/CloudBoard'
 import { LevelComplete } from './components/LevelComplete'
+import { usePerformance, type PerformanceEntry } from '@/lib/performance'
+import { useAuth } from '@/lib/auth'
+import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
+import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
 import './ChessClouds.css'
+
+const GAME_ID = 'chess-clouds'
 
 type Screen = 'title' | 'intro' | 'game' | 'complete'
 
@@ -12,20 +18,63 @@ interface Props {
 }
 
 export default function ChessClouds({ onExit }: Props) {
+  const { userId } = useAuth()
+  const { report } = usePerformance()
+
   const [screen, setScreen]       = useState<Screen>('title')
   const [levelIdx, setLevelIdx]   = useState(0)
-  const [gameKey, setGameKey]     = useState(0) // force remount of board on replay
+  const [gameKey, setGameKey]     = useState(0)
   const [lastCorrect, setLastCorrect] = useState(0)
   const [lastTotal, setLastTotal]     = useState(0)
+
+  // Completed level tracking
+  const [completedLevelIds, setCompletedLevelIds] = useState<Set<string>>(
+    () => getCompletedLevels(GAME_ID),
+  )
+
+  // Per-level performance entries collected via CloudBoard's onAnswer callback
+  const perfEntries = useRef<PerformanceEntry[]>([])
+
+  // Merge in remote completed levels once userId is available
+  useEffect(() => {
+    if (!userId) return
+    remoteGetCompletedLevels(userId, GAME_ID).then(remote => {
+      if (remote.size > 0) setCompletedLevelIds(prev => new Set([...prev, ...remote]))
+    })
+  }, [userId])
 
   const level = LEVELS[levelIdx]
 
   function startLevel() { setScreen('intro') }
-  function beginGame()  { setScreen('game') }
+  function beginGame()  {
+    perfEntries.current = [] // reset entries for new attempt
+    setScreen('game')
+  }
+
+  // Called by CloudBoard after each question answer
+  function handleAnswer(correct: boolean) {
+    perfEntries.current.push({
+      category: 'cloud-aws',
+      correct,
+      gameId: GAME_ID,
+      timestamp: Date.now(),
+    })
+  }
 
   function handleComplete(correct: number, total: number) {
     setLastCorrect(correct)
     setLastTotal(total)
+
+    // Persist performance to Supabase
+    report(perfEntries.current, GAME_ID)
+
+    // Mark level complete locally + remotely
+    const levelId = String(level.id)
+    markLevelComplete(GAME_ID, levelId)
+    const updated = getCompletedLevels(GAME_ID)
+    setCompletedLevelIds(updated)
+    if (userId) remoteMarkLevelComplete(userId, GAME_ID, levelId, updated)
+
     setScreen('complete')
   }
 
@@ -40,6 +89,7 @@ export default function ChessClouds({ onExit }: Props) {
   }
 
   function handleReplay() {
+    perfEntries.current = []
     setGameKey(k => k + 1)
     setScreen('game')
   }
@@ -59,6 +109,7 @@ export default function ChessClouds({ onExit }: Props) {
             <span className="cc-cloud cc-cloud-4">☁️</span>
           </div>
 
+          <div className="cc-title-ribbon">Sky Castle Circuit</div>
           <div className="cc-title-chess-icon">♛</div>
           <h1 className="cc-title-heading">Chess in the Clouds</h1>
           <p className="cc-title-sub">
@@ -76,7 +127,7 @@ export default function ChessClouds({ onExit }: Props) {
                 onClick={() => { setLevelIdx(i); setGameKey(k => k + 1); startLevel() }}
               >
                 <span className="cc-lc-num" style={{ color: lv.accentColor }}>
-                  {lv.id}
+                  {completedLevelIds.has(String(lv.id)) ? '✓' : lv.id}
                 </span>
                 <div className="cc-lc-body">
                   <p className="cc-lc-title">{lv.title}</p>
@@ -115,6 +166,7 @@ export default function ChessClouds({ onExit }: Props) {
         level={level}
         onComplete={handleComplete}
         onExit={() => setScreen('title')}
+        onAnswer={handleAnswer}
       />
     )
   }

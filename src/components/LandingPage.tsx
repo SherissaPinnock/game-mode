@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
+import { fetchGlobalLeaderboard, type GameConfigEntry } from '@/lib/supabaseApi'
 import { HeroBanner } from '@/components/HeroBanner'
 import { GameCard } from '@/components/GameCard'
 import { games } from '@/data/games'
 import { Button } from '@/components/ui/button'
+import pythonLaddersPreviewThumb from '@/assets/python ladders game.webp'
+import pythonPlayGif from '@/assets/python play.gif'
 import { FaPython } from "react-icons/fa";
 import { FaGitAlt } from "react-icons/fa";
 import { FaDocker } from "react-icons/fa";
@@ -11,16 +14,32 @@ import { FaCogs } from "react-icons/fa";
 import { FaProjectDiagram } from "react-icons/fa";
 import { FaRobot } from "react-icons/fa";
 import { FaChartBar } from "react-icons/fa";
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-// ── Featured games (4 picks) ────────────────────────────────────────────────
-const FEATURED_IDS = ['python-and-ladders', 'checkers', 'memory-match', 'devops-dynamo']
-const featuredGames = FEATURED_IDS.map(id => games.find(g => g.id === id)!).filter(Boolean)
+// ── Featured games fallback (used when config not yet loaded) ────────────────
+const DEFAULT_FEATURED_IDS = ['python-and-ladders', 'checkers', 'memory-match', 'devops-dynamo']
+const pythonLaddersGame = games.find(game => game.id === 'python-and-ladders')
+
+const PREVIEW_SLIDES = [
+  {
+    id: pythonLaddersGame?.id ?? 'python-and-ladders',
+    eyebrow: 'Live preview',
+    title: pythonLaddersGame?.title ?? 'Python & Ladders',
+    description:
+      pythonLaddersGame?.description ??
+      'Climb the corporate ladder by answering Python questions. Avoid pitfalls and reach the top!',
+    thumbnail: pythonLaddersPreviewThumb,
+    thumbnailAlt: 'Python & Ladders game thumbnail',
+    previewMedia: pythonPlayGif,
+    previewAlt: 'Python & Ladders gameplay preview',
+  },
+]
 
 // ── Tech topics ─────────────────────────────────────────────────────────────
 const TOPICS = [
   { icon: <FaPython />, name: 'Python',        desc: 'Variables, loops, OOP, data structures',        games: 1, color: '#fef3c7', accent: '#d97706' },
   { icon: <FaGitAlt />, name: 'Git & GitHub',  desc: 'Branching, merging, pull requests, workflows',  games: 2, color: '#dcfce7', accent: '#16a34a' },
-  { icon: <FaDocker />, name: 'Docker',        desc: 'Containers, images, Dockerfiles, networking',    games: 1, color: '#dbeafe', accent: '#2563eb' },
+  { icon: <FaDocker />, name: 'Docker',        desc: 'Containers, images, Dockerfiles, networking',    games: 2, color: '#dbeafe', accent: '#2563eb' },
   { icon: <FaAws />, name: 'AWS',           desc: 'EC2, S3, Lambda, load balancing, IAM',          games: 2, color: '#fce7f3', accent: '#db2777' },
   { icon: <FaCogs />, name: 'DevOps',        desc: 'CI/CD pipelines, monitoring, incident response', games: 2, color: '#f3e8ff', accent: '#9333ea' },
   { icon: <FaProjectDiagram />, name: 'System Design', desc: 'Scalability, caching, queues, databases',       games: 3, color: '#e0f2fe', accent: '#0284c7' },
@@ -47,28 +66,77 @@ const AVATAR_COLORS = [
   '#8b5cf6', '#06b6d4', '#ec4899', '#f97316',
 ]
 
-// Map name → stable color index so color doesn't change as ranks shuffle
-const AVATAR_COLOR_MAP: Record<string, string> = Object.fromEntries(
-  INITIAL_BOARD.map((e, i) => [e.name, AVATAR_COLORS[i % AVATAR_COLORS.length]])
-)
+function buildColorMap(entries: LeaderEntry[]): Record<string, string> {
+  return Object.fromEntries(
+    entries.map((e, i) => [e.name, AVATAR_COLORS[i % AVATAR_COLORS.length]])
+  )
+}
 
 interface LandingPageProps {
   onBrowseGames: () => void
   onPlay: (id: string) => void
+  gameConfig?: Map<string, GameConfigEntry>
 }
 
-export function LandingPage({ onBrowseGames, onPlay }: LandingPageProps) {
+export function LandingPage({ onBrowseGames, onPlay, gameConfig }: LandingPageProps) {
   const browse = () => { window.scrollTo(0, 0); onBrowseGames() }
 
+  const featuredGames = (() => {
+    if (gameConfig && gameConfig.size > 0) {
+      const fromConfig = games.filter(g => gameConfig.get(g.id)?.featured)
+      if (fromConfig.length > 0) return fromConfig
+    }
+    return DEFAULT_FEATURED_IDS.map(id => games.find(g => g.id === id)!).filter(Boolean)
+  })()
+
   // ── Leaderboard live animation ──────────────────────────────────────────────
+  const [activePreview, setActivePreview] = useState(0)
   const [board, setBoard] = useState<LeaderEntry[]>(() => INITIAL_BOARD.map(e => ({ ...e })))
   const [risingName, setRisingName] = useState<string | null>(null)
+  const [avatarColorMap, setAvatarColorMap] = useState<Record<string, string>>(
+    () => buildColorMap(INITIAL_BOARD),
+  )
+
+  // Fetch live leaderboard from Supabase; fall back to mock data if offline/empty
+  useEffect(() => {
+    fetchGlobalLeaderboard(8).then(remote => {
+      if (remote.length === 0) return
+      const mapped: LeaderEntry[] = remote.map((r, i) => ({
+        rank:  r.rank,
+        name:  r.displayName,
+        avatar: r.avatarInitials,
+        score: r.totalXp,
+        badge: i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '',
+        games: r.sessionsPlayed,
+      }))
+      setBoard(mapped)
+      setAvatarColorMap(buildColorMap(mapped))
+    })
+  }, [])
+  const previewCount = PREVIEW_SLIDES.length
+
+  const goToPreview = (index: number) => {
+    if (!previewCount) return
+    setActivePreview((index + previewCount) % previewCount)
+  }
+
+  const showPreviousPreview = () => {
+    if (!previewCount) return
+    setActivePreview(prev => (prev - 1 + previewCount) % previewCount)
+  }
+
+  const showNextPreview = () => {
+    if (!previewCount) return
+    setActivePreview(prev => (prev + 1) % previewCount)
+  }
 
   useEffect(() => {
     const id = setInterval(() => {
       setBoard(prev => {
+        if (prev.length < 2) return prev
         // pick a random slot from index 1–(len-1) to climb one place
         const idx = 1 + Math.floor(Math.random() * (prev.length - 1))
+        if (!prev[idx] || !prev[idx - 1]) return prev
         const next = prev.map(e => ({ ...e }))
         // boost the climber's score
         next[idx] = { ...next[idx], score: next[idx].score + Math.floor(Math.random() * 350 + 80) }
@@ -130,6 +198,87 @@ export function LandingPage({ onBrowseGames, onPlay }: LandingPageProps) {
           <div className="lp-featured-grid">
             {featuredGames.map(game => (
               <GameCard key={game.id} game={game} onPlay={onPlay} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Preview carousel ── */}
+      <section className="lp-section lp-preview-section">
+        <div className="lp-section-inner">
+          <div className="lp-preview-nav-wrap" aria-label="Game preview controls">
+            <button
+              type="button"
+              className="lp-preview-nav"
+              onClick={showPreviousPreview}
+              aria-label="Show previous game preview"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              className="lp-preview-nav"
+              onClick={showNextPreview}
+              aria-label="Show next game preview"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          <div
+            className="lp-preview-carousel"
+            aria-roledescription="carousel"
+            aria-label="Game preview carousel"
+          >
+            <div
+              className="lp-preview-track"
+              style={{ transform: `translateX(-${activePreview * 100}%)` }}
+            >
+              {PREVIEW_SLIDES.map((slide, index) => (
+                <article
+                  key={slide.id}
+                  className="lp-preview-slide"
+                  aria-hidden={index !== activePreview}
+                >
+                  <div className="lp-preview-card">
+                    <div className="lp-preview-aside">
+                      <div className="lp-preview-copy-block">
+                        <p className="lp-preview-eyebrow">{slide.eyebrow}</p>
+                        <h3 className="lp-preview-title">{slide.title}</h3>
+                        <p className="lp-preview-description">{slide.description}</p>
+                      </div>
+
+                      <img
+                        src={slide.thumbnail}
+                        alt={slide.thumbnailAlt}
+                        className="lp-preview-thumbnail"
+                      />
+                    </div>
+
+                    <div className="lp-preview-stage">
+                      <div className="lp-preview-demo-label">Gameplay preview</div>
+                      <img
+                        src={slide.previewMedia}
+                        alt={slide.previewAlt}
+                        className="lp-preview-demo-media"
+                      />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="lp-preview-dots" aria-label="Select game preview">
+            {PREVIEW_SLIDES.map((slide, index) => (
+              <button
+                key={slide.id}
+                type="button"
+                className={`lp-preview-dot ${index === activePreview ? 'is-active' : ''}`}
+                onClick={() => goToPreview(index)}
+                aria-label={`Show ${slide.title} preview`}
+                aria-pressed={index === activePreview}
+              />
             ))}
           </div>
         </div>
@@ -217,7 +366,7 @@ export function LandingPage({ onBrowseGames, onPlay }: LandingPageProps) {
                   <span className="lp-lb-col-player">
                     <span
                       className="lp-lb-avatar"
-                      style={{ background: AVATAR_COLOR_MAP[entry.name] }}
+                      style={{ background: avatarColorMap[entry.name] }}
                     >
                       {entry.avatar}
                     </span>

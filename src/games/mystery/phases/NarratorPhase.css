@@ -1,0 +1,202 @@
+/* ── Overlay ───────────────────────────────────────────────────── */
+.nar-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.35) 50%,
+    rgba(0, 0, 0, 0)    65%
+  );
+}
+
+/* ── Exit button ───────────────────────────────────────────────── */
+.nar-exit-btn {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  pointer-events: all;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #64748b;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  z-index: 60;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: color 0.15s, background 0.15s;
+}
+.nar-exit-btn:hover {
+  background: rgba(0,0,0,0.8);
+  color: #94a3b8;
+}
+
+/* ── Bottom panel ──────────────────────────────────────────────── */
+.nar-panel {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 28px;
+  padding: 0 40px 28px 32px;
+  background: linear-gradient(
+    to top,
+    rgba(4, 2, 0, 0.97) 0%,
+    rgba(4, 2, 0, 0.88) 70%,
+    transparent         100%
+  );
+  pointer-events: none;
+}
+
+/* ── Portrait ──────────────────────────────────────────────────── */
+.nar-portrait-wrap {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  margin-top: -180px;
+  position: relative;
+}
+
+.nar-portrait-img {
+  width: 290px;
+  height: auto;
+  filter:
+    drop-shadow(0 0 28px rgba(255, 140, 30, 0.5))
+    drop-shadow(0 0 70px rgba(120, 60, 10, 0.35));
+  animation: narFloat 5s ease-in-out infinite;
+}
+
+@keyframes narFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+
+.nar-portrait-lantern {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(255, 160, 40, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: narLanternPulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes narLanternPulse {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  50%       { opacity: 1;   transform: translateX(-50%) scale(1.3); }
+}
+
+.nar-portrait-name {
+  font-size: 0.7rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a5c1e;
+  margin: 0;
+}
+
+/* ── Dialogue box ──────────────────────────────────────────────── */
+.nar-dialogue-box {
+  flex: 1;
+  background: rgba(6, 3, 1, 0.88);
+  border: 1px solid rgba(160, 120, 50, 0.32);
+  border-radius: 12px;
+  padding: 22px 28px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow:
+    0 0 40px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 200, 80, 0.06),
+    inset 0 0 30px rgba(0, 0, 0, 0.4);
+  min-height: 130px;
+  position: relative;
+  align-self: center;
+  pointer-events: all;
+}
+
+.nar-dialogue-quote {
+  position: absolute;
+  top: 8px;
+  left: 22px;
+  font-size: 5rem;
+  color: rgba(160, 120, 50, 0.1);
+  font-family: 'Georgia', serif;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.nar-dialogue-text {
+  font-size: 1.08rem;
+  line-height: 1.8;
+  color: #dfc99a;
+  font-style: italic;
+  min-height: 4.5em;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.01em;
+}
+
+.nar-cursor {
+  display: inline-block;
+  color: #c8960a;
+  font-style: normal;
+  animation: narCursorBlink 0.65s step-end infinite;
+}
+
+@keyframes narCursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.nar-dialogue-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nar-prog-track {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.nar-prog-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background 0.25s, transform 0.25s;
+}
+.nar-prog-dot.done   { background: rgba(160, 120, 50, 0.4); }
+.nar-prog-dot.active {
+  background: #c8960a;
+  box-shadow: 0 0 8px rgba(200, 150, 10, 0.7);
+  transform: scale(1.4);
+}
+
+.nar-click-hint {
+  font-size: 0.68rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #3a2c10;
+  animation: narHintPulse 2s ease-in-out infinite;
+}
+
+@keyframes narHintPulse {
+  0%, 100% { color: #3a2c10; }
+  50%       { color: #6a5020; }
+}

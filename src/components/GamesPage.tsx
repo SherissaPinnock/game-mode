@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { games } from '@/data/games'
 import { GameCard } from '@/components/GameCard'
+import type { GameConfigEntry } from '@/lib/supabaseApi'
 
 interface GamesPageProps {
   onPlay: (id: string) => void
   onBack: () => void
+  gameConfig?: Map<string, GameConfigEntry>
 }
 
 function FilterGroup({
@@ -35,7 +37,7 @@ function FilterGroup({
   )
 }
 
-export function GamesPage({ onPlay, onBack }: GamesPageProps) {
+export function GamesPage({ onPlay, onBack, gameConfig }: GamesPageProps) {
   const [search,         setSearch]         = useState('')
   const [selectedLevels, setSelectedLevels] = useState<string[]>([])
   const [selectedTags,   setSelectedTags]   = useState<string[]>([])
@@ -50,13 +52,24 @@ export function GamesPage({ onPlay, onBack }: GamesPageProps) {
     setSelectedTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
   }
 
-  const filtered = games.filter(g => {
-    const matchSearch = g.title.toLowerCase().includes(search.toLowerCase()) ||
-                        g.description.toLowerCase().includes(search.toLowerCase())
-    const matchLevel  = selectedLevels.length === 0 || selectedLevels.includes(g.level)
-    const matchTag    = selectedTags.length === 0   || selectedTags.includes(g.tag)
-    return matchSearch && matchLevel && matchTag
-  })
+  const configLoaded = !!gameConfig && gameConfig.size > 0
+
+  const filtered = [...games]
+    .sort((a, b) => {
+      if (!configLoaded) return 0
+      const aOrder = gameConfig!.get(a.id)?.sortOrder ?? 999
+      const bOrder = gameConfig!.get(b.id)?.sortOrder ?? 999
+      return aOrder - bOrder
+    })
+    .filter(g => {
+      const published = configLoaded ? (gameConfig!.get(g.id)?.published ?? true) : true
+      if (!published) return false
+      const matchSearch = g.title.toLowerCase().includes(search.toLowerCase()) ||
+                          g.description.toLowerCase().includes(search.toLowerCase())
+      const matchLevel  = selectedLevels.length === 0 || selectedLevels.includes(g.level)
+      const matchTag    = selectedTags.length === 0   || selectedTags.includes(g.tag)
+      return matchSearch && matchLevel && matchTag
+    })
 
   return (
     <div className="app-shell">

@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, useCallback, type DragEvent } from 'react'
+import { useEffect, useRef, useState, useCallback, type CSSProperties, type DragEvent } from 'react'
 import { usePerformance, computeStats, type PerformanceEntry } from '@/lib/performance'
 import { GameRecommendations } from '@/components/GameRecommendations'
 import { playCorrect, playWrong, playClick, playNextLevel, playPop} from '@/lib/sounds'
-import { saveGame, clearGame } from '@/lib/resume'
+import { saveGameWithSync, clearGameWithSync } from '@/lib/resume'
+import { useAuth } from '@/lib/auth'
 import { ExitConfirmModal } from '@/components/ExitConfirmModal'
 import { useGameTheme } from '@/lib/useGameTheme'
+import './BuildAStartup.css'
 
 export interface BuildAStartupSave {
   levelIdx: number
@@ -52,20 +54,20 @@ type Phase = 'intro' | 'playing' | 'result' | 'game-over'
 // ─── Component Catalog ───────────────────────────────────────────────────────
 
 const COMPONENTS: Record<string, ArchComponent> = {
-  'dns':             { id: 'dns',             label: 'DNS',             emoji: '🌐',  description: 'Translates domain names (like google.com) into IP addresses so browsers know where to go.',                        color: '#95a5a6' },
-  'cdn':             { id: 'cdn',             label: 'CDN',             emoji: '🌍',  description: 'Caches static files (images, CSS, JS) on servers around the world so users get content from the nearest location.',  color: '#27ae60' },
-  'load-balancer':   { id: 'load-balancer',   label: 'Load Balancer',   emoji: '⚖️',  description: 'Distributes incoming traffic evenly across multiple servers so no single server gets overwhelmed.',                color: '#8e44ad' },
-  'api-gateway':     { id: 'api-gateway',     label: 'API Gateway',     emoji: '🚪',  description: 'The single entry point for all API requests. Handles routing, rate limiting, and authentication.',                 color: '#16a085' },
-  'web-server':      { id: 'web-server',      label: 'Web Server',      emoji: '🖥️',  description: 'Processes HTTP requests from users, runs your application code, and returns responses.',                            color: '#2980b9' },
-  'api-server':      { id: 'api-server',      label: 'API Server',      emoji: '💻',  description: 'Handles API requests and executes business logic. The brain of your backend.',                                       color: '#3498db' },
-  'cache':           { id: 'cache',           label: 'Cache',           emoji: '⚡',  description: 'Stores frequently accessed data in memory (like Redis) for ultra-fast retrieval instead of hitting the database.',    color: '#f1c40f' },
-  'database':        { id: 'database',        label: 'Database',        emoji: '🗄️',  description: 'Persistently stores structured data (users, posts, orders). The source of truth for your application.',            color: '#e67e22' },
-  'message-queue':   { id: 'message-queue',   label: 'Msg Queue',       emoji: '📬',  description: 'Buffers messages between services for async processing. Decouples producers from consumers (like SQS or RabbitMQ).', color: '#e74c3c' },
-  'worker':          { id: 'worker',          label: 'Worker',          emoji: '⚙️',  description: 'A background process that pulls jobs from a queue and processes them (video encoding, email sending, etc.).',       color: '#7f8c8d' },
-  'auth-service':    { id: 'auth-service',    label: 'Auth Service',    emoji: '🔐',  description: 'Dedicated microservice for user login, signup, tokens, and permissions.',                                            color: '#c0392b' },
-  'product-service': { id: 'product-service', label: 'Product Svc',     emoji: '🏪',  description: 'Microservice managing product catalog, inventory, and pricing.',                                                     color: '#d35400' },
-  'object-storage':  { id: 'object-storage',  label: 'Obj Storage',     emoji: '📦',  description: 'Stores large files like images, videos, and backups (like AWS S3).',                                                 color: '#2c3e50' },
-  'firewall':        { id: 'firewall',        label: 'Firewall',        emoji: '🛡️',  description: 'Filters network traffic and blocks malicious requests before they reach your servers.',                               color: '#c0392b' },
+  'dns':             { id: 'dns',             label: 'DNS',             emoji: '🌐',  description: 'Translates domain names (like google.com) into IP addresses so browsers know where to go.',                        color: '#87959a' },
+  'cdn':             { id: 'cdn',             label: 'CDN',             emoji: '🌍',  description: 'Caches static files (images, CSS, JS) on servers around the world so users get content from the nearest location.',  color: '#5b8c74' },
+  'load-balancer':   { id: 'load-balancer',   label: 'Load Balancer',   emoji: '⚖️',  description: 'Distributes incoming traffic evenly across multiple servers so no single server gets overwhelmed.',                color: '#7c6492' },
+  'api-gateway':     { id: 'api-gateway',     label: 'API Gateway',     emoji: '🚪',  description: 'The single entry point for all API requests. Handles routing, rate limiting, and authentication.',                 color: '#5a8b84' },
+  'web-server':      { id: 'web-server',      label: 'Web Server',      emoji: '🖥️',  description: 'Processes HTTP requests from users, runs your application code, and returns responses.',                            color: '#5a7392' },
+  'api-server':      { id: 'api-server',      label: 'API Server',      emoji: '💻',  description: 'Handles API requests and executes business logic. The brain of your backend.',                                       color: '#65839d' },
+  'cache':           { id: 'cache',           label: 'Cache',           emoji: '⚡',  description: 'Stores frequently accessed data in memory (like Redis) for ultra-fast retrieval instead of hitting the database.',    color: '#b49a57' },
+  'database':        { id: 'database',        label: 'Database',        emoji: '🗄️',  description: 'Persistently stores structured data (users, posts, orders). The source of truth for your application.',            color: '#aa7d53' },
+  'message-queue':   { id: 'message-queue',   label: 'Msg Queue',       emoji: '📬',  description: 'Buffers messages between services for async processing. Decouples producers from consumers (like SQS or RabbitMQ).', color: '#9b6e6b' },
+  'worker':          { id: 'worker',          label: 'Worker',          emoji: '⚙️',  description: 'A background process that pulls jobs from a queue and processes them (video encoding, email sending, etc.).',       color: '#7f8786' },
+  'auth-service':    { id: 'auth-service',    label: 'Auth Service',    emoji: '🔐',  description: 'Dedicated microservice for user login, signup, tokens, and permissions.',                                            color: '#8e6664' },
+  'product-service': { id: 'product-service', label: 'Product Svc',     emoji: '🏪',  description: 'Microservice managing product catalog, inventory, and pricing.',                                                     color: '#8b6c4c' },
+  'object-storage':  { id: 'object-storage',  label: 'Obj Storage',     emoji: '📦',  description: 'Stores large files like images, videos, and backups (like AWS S3).',                                                 color: '#5b6872' },
+  'firewall':        { id: 'firewall',        label: 'Firewall',        emoji: '🛡️',  description: 'Filters network traffic and blocks malicious requests before they reach your servers.',                               color: '#8d5f61' },
 }
 
 // ─── Level Data ──────────────────────────────────────────────────────────────
@@ -188,18 +190,18 @@ const LEVELS: Level[] = [
 // ─── Style constants ─────────────────────────────────────────────────────────
 
 const S = {
-  bg:        '#0f0c29',
-  paper:     '#1a1730',
-  gridLine:  '#2a2650',
-  border:    '#3d3870',
-  darkText:  '#e2e0ff',
-  mutedText: '#7c78b8',
-  accent:    '#818cf8',
-  success:   '#34d399',
-  error:     '#f87171',
-  warn:      '#fbbf24',
-  slotBg:    '#1e1a3a',
-  slotDash:  '#4a4680',
+  bg:        '#1f2d2b',
+  paper:     '#6f6386',
+  gridLine:  '#a89fba',
+  border:    '#322844',
+  darkText:  '#fbf4e8',
+  mutedText: '#e4d8cd',
+  accent:    '#8c7f9f',
+  success:   '#6b9d7f',
+  error:     '#b07872',
+  warn:      '#be9c63',
+  slotBg:    '#5e5473',
+  slotDash:  '#6f6787',
   font:      'IBM Plex Sans, -apple-system, sans-serif',
   bodyFont:  'system-ui, -apple-system, sans-serif',
 }
@@ -317,21 +319,21 @@ function DropSlot({
 
   if (dragOver && isEmpty) {
     borderColor = S.accent
-    bgColor = '#e8f0fe'
+    bgColor = '#d9d3df'
     borderStyle = '3px solid'
   } else if (checked && isCorrect === true) {
     borderColor = S.success
-    bgColor = '#e8f8e8'
+    bgColor = '#dce8de'
     borderStyle = '3px solid'
     animClass = 'bas-correct'
   } else if (checked && isCorrect === false) {
     borderColor = S.error
-    bgColor = '#fde8e8'
+    bgColor = '#ead9d7'
     borderStyle = '3px solid'
     animClass = 'bas-wrong'
   } else if (placed) {
     borderColor = placed.color
-    bgColor = '#fff'
+    bgColor = '#f4ece0'
     borderStyle = '3px solid'
   }
 
@@ -361,7 +363,7 @@ function DropSlot({
         gap: 8,
         cursor: placed && !checked ? 'pointer' : 'default',
         transition: 'all 0.2s ease',
-        boxShadow: dragOver ? `0 0 12px ${S.accent}44` : placed ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+        boxShadow: dragOver ? `0 0 0 4px ${S.accent}33` : placed ? '0 5px 0 rgba(50,40,68,0.18)' : '0 4px 0 rgba(50,40,68,0.12)',
         zIndex: 2,
       }}
     >
@@ -387,7 +389,7 @@ function DropSlot({
         <span style={{
           fontFamily: S.font,
           fontSize: 16,
-          color: S.mutedText,
+          color: '#f0e8db',
           fontStyle: 'italic',
           textAlign: 'center',
           padding: '0 8px',
@@ -428,13 +430,13 @@ function TrayItem({
         alignItems: 'center',
         gap: 8,
         padding: '8px 12px',
-        background: selected ? '#e0f0ff' : isPlaced ? '#eee' : '#fff',
-        border: `2px solid ${selected ? S.accent : isPlaced ? '#ddd' : comp.color}`,
-        borderRadius: 10,
+        background: selected ? '#d8d1df' : isPlaced ? '#cfc8d6' : '#f4ece0',
+        border: `3px solid ${selected ? S.accent : isPlaced ? '#b4acbd' : comp.color}`,
+        borderRadius: 14,
         cursor: isPlaced ? 'default' : 'pointer',
         opacity: isPlaced ? 0.4 : 1,
         transition: 'all 0.2s ease',
-        boxShadow: selected ? `0 0 0 3px ${S.accent}44` : isPlaced ? 'none' : '0 2px 6px rgba(0,0,0,0.08)',
+        boxShadow: selected ? `0 0 0 4px ${S.accent}33` : isPlaced ? '0 3px 0 rgba(50,40,68,0.1)' : '0 5px 0 rgba(50,40,68,0.2)',
         userSelect: 'none',
         whiteSpace: 'nowrap',
         flexShrink: 0,
@@ -445,7 +447,7 @@ function TrayItem({
         fontFamily: S.bodyFont,
         fontSize: 13,
         fontWeight: 600,
-        color: isPlaced ? '#aaa' : S.darkText,
+        color: isPlaced ? '#877f8d' : '#3b2f4d',
       }}>
         {comp.label}
       </span>
@@ -471,57 +473,28 @@ function HintModal({
   const canReveal = attemptsUsed >= 2 && !revealUsed
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      backdropFilter: 'blur(2px)',
-    }}>
-      <div style={{
-        background: S.bg,
-        border: `3px solid ${S.border}`,
-        borderRadius: 16,
-        padding: '28px 32px',
-        maxWidth: 500,
-        maxHeight: '80vh',
-        overflowY: 'auto',
-        boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-      }}>
+    <div className="bas-overlay">
+      <div className="bas-modal-card">
         {/* Header */}
-        <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginBottom: 20, paddingBottom: 14,
-          borderBottom: `2px solid ${S.gridLine}`,
-        }}>
-          <h3 style={{ margin: 0, fontFamily: S.font, fontSize: 28, color: S.darkText }}>
+        <div className="bas-modal-header">
+          <h3 className="bas-modal-title">
             Component Guide
           </h3>
-          <button onClick={onClose} style={{
-            background: 'none', border: `2px solid ${S.border}`, borderRadius: 8,
-            padding: '6px 14px', cursor: 'pointer',
-            fontFamily: S.bodyFont, fontSize: 14, color: S.mutedText,
-          }}>
+          <button onClick={onClose} className="bas-btn bas-btn-ghost">
             Close
           </button>
         </div>
 
         {/* Component descriptions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="bas-guide-list">
           {available.map(comp => (
-            <div key={comp.id} style={{
-              display: 'flex', gap: 12, alignItems: 'flex-start',
-              padding: '10px 14px',
-              background: '#fff',
-              border: `1px solid ${S.gridLine}`,
-              borderRadius: 10,
-              borderLeft: `4px solid ${comp.color}`,
-            }}>
+            <div key={comp.id} className="bas-guide-item" style={{ borderLeftColor: comp.color }}>
               <span style={{ fontSize: 22, flexShrink: 0, marginTop: 2 }}>{comp.emoji}</span>
               <div>
-                <div style={{ fontFamily: S.bodyFont, fontSize: 14, fontWeight: 700, color: S.darkText }}>
+                <div className="bas-guide-name">
                   {comp.label}
                 </div>
-                <div style={{ fontFamily: S.bodyFont, fontSize: 13, color: S.mutedText, lineHeight: 1.5, marginTop: 4 }}>
+                <div className="bas-guide-body">
                   {comp.description}
                 </div>
               </div>
@@ -530,16 +503,12 @@ function HintModal({
         </div>
 
         {/* Reveal hint section */}
-        <div style={{
-          marginTop: 20, paddingTop: 16,
-          borderTop: `2px solid ${S.gridLine}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
+        <div className="bas-reveal-row">
           <div>
-            <div style={{ fontFamily: S.font, fontSize: 20, color: S.darkText }}>
+            <div className="bas-reveal-title">
               Reveal a box
             </div>
-            <div style={{ fontFamily: S.bodyFont, fontSize: 12, color: S.mutedText, marginTop: 2 }}>
+            <div className="bas-reveal-sub">
               {canReveal
                 ? 'Reveals one correct placement. Use it wisely!'
                 : revealUsed
@@ -550,18 +519,7 @@ function HintModal({
           <button
             onClick={onReveal}
             disabled={!canReveal}
-            style={{
-              background: canReveal ? S.warn : '#eee',
-              color: canReveal ? '#fff' : '#bbb',
-              border: 'none',
-              borderRadius: 10,
-              padding: '10px 18px',
-              fontFamily: S.bodyFont,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: canReveal ? 'pointer' : 'not-allowed',
-              boxShadow: canReveal ? '0 2px 8px rgba(243,156,18,0.3)' : 'none',
-            }}
+            className={`bas-btn ${canReveal ? 'bas-btn-warn' : 'bas-btn-disabled'}`}
           >
             Reveal
           </button>
@@ -589,116 +547,47 @@ function LevelIntro({
     : S.error
 
   return (
-    <div className="sketch-bg" style={{
-      minHeight: '100vh',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: S.bg,
-      fontFamily: S.bodyFont,
-    }}>
-      <div style={{
-        background: S.paper,
-        border: `3px solid ${S.border}`,
-        borderRadius: 20,
-        padding: '44px 48px',
-        maxWidth: 520,
-        width: '90%',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-        textAlign: 'center',
-      }}>
+    <div className="bas-screen-shell">
+      <div className="bas-hero-card">
         {/* Level badge */}
-        <div style={{
-          display: 'inline-block',
-          background: S.accent,
-          color: '#fff',
-          borderRadius: 20,
-          padding: '5px 18px',
-          fontSize: 13,
-          fontWeight: 700,
-          letterSpacing: '0.05em',
-          marginBottom: 16,
-        }}>
+        <div className="bas-badge">
           LEVEL {level.id} / {totalLevels}
         </div>
 
-        <h1 style={{
-          fontFamily: S.font,
-          fontSize: 42,
-          margin: '0 0 4px',
-          color: S.darkText,
-        }}>
+        <h1 className="bas-hero-title">
           {level.title}
         </h1>
 
         {/* Difficulty */}
-        <span style={{
-          display: 'inline-block',
-          background: `${diffColor}18`,
-          color: diffColor,
-          border: `2px solid ${diffColor}`,
-          borderRadius: 8,
-          padding: '3px 12px',
-          fontSize: 12,
-          fontWeight: 700,
-          marginBottom: 20,
-        }}>
+        <span className="bas-difficulty" style={{ color: diffColor, borderColor: diffColor }}>
           {level.difficulty.toUpperCase()}
         </span>
 
-        <p style={{
-          fontSize: 16,
-          lineHeight: 1.7,
-          color: S.mutedText,
-          margin: '0 0 8px',
-        }}>
+        <p className="bas-hero-body">
           {level.scenario}
         </p>
 
         {/* Stats */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', gap: 24,
-          margin: '20px 0',
-          padding: '14px 0',
-          borderTop: `1px solid ${S.gridLine}`,
-          borderBottom: `1px solid ${S.gridLine}`,
-        }}>
-          <div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: S.darkText }}>{level.slots.length}</div>
-            <div style={{ fontSize: 12, color: S.mutedText }}>components</div>
+        <div className="bas-stat-strip">
+          <div className="bas-stat-cell">
+            <div className="bas-stat-num">{level.slots.length}</div>
+            <div className="bas-stat-label">components</div>
           </div>
-          <div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: S.darkText }}>{level.available.length - level.slots.length}</div>
-            <div style={{ fontSize: 12, color: S.mutedText }}>distractors</div>
+          <div className="bas-stat-cell">
+            <div className="bas-stat-num">{level.available.length - level.slots.length}</div>
+            <div className="bas-stat-label">distractors</div>
           </div>
-          <div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: S.darkText }}>3</div>
-            <div style={{ fontSize: 12, color: S.mutedText }}>attempts</div>
+          <div className="bas-stat-cell">
+            <div className="bas-stat-num">3</div>
+            <div className="bas-stat-label">attempts</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <button onClick={onExit} style={{
-            padding: '12px 24px',
-            background: 'transparent',
-            border: `2px solid ${S.border}`,
-            borderRadius: 12,
-            fontSize: 15,
-            fontWeight: 600,
-            color: S.mutedText,
-            cursor: 'pointer',
-          }}>
+        <div className="bas-hero-actions">
+          <button onClick={onExit} className="bas-btn bas-btn-ghost">
             Back
           </button>
-          <button onClick={onStart} style={{
-            padding: '12px 32px',
-            background: S.accent,
-            border: 'none',
-            borderRadius: 12,
-            fontSize: 15,
-            fontWeight: 700,
-            color: '#fff',
-            cursor: 'pointer',
-            boxShadow: `0 4px 14px ${S.accent}44`,
-          }}>
+          <button onClick={onStart} className="bas-btn bas-btn-primary">
             Start Building
           </button>
         </div>
@@ -723,23 +612,10 @@ function LevelResult({
 }) {
   const passed = stars > 0
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      backdropFilter: 'blur(3px)',
-    }}>
-      <div style={{
-        background: S.paper,
-        border: `3px solid ${passed ? S.success : S.error}`,
-        borderRadius: 20,
-        padding: '40px 48px',
-        maxWidth: 420,
-        textAlign: 'center',
-        boxShadow: `0 12px 40px ${passed ? S.success : S.error}33`,
-      }}>
+    <div className="bas-overlay">
+      <div className="bas-result-card" style={{ '--bas-state': passed ? S.success : S.error } as CSSProperties}>
         {/* Stars */}
-        <div style={{ fontSize: 44, marginBottom: 12 }}>
+        <div className="bas-stars-row">
           {[1, 2, 3].map(i => (
             <span key={i} style={{
               opacity: i <= stars ? 1 : 0.2,
@@ -751,55 +627,26 @@ function LevelResult({
           ))}
         </div>
 
-        <h2 style={{
-          fontFamily: S.font,
-          fontSize: 36,
-          margin: '0 0 8px',
-          color: passed ? S.success : S.error,
-        }}>
+        <h2 className="bas-result-title" style={{ color: passed ? S.success : S.error }}>
           {passed ? 'Architecture Complete!' : 'System Down!'}
         </h2>
 
-        <p style={{
-          fontSize: 15,
-          color: S.mutedText,
-          lineHeight: 1.6,
-          margin: '0 0 24px',
-        }}>
+        <p className="bas-result-body">
           {passed
-            ? stars === 3
-              ? 'Perfect architecture on the first try! You really know your stuff.'
+              ? stars === 3
+                ? 'Perfect architecture on the first try! You really know your stuff.'
               : stars === 2
                 ? 'Solid work! Just needed a second look to nail it.'
                 : 'You got there in the end. Practice makes perfect!'
             : 'Ran out of attempts. Review the component descriptions and try again!'}
         </p>
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <button onClick={onRetry} style={{
-            padding: '12px 24px',
-            background: 'transparent',
-            border: `2px solid ${S.border}`,
-            borderRadius: 12,
-            fontSize: 15,
-            fontWeight: 600,
-            color: S.mutedText,
-            cursor: 'pointer',
-          }}>
+        <div className="bas-result-actions">
+          <button onClick={onRetry} className="bas-btn bas-btn-ghost">
             Retry
           </button>
           {passed && (
-            <button onClick={onNext} style={{
-              padding: '12px 28px',
-              background: S.accent,
-              border: 'none',
-              borderRadius: 12,
-              fontSize: 15,
-              fontWeight: 700,
-              color: '#fff',
-              cursor: 'pointer',
-              boxShadow: `0 4px 14px ${S.accent}44`,
-            }}>
+            <button onClick={onNext} className="bas-btn bas-btn-primary">
               {isLastLevel ? 'See Results' : 'Next Level'}
             </button>
           )}
@@ -826,63 +673,29 @@ function GameComplete({
   const maxStars = results.length * 3
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-      background: S.bg,
-      fontFamily: S.bodyFont,
-      padding: '48px 24px',
-    }}>
-      <div style={{
-        background: S.paper,
-        border: `3px solid ${S.accent}`,
-        borderRadius: 20,
-        padding: '44px 48px',
-        width: '100%',
-        maxWidth: 900,
-        boxShadow: `0 12px 40px ${S.accent}33`,
-      }}>
+    <div className="bas-screen-shell bas-complete-shell">
+      <div className="bas-complete-card">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 52, marginBottom: 8 }}>🏗️</div>
-          <h1 style={{
-            fontFamily: S.font,
-            fontSize: 40,
-            margin: '0 0 8px',
-            color: S.darkText,
-          }}>
+        <div className="bas-complete-head">
+          <div className="bas-complete-emoji">🏗️</div>
+          <h1 className="bas-hero-title">
             Startup Built!
           </h1>
-          <p style={{ fontSize: 15, color: S.mutedText, margin: '0 0 12px' }}>
+          <p className="bas-result-body">
             You've completed all {results.length} architecture challenges.
           </p>
-          <div style={{ fontSize: 28, fontWeight: 700, color: S.accent }}>
+          <div className="bas-complete-score">
             {totalStars} / {maxStars} ⭐
           </div>
         </div>
 
         {/* Two-column layout on desktop */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: 24,
-          marginBottom: 32,
-        }}>
+        <div className="bas-complete-grid">
           {/* Per-level breakdown */}
-          <div style={{
-            display: 'flex', flexDirection: 'column', gap: 8,
-            padding: '20px',
-            background: S.paper,
-            borderRadius: 12,
-            border: `1px solid ${S.gridLine}`,
-          }}>
+          <div className="bas-summary-card">
             {results.map((r, i) => (
-              <div key={r.levelId} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '8px 8px',
-                borderBottom: i < results.length - 1 ? `1px solid ${S.gridLine}` : 'none',
-              }}>
-                <span style={{ fontSize: 14, color: S.darkText, fontWeight: 600 }}>
+              <div key={r.levelId} className="bas-summary-row" style={{ borderBottom: i < results.length - 1 ? `1px solid ${S.gridLine}` : 'none' }}>
+                <span className="bas-summary-label">
                   Lv.{r.levelId} — {LEVELS[i].title}
                 </span>
                 <span>
@@ -900,30 +713,11 @@ function GameComplete({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <button onClick={onExit} style={{
-            padding: '12px 24px',
-            background: 'transparent',
-            border: `2px solid ${S.border}`,
-            borderRadius: 12,
-            fontSize: 15,
-            fontWeight: 600,
-            color: S.mutedText,
-            cursor: 'pointer',
-          }}>
+        <div className="bas-hero-actions">
+          <button onClick={onExit} className="bas-btn bas-btn-ghost">
             Home
           </button>
-          <button onClick={onRestart} style={{
-            padding: '12px 28px',
-            background: S.accent,
-            border: 'none',
-            borderRadius: 12,
-            fontSize: 15,
-            fontWeight: 700,
-            color: '#fff',
-            cursor: 'pointer',
-            boxShadow: `0 4px 14px ${S.accent}44`,
-          }}>
+          <button onClick={onRestart} className="bas-btn bas-btn-primary">
             Play Again
           </button>
         </div>
@@ -935,6 +729,7 @@ function GameComplete({
 // ─── Main Game Component ─────────────────────────────────────────────────────
 
 export default function BuildAStartup({ onExit, resumeState }: { onExit: () => void; resumeState?: BuildAStartupSave | null }) {
+  const { userId } = useAuth()
   const { isDark, toggle: toggleTheme } = useGameTheme()
 
   const [phase, setPhase] = useState<Phase>(resumeState ? 'playing' : 'intro')
@@ -1000,13 +795,13 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
   }, [])
 
   function handleSaveAndExit() {
-    saveGame(GAME_ID, { levelIdx, results } satisfies BuildAStartupSave,
-      `Level ${levelIdx + 1} of ${LEVELS.length}`)
+    saveGameWithSync(GAME_ID, { levelIdx, results } satisfies BuildAStartupSave,
+      `Level ${levelIdx + 1} of ${LEVELS.length}`, userId)
     onExit()
   }
 
   function handleQuit() {
-    clearGame(GAME_ID)
+    clearGameWithSync(GAME_ID, userId)
     onExit()
   }
 
@@ -1134,6 +929,15 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
     setPhase('intro')
   }
 
+  // ── Report performance on game over ──────────────────────────────────────
+  useEffect(() => {
+    if (phase === 'game-over' && !hasReported.current) {
+      hasReported.current = true
+      report(perfEntries.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
   // ── Render phases ─────────────────────────────────────────────────────────
 
   if (phase === 'intro') {
@@ -1151,10 +955,6 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
   }
 
   if (phase === 'game-over') {
-    if (!hasReported.current) {
-      hasReported.current = true
-      report(perfEntries.current)
-    }
     return (
       <GameComplete
         results={results}
@@ -1171,82 +971,43 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
     : level.difficulty === 'Medium' ? S.warn
     : S.error
 
-  const outerBg = isDark ? S.bg : '#f0f4ff'
+  const outerBg = isDark ? S.bg : '#ece6db'
 
   const ThemeToggle = (
     <button
       onClick={toggleTheme}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      style={{
-        position: 'relative', width: 40, height: 24, borderRadius: 12,
-        background: isDark ? '#6d28d9' : '#f59e0b',
-        border: 'none', cursor: 'pointer', flexShrink: 0, transition: 'background 0.3s',
-      }}
+      className="bas-theme-toggle"
+      style={{ background: isDark ? '#64597a' : '#b69c6a' }}
     >
-      <span style={{
-        position: 'absolute', top: 4, width: 16, height: 16, borderRadius: '50%',
-        background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-        transition: 'left 0.3s',
-        left: isDark ? 20 : 4,
-      }} />
+      <span className="bas-theme-toggle-knob" style={{ left: isDark ? 20 : 4 }} />
     </button>
   )
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: outerBg,
-      fontFamily: S.bodyFont,
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
+    <div className="bas-game-shell" style={{ background: outerBg }}>
       {exitModal}
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 16px',
-        borderBottom: `1px solid ${S.gridLine}`,
-        background: 'rgba(0,0,0,0.3)',
-        backdropFilter: 'blur(8px)',
-      }}>
-        <button onClick={() => setShowExitModal(true)} style={{
-          background: 'none', border: `1px solid ${S.border}`, borderRadius: 50,
-          padding: '6px 16px', cursor: 'pointer',
-          fontFamily: S.bodyFont, fontSize: 13, color: S.mutedText,
-        }}>
+      <div className="bas-topbar">
+        <button onClick={() => setShowExitModal(true)} className="bas-btn bas-btn-ghost">
           ← Exit
         </button>
 
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontFamily: S.font,
-            fontSize: 24,
-            color: S.darkText,
-            lineHeight: 1.2,
-          }}>
+        <div className="bas-topbar-title">
+          <div className="bas-topbar-kicker">Architecture Workshop</div>
+          <div className="bas-topbar-name">
             {level.title}
           </div>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: diffColor,
-            letterSpacing: '0.06em',
-          }}>
+          <span className="bas-topbar-meta" style={{ color: diffColor }}>
             LEVEL {level.id} — {level.difficulty.toUpperCase()}
           </span>
         </div>
 
         {/* Attempts + theme toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, color: S.mutedText, fontWeight: 600 }}>Tries:</span>
+        <div className="bas-topbar-side">
+          <span className="bas-tries-label">Tries:</span>
           {[1, 2, 3].map(i => (
-            <span key={i} style={{
-              fontSize: 20,
-              opacity: i <= attempts ? 1 : 0.2,
-              filter: i <= attempts ? 'none' : 'grayscale(1)',
-            }}>
+            <span key={i} className="bas-heart" style={{ opacity: i <= attempts ? 1 : 0.2, filter: i <= attempts ? 'none' : 'grayscale(1)' }}>
               ❤️
             </span>
           ))}
@@ -1256,22 +1017,14 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
 
       {/* Mobile: tray on top as horizontal scroll, then diagram below */}
       {isMobile && (
-        <div style={{ width: '100%', padding: '0 8px' }}>
+        <div className="bas-mobile-wrap">
           {/* Selected component indicator */}
           {selectedComp && (
-            <div style={{
-              textAlign: 'center', padding: '6px', marginBottom: 6,
-              background: '#e0f0ff', borderRadius: 8,
-              fontSize: 13, fontWeight: 600, color: S.accent,
-            }}>
+            <div className="bas-mobile-selected">
               Tap a slot to place {COMPONENTS[selectedComp]?.emoji} {COMPONENTS[selectedComp]?.label}
             </div>
           )}
-          <div style={{
-            display: 'flex', gap: 8, overflowX: 'auto',
-            padding: '8px 0', marginBottom: 8,
-            WebkitOverflowScrolling: 'touch',
-          }}>
+          <div className="bas-mobile-tray">
             {availableComps.map(comp => (
               <TrayItem
                 key={comp.id}
@@ -1289,40 +1042,24 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
             ))}
           </div>
           {/* Mobile action buttons row */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <div className="bas-mobile-actions">
             <button
               onClick={() => setShowHints(true)}
-              style={{
-                flex: 1, padding: '10px', background: '#fff',
-                border: `2px solid ${S.warn}`, borderRadius: 10,
-                fontSize: 14, fontWeight: 600, color: S.warn, cursor: 'pointer',
-              }}
+              className="bas-btn bas-btn-warn bas-grow-1"
             >
               💡 Hints
             </button>
             <button
               onClick={handleCheck}
               disabled={!allFilled || checked}
-              style={{
-                flex: 2, padding: '10px',
-                background: allFilled && !checked ? S.success : '#ddd',
-                border: 'none', borderRadius: 10,
-                fontSize: 14, fontWeight: 700,
-                color: allFilled && !checked ? '#fff' : '#aaa',
-                cursor: allFilled && !checked ? 'pointer' : 'not-allowed',
-              }}
+              className={`bas-btn ${allFilled && !checked ? 'bas-btn-success' : 'bas-btn-disabled'} bas-grow-2`}
             >
               ✓ Check
             </button>
             <button
               onClick={() => { setPlacements({}); setChecked(false); setCorrectMap({}) }}
               disabled={checked}
-              style={{
-                flex: 1, padding: '10px', background: 'transparent',
-                border: `1px solid ${S.border}`, borderRadius: 8,
-                fontSize: 13, color: S.mutedText,
-                cursor: checked ? 'not-allowed' : 'pointer',
-              }}
+              className="bas-btn bas-btn-ghost bas-grow-1"
             >
               Reset
             </button>
@@ -1337,40 +1074,16 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
         gap: 0,
         padding: isMobile ? '0 8px 8px' : '8px 10px',
         minHeight: 0,
-      }}>
+      }} className="bas-main-area">
         {/* Diagram */}
-        <div style={{
+        <div className="bas-diagram-shell" style={{
           flex: 1,
-          position: 'relative',
-          background: '#fff',
-          border: `2px solid ${S.gridLine}`,
-          borderRadius: 16,
-          backgroundImage: `
-            linear-gradient(${S.gridLine}40 1px, transparent 1px),
-            linear-gradient(90deg, ${S.gridLine}40 1px, transparent 1px)
-          `,
-          backgroundSize: '24px 24px',
-          overflow: 'visible',
           minHeight: isMobile ? 'clamp(260px, 45vh, 380px)' : 'clamp(300px, 50vh, 440px)',
         }} ref={containerRef}>
           {/* Users icon (fixed, not a drop target) */}
-          <div style={{
-            position: 'absolute',
-            left: `calc(50% - 55px)`,
+          <div className="bas-users-pill" style={{
+            left: 'calc(50% - 55px)',
             top: `calc(${USERS_Y}% - 2px)`,
-            width: 110,
-            height: 40,
-            background: S.accent,
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            color: '#fff',
-            fontWeight: 700,
-            fontSize: 14,
-            boxShadow: `0 3px 10px ${S.accent}33`,
-            zIndex: 3,
           }}>
             <span style={{ fontSize: 18 }}>👤</span>
             Users
@@ -1416,31 +1129,12 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
 
         {/* Component Tray — desktop only (mobile tray is above diagram) */}
         {!isMobile && (
-          <div style={{
-            width: 'clamp(160px, 22vw, 200px)',
-            marginLeft: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}>
-            <div style={{
-              fontFamily: S.font,
-              fontSize: 'clamp(16px, 4vw, 22px)',
-              color: S.darkText,
-              marginBottom: 4,
-              textAlign: 'center',
-            }}>
+          <div className="bas-tray-shell">
+            <div className="bas-tray-title">
               Components
             </div>
 
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-              paddingRight: 4,
-            }}>
+            <div className="bas-tray-list">
               {availableComps.map(comp => (
                 <TrayItem
                   key={comp.id}
@@ -1460,19 +1154,10 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
             </div>
 
             {/* Action buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+            <div className="bas-tray-actions">
               <button
                 onClick={() => setShowHints(true)}
-                style={{
-                  padding: '10px',
-                  background: '#fff',
-                  border: `2px solid ${S.warn}`,
-                  borderRadius: 10,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: S.warn,
-                  cursor: 'pointer',
-                }}
+                className="bas-btn bas-btn-warn"
               >
                 💡 Hints
               </button>
@@ -1480,17 +1165,7 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
               <button
                 onClick={handleCheck}
                 disabled={!allFilled || checked}
-                style={{
-                  padding: '12px',
-                  background: allFilled && !checked ? S.success : '#ddd',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: allFilled && !checked ? '#fff' : '#aaa',
-                  cursor: allFilled && !checked ? 'pointer' : 'not-allowed',
-                  boxShadow: allFilled && !checked ? `0 3px 10px ${S.success}33` : 'none',
-                }}
+                className={`bas-btn ${allFilled && !checked ? 'bas-btn-success' : 'bas-btn-disabled'}`}
               >
                 ✓ Check Answer
               </button>
@@ -1498,15 +1173,7 @@ export default function BuildAStartup({ onExit, resumeState }: { onExit: () => v
               <button
                 onClick={() => { setPlacements({}); setChecked(false); setCorrectMap({}) }}
                 disabled={checked}
-                style={{
-                  padding: '8px',
-                  background: 'transparent',
-                  border: `1px solid ${S.border}`,
-                  borderRadius: 8,
-                  fontSize: 13,
-                  color: S.mutedText,
-                  cursor: checked ? 'not-allowed' : 'pointer',
-                }}
+                className="bas-btn bas-btn-ghost"
               >
                 Reset
               </button>

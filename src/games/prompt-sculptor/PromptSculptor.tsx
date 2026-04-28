@@ -6,6 +6,9 @@ import { CHALLENGES } from './challenges'
 import type { Challenge, TechniqueOption, GamePhase, TechniqueType } from './types'
 import { playCorrect, playWrong } from '@/lib/sounds'
 import { useGameTheme } from '@/lib/useGameTheme'
+import { useAuth } from '@/lib/auth'
+import { persistSession } from '@/lib/supabaseApi'
+import './PromptSculptor.css'
 
 // ─── Tutorial Content ────────────────────────────────────────────────────────
 
@@ -48,11 +51,11 @@ const TECHNIQUE_ICONS: Record<TechniqueType, string> = {
 }
 
 const TECHNIQUE_COLORS: Record<TechniqueType, string> = {
-  role: 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200',
-  examples: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
-  constraints: 'bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200',
-  format: 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200',
-  cot: 'bg-pink-100 text-pink-800 border-pink-200 hover:bg-pink-200',
+  role: 'ps-tech-role',
+  examples: 'ps-tech-examples',
+  constraints: 'ps-tech-constraints',
+  format: 'ps-tech-format',
+  cot: 'ps-tech-cot',
 }
 
 // ─── Star Rating Component ───────────────────────────────────────────────────
@@ -94,6 +97,7 @@ interface PromptSculptorProps {
 }
 
 export function PromptSculptor({ onExit }: PromptSculptorProps) {
+  const { userId } = useAuth()
   const { isDark, toggle } = useGameTheme()
 
   const [phase, setPhase] = useState<GamePhase>('tutorial')
@@ -114,6 +118,13 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
   const outputRef = useRef<HTMLDivElement>(null)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Persist score to Supabase when all challenges are complete
+  useEffect(() => {
+    if (phase !== 'complete' || !userId) return
+    persistSession({ userId, gameId: 'prompt-sculptor', score, entries: [],
+      metadata: { challenges: CHALLENGES.length } })
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentChallenge: Challenge = CHALLENGES[currentChallengeIndex]
 
@@ -353,65 +364,55 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
   }
 
   // ── Calculate optimal cost for current applied techniques ──────────────────
-  function getEfficiencyLabel(): { label: string; color: string } {
+  function getEfficiencyLabel(): { label: string; tone: string } {
     const minCost = currentChallenge.minimumCost
-    if (totalCost <= minCost) return { label: 'Optimal!', color: 'text-green-600' }
-    if (totalCost <= minCost + 1) return { label: 'Good', color: 'text-amber-600' }
-    return { label: 'Inefficient', color: 'text-red-600' }
+    if (totalCost <= minCost) return { label: 'Optimal!', tone: 'ps-efficiency-good' }
+    if (totalCost <= minCost + 1) return { label: 'Good', tone: 'ps-efficiency-mid' }
+    return { label: 'Inefficient', tone: 'ps-efficiency-bad' }
   }
 
-  // ── Theme tokens ─────────────────────────────────────────────────────────
-  const BG = isDark
-    ? 'bg-[radial-gradient(ellipse_at_top_right,_#1a0533_0%,_#07071a_50%,_#0a1628_100%)]'
-    : 'bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-100'
-  const HEADER_CLS = isDark
-    ? 'border-b border-white/10 bg-black/40 backdrop-blur-sm'
-    : 'border-b border-slate-200 bg-white/90 backdrop-blur-sm shadow-sm'
-  const EXIT_BTN_CLS = isDark
-    ? 'text-sm font-medium text-slate-400 hover:text-white border border-white/10 hover:border-white/30 px-3 py-1.5 rounded-full transition-all'
-    : 'text-sm font-medium text-slate-500 hover:text-slate-800 border border-slate-300 hover:border-slate-400 px-3 py-1.5 rounded-full transition-all'
-  const TITLE_CLS = isDark
-    ? 'font-semibold text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-fuchsia-300'
-    : 'font-semibold text-slate-800'
-
   const ThemeToggle = (
-    <button onClick={toggle} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className={`relative w-10 h-6 rounded-full transition-colors duration-300 flex-shrink-0 ${isDark ? 'bg-violet-600' : 'bg-amber-400'}`}>
-      <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300 ${isDark ? 'left-5' : 'left-1'}`} />
+    <button
+      onClick={toggle}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="ps-theme-toggle"
+      style={{ background: isDark ? '#64597a' : '#b69c6a' }}
+    >
+      <span className="ps-theme-toggle-knob" style={{ left: isDark ? 20 : 4 }} />
     </button>
   )
 
   // ── Render Tutorial ────────────────────────────────────────────────────────
   if (phase === 'tutorial') {
     return (
-      <div className={`flex flex-1 flex-col items-center justify-center px-4 py-8 min-h-screen ${BG}`}>
-        <div className="w-full max-w-lg flex justify-end mb-3">{ThemeToggle}</div>
-        <Card className="max-w-lg w-full p-6 sm:p-8 shadow-lg bg-slate-800/80 border-white/10 text-white">
+      <div className={`ps-shell ${isDark ? 'ps-dark' : 'ps-light'} ps-centered`}>
+        <div className="ps-top-toggle">{ThemeToggle}</div>
+        <Card className="ps-panel ps-hero-panel max-w-lg w-full p-6 sm:p-8">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">
+              <h2 className="ps-heading text-xl">
                 {TUTORIAL_STEPS[tutorialStep].title}
               </h2>
-              <Badge variant="outline">
+              <Badge className="ps-pill">
                 {tutorialStep + 1} / {TUTORIAL_STEPS.length}
               </Badge>
             </div>
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div className="ps-progress-track">
               <div
-                className="h-full bg-primary transition-all duration-300"
+                className="ps-progress-fill"
                 style={{ width: `${((tutorialStep + 1) / TUTORIAL_STEPS.length) * 100}%` }}
               />
             </div>
           </div>
 
-          <p className="text-muted-foreground leading-relaxed whitespace-pre-line mb-8">
+          <p className="ps-body-copy whitespace-pre-line mb-8">
             {TUTORIAL_STEPS[tutorialStep].content}
           </p>
 
           <div className="flex justify-between">
             {tutorialStep > 0 && (
               <Button
-                variant="outline"
+                className="ps-btn ps-btn-ghost"
                 onClick={() => setTutorialStep(prev => prev - 1)}
               >
                 ← Back
@@ -419,7 +420,7 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
             )}
             <Button
               onClick={handleNextTutorial}
-              className="ml-auto"
+              className="ps-btn ps-btn-primary ml-auto"
             >
               {tutorialStep < TUTORIAL_STEPS.length - 1 ? 'Next' : "Let's Play! →"}
             </Button>
@@ -435,47 +436,47 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
     const percentage = Math.round((score / maxScore) * 100)
 
     return (
-      <div className={`flex flex-1 flex-col items-center justify-center px-4 py-8 min-h-screen ${BG}`}>
-        <Card className="max-w-lg w-full p-8 shadow-lg text-center bg-slate-800/80 border-white/10 text-white">
-          <div className="text-5xl mb-4 animate-bounce">🎉</div>
-          <h2 className="text-2xl font-bold mb-2">Congratulations!</h2>
-          <p className="text-muted-foreground mb-6">
+      <div className={`ps-shell ${isDark ? 'ps-dark' : 'ps-light'} ps-centered`}>
+        <Card className="ps-panel ps-hero-panel max-w-lg w-full p-8 text-center">
+          <div className="ps-hero-emoji text-5xl mb-4">🎉</div>
+          <h2 className="ps-heading text-2xl mb-2">Congratulations!</h2>
+          <p className="ps-body-copy mb-6">
             You've completed all {CHALLENGES.length} prompt sculpting challenges!
           </p>
 
-          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-6 mb-6 border">
-            <div className="text-sm text-muted-foreground mb-2">Total Score</div>
-            <div className="text-5xl font-bold text-primary mb-2">{score}</div>
-            <div className="text-xs text-muted-foreground">
+          <div className="ps-score-card">
+            <div className="ps-mini-label mb-2">Total Score</div>
+            <div className="ps-score-value mb-2">{score}</div>
+            <div className="ps-mini-copy">
               ({percentage}% of max score)
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-muted rounded-lg p-3">
+            <div className="ps-stat-card">
               <div className="text-2xl mb-1">🎯</div>
-              <div className="text-xs text-muted-foreground">Challenges</div>
-              <div className="font-bold">{CHALLENGES.length}</div>
+              <div className="ps-mini-copy">Challenges</div>
+              <div className="ps-stat-value">{CHALLENGES.length}</div>
             </div>
-            <div className="bg-muted rounded-lg p-3">
+            <div className="ps-stat-card">
               <div className="text-2xl mb-1">⭐</div>
-              <div className="text-xs text-muted-foreground">Avg Stars</div>
-              <div className="font-bold">{(score / CHALLENGES.length / 50).toFixed(1)}</div>
+              <div className="ps-mini-copy">Avg Stars</div>
+              <div className="ps-stat-value">{(score / CHALLENGES.length / 50).toFixed(1)}</div>
             </div>
-            <div className="bg-muted rounded-lg p-3">
+            <div className="ps-stat-card">
               <div className="text-2xl mb-1">🏆</div>
-              <div className="text-xs text-muted-foreground">Rank</div>
-              <div className="font-bold">
+              <div className="ps-mini-copy">Rank</div>
+              <div className="ps-stat-value">
                 {percentage >= 80 ? 'Expert' : percentage >= 60 ? 'Pro' : percentage >= 40 ? 'Learner' : 'Novice'}
               </div>
             </div>
           </div>
 
           <div className="flex gap-3 justify-center">
-            <Button variant="outline" onClick={onExit}>
+            <Button className="ps-btn ps-btn-ghost" onClick={onExit}>
               ← Menu
             </Button>
-            <Button onClick={handleRestart}>Play Again</Button>
+            <Button className="ps-btn ps-btn-primary" onClick={handleRestart}>Play Again</Button>
           </div>
         </Card>
       </div>
@@ -486,28 +487,28 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
   // ── Render Game ────────────────────────────────────────────────────────────
   return (
-    <div className={`flex flex-1 flex-col min-h-screen ${BG}`}>
+    <div className={`ps-shell ${isDark ? 'ps-dark' : 'ps-light'}`}>
       {/* Header */}
-      <header className={`px-4 py-3 flex items-center justify-between sticky top-0 z-10 ${HEADER_CLS}`}>
+      <header className="ps-topbar">
         <div className="flex items-center gap-3">
-          <button onClick={onExit} className={EXIT_BTN_CLS}>← Exit</button>
-          <div className={`h-6 w-px ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-          <div className="flex items-center gap-2">
+          <button onClick={onExit} className="ps-btn ps-btn-ghost ps-exit-btn">← Exit</button>
+          <div className="ps-divider" />
+          <div className="flex items-center gap-2 ps-brand">
             <span className="text-lg">🎨</span>
-            <span className={`hidden sm:inline ${TITLE_CLS}`}>Prompt Sculptor</span>
+            <span className="hidden sm:inline ps-brand-title">Prompt Sculptor</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`hidden sm:inline ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Score:</span>
-            <span className={`font-bold ${isDark ? 'text-violet-300' : 'text-violet-600'}`}>{score}</span>
+          <div className="flex items-center gap-2 text-sm ps-score-chip">
+            <span className="hidden sm:inline ps-chip-label">Score:</span>
+            <span className="font-bold ps-chip-value">{score}</span>
           </div>
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+          <span className={`ps-difficulty-pill ${
             currentChallenge.difficulty === 'Beginner'
-              ? 'bg-emerald-500/20 text-emerald-700 border-emerald-300'
+              ? 'ps-difficulty-beginner'
               : currentChallenge.difficulty === 'Intermediate'
-              ? 'bg-amber-500/20 text-amber-700 border-amber-300'
-              : 'bg-rose-500/20 text-rose-700 border-rose-300'
+              ? 'ps-difficulty-intermediate'
+              : 'ps-difficulty-advanced'
           }`}>
             {currentChallenge.difficulty}
           </span>
@@ -517,32 +518,32 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
       {/* Intro overlay */}
       {phase === 'intro' && (
-        <div className="absolute inset-0 bg-background/95 z-20 flex items-center justify-center px-4">
-          <Card className="max-w-lg w-full p-6 shadow-lg">
+        <div className="ps-overlay">
+          <Card className="ps-panel ps-intro-card max-w-lg w-full p-6">
             <div className="text-center mb-6">
-              <span className="text-5xl mb-4 block">{currentChallenge.emoji}</span>
-              <h2 className="text-xl font-bold mb-2">{currentChallenge.title}</h2>
-              <p className="text-muted-foreground text-sm mb-4">{currentChallenge.description}</p>
-              <Badge variant="secondary" className="mb-4">
+              <span className="ps-hero-emoji text-5xl mb-4 block">{currentChallenge.emoji}</span>
+              <h2 className="ps-heading text-xl mb-2">{currentChallenge.title}</h2>
+              <p className="ps-body-copy text-sm mb-4">{currentChallenge.description}</p>
+              <Badge className="ps-pill mb-4">
                 {currentChallenge.conceptLabel}
               </Badge>
             </div>
-            <div className="bg-muted rounded-lg p-4 mb-6">
-              <div className="text-sm font-semibold mb-2">{currentChallenge.targetLabel}</div>
-              <div className="text-sm text-muted-foreground font-mono bg-background p-3 rounded border whitespace-pre-wrap max-h-32 overflow-y-auto">
+            <div className="ps-target-card">
+              <div className="ps-mini-label mb-2">{currentChallenge.targetLabel}</div>
+              <div className="ps-code-box max-h-32 overflow-y-auto">
                 {currentChallenge.targetOutput}
               </div>
             </div>
             <div className="flex gap-3">
               <Button
-                variant="outline"
+                className="ps-btn ps-btn-ghost"
                 onClick={() => setPhase('tutorial')}
               >
                 📖 Tutorial
               </Button>
               <Button
                 onClick={() => setPhase('playing')}
-                className="ml-auto"
+                className="ps-btn ps-btn-primary ml-auto"
               >
                 Start Challenge →
               </Button>
@@ -556,33 +557,33 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
         {/* Left panel: Challenge info & Techniques */}
         <div className="flex-1 flex flex-col gap-4 min-w-0">
           {/* Challenge header */}
-          <Card className="p-4">
+          <Card className="ps-panel p-4">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-2xl">{currentChallenge.emoji}</span>
-                  <h3 className="font-bold text-lg">{currentChallenge.title}</h3>
+                  <h3 className="ps-heading text-lg">{currentChallenge.title}</h3>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="ps-mini-copy text-sm">
                   {currentChallenge.conceptLabel}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">
+                <Badge className="ps-pill">
                   {currentChallengeIndex + 1}/{CHALLENGES.length}
                 </Badge>
               </div>
             </div>
 
             {/* Target output preview */}
-            <div className="mt-3 p-3 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+            <div className="ps-target-card mt-3">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm">🎯</span>
-                <span className="text-xs font-semibold text-primary">
+                <span className="ps-mini-label">
                   {currentChallenge.targetLabel}
                 </span>
               </div>
-              <div className="text-sm font-mono bg-background p-3 rounded border whitespace-pre-wrap max-h-40 overflow-y-auto">
+              <div className="ps-code-box max-h-40 overflow-y-auto">
                 {currentChallenge.targetOutput}
               </div>
             </div>
@@ -590,19 +591,19 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
           {/* Applied techniques */}
           {appliedTechniques.size > 0 && (
-            <Card className="p-4">
+            <Card className="ps-panel p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-sm">Applied Techniques</h4>
-                  <span className={`text-xs font-medium ${efficiency.color}`}>
+                  <h4 className="ps-subheading text-sm">Applied Techniques</h4>
+                  <span className={`text-xs font-medium ${efficiency.tone}`}>
                     ({efficiency.label})
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm ps-mini-copy">
                     Cost: <span className="font-bold">{totalCost} pts</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs ps-mini-copy">
                     (min: {currentChallenge.minimumCost})
                   </span>
                 </div>
@@ -614,7 +615,7 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
                   return (
                     <Badge
                       key={tech.id}
-                      className={`${TECHNIQUE_COLORS[tech.type]} cursor-pointer hover:opacity-80 px-3 py-1.5 flex items-center gap-1.5 transition-all`}
+                      className={`ps-tech-badge ${TECHNIQUE_COLORS[tech.type]}`}
                       onClick={() => handleRemoveTechnique(tech.id)}
                     >
                       {TECHNIQUE_ICONS[tech.type]} {tech.label}
@@ -627,8 +628,8 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
           )}
 
           {/* Available techniques */}
-          <Card className="p-4 flex-1">
-            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+          <Card className="ps-panel p-4 flex-1">
+            <h4 className="ps-subheading text-sm mb-3 flex items-center gap-2">
               <span>🔧</span> Available Techniques
             </h4>
             <div className="space-y-2 max-h-80 overflow-y-auto">
@@ -637,16 +638,14 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
                   key={technique.id}
                   onClick={() => handleApplyTechnique(technique)}
                   disabled={isGenerating}
-                  className={`w-full p-3 rounded-lg border text-left transition-all hover:shadow-md active:scale-[0.98] ${
-                    TECHNIQUE_COLORS[technique.type]
-                  } ${isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.01]'}`}
+                  className={`ps-technique-btn ${TECHNIQUE_COLORS[technique.type]} ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{TECHNIQUE_ICONS[technique.type]}</span>
                       <span className="font-medium">{technique.label}</span>
                     </div>
-                    <Badge variant="outline" className="text-xs bg-background">
+                    <Badge className="ps-tech-cost">
                       {technique.cost} pt{technique.cost > 1 ? 's' : ''}
                     </Badge>
                   </div>
@@ -657,10 +656,10 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
             {availableTechniques.length === 0 && (
               <div className="text-center py-6">
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-sm ps-mini-copy mb-2">
                   All techniques used.
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs ps-mini-copy">
                   Click on applied techniques above to remove and try different combinations.
                 </p>
               </div>
@@ -670,17 +669,15 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
           {/* Actions */}
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              className="ps-btn ps-btn-ghost flex-1"
               onClick={() => setShowHint(!showHint)}
-              className="flex-1"
               disabled={isGenerating}
             >
               💡 {showHint ? 'Hide Hint' : 'Show Hint'}
             </Button>
             <Button
-              variant="outline"
+              className="ps-btn ps-btn-ghost flex-1"
               onClick={handleSkip}
-              className="flex-1"
               disabled={isGenerating}
             >
               Skip →
@@ -688,8 +685,8 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
           </div>
 
           {showHint && (
-            <Card className="p-3 bg-amber-50 border-amber-200 animate-in fade-in slide-in-from-top-2">
-              <p className="text-sm text-amber-800">
+            <Card className="ps-hint-card p-3 animate-in fade-in slide-in-from-top-2">
+              <p className="text-sm">
                 💡 <strong>Hint:</strong> {currentChallenge.hint}
               </p>
             </Card>
@@ -698,41 +695,41 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
         {/* Right panel: MockGPT Chat Interface */}
         <div className="flex-1 flex flex-col max-w-xl">
-          <Card className="flex-1 flex flex-col overflow-hidden shadow-lg">
+          <Card className="ps-panel ps-chat-shell flex-1 flex flex-col overflow-hidden">
             {/* Chat header */}
-            <div className="p-3 border-b bg-gradient-to-r from-primary/10 to-transparent flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white text-sm font-bold shadow">
+            <div className="ps-chat-header">
+              <div className="ps-chat-avatar">
                 M
               </div>
               <div>
-                <div className="font-semibold text-sm">mockGPT</div>
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <div className="ps-subheading text-sm">mockGPT</div>
+                <div className="ps-mini-copy text-xs flex items-center gap-1">
+                  <span className="ps-online-dot animate-pulse" />
                   Online
                 </div>
               </div>
             </div>
 
             {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 ps-chat-body">
               {/* System prompt display */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground font-semibold">
+                  <span className="text-xs ps-mini-label">
                     📝 Assembled Prompt:
                   </span>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="ps-tech-cost">
                     {getAssembledPrompt().length} chars
                   </Badge>
                 </div>
-                <div className="bg-background p-3 rounded-lg text-sm font-mono whitespace-pre-wrap border shadow-sm">
+                <div className="ps-code-box">
                   {getAssembledPrompt()}
                 </div>
               </div>
 
               {/* User message (the prompt) */}
               <div className="flex justify-end">
-                <div className="bg-primary text-primary-foreground p-3 rounded-lg rounded-tr-sm max-w-[85%] text-sm shadow-md">
+                <div className="ps-user-bubble">
                   ▶ Run this prompt
                 </div>
               </div>
@@ -741,9 +738,9 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
               <div className="flex justify-start">
                 <div
                   ref={outputRef}
-                  className={`bg-background p-4 rounded-lg rounded-tl-sm max-w-[85%] text-sm font-mono whitespace-pre-wrap border shadow-sm min-w-[200px] ${
-                    isGenerating ? 'ring-2 ring-primary/30' : ''
-                  } ${showSuccess ? 'ring-2 ring-green-500 bg-green-50' : ''}`}
+                  className={`ps-ai-bubble ${
+                    isGenerating ? 'ps-ai-bubble-generating' : ''
+                  } ${showSuccess ? 'ps-ai-bubble-success' : ''}`}
                 >
                   {isGenerating ? (
                     <TypingIndicator />
@@ -762,21 +759,21 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
               {currentOutput && !isGenerating && (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Match Quality</span>
+                    <span className="ps-mini-copy">Match Quality</span>
                     <span className={`font-bold ${
-                      matchPercentage >= 80 ? 'text-green-600' :
-                      matchPercentage >= 50 ? 'text-amber-600' :
-                      'text-red-600'
+                      matchPercentage >= 80 ? 'ps-efficiency-good' :
+                      matchPercentage >= 50 ? 'ps-efficiency-mid' :
+                      'ps-efficiency-bad'
                     }`}>
                       {matchPercentage}%
                     </span>
                   </div>
-                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="ps-progress-track">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        matchPercentage >= 80 ? 'bg-green-500' :
-                        matchPercentage >= 50 ? 'bg-amber-500' :
-                        'bg-red-500'
+                        matchPercentage >= 80 ? 'ps-progress-good' :
+                        matchPercentage >= 50 ? 'ps-progress-mid' :
+                        'ps-progress-bad'
                       }`}
                       style={{ width: `${matchPercentage}%` }}
                     />
@@ -786,10 +783,10 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
               {/* Comparison indicator */}
               {currentOutput && !isGenerating && displayedOutput === currentOutput && (
-                <div className={`p-3 rounded-lg text-sm text-center font-medium animate-in fade-in ${
+                <div className={`ps-compare-banner animate-in fade-in ${
                   currentOutput === currentChallenge.targetOutput
-                    ? 'bg-green-100 text-green-800 border border-green-200'
-                    : 'bg-red-50 text-red-700 border border-red-200'
+                    ? 'ps-compare-good'
+                    : 'ps-compare-bad'
                 }`}>
                   {currentOutput === currentChallenge.targetOutput ? (
                     <span className="flex items-center justify-center gap-2">
@@ -806,34 +803,34 @@ export function PromptSculptor({ onExit }: PromptSculptorProps) {
 
             {/* Success overlay */}
             {showSuccess && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/90 z-10">
-                <Card className="p-8 text-center animate-in fade-in zoom-in shadow-2xl max-w-sm">
+              <div className="ps-overlay ps-overlay-local z-10">
+                <Card className="ps-panel ps-success-card p-8 text-center animate-in fade-in zoom-in max-w-sm">
                   <div className="text-6xl mb-4">🎉</div>
-                  <h3 className="text-2xl font-bold mb-2">Perfect Match!</h3>
+                  <h3 className="ps-heading text-2xl mb-2">Perfect Match!</h3>
                   <div className="flex justify-center mb-4">
                     <StarRating stars={stars} size="lg" />
                   </div>
-                  <div className="bg-muted rounded-lg p-4 mb-4 space-y-2">
+                  <div className="ps-score-breakdown mb-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Base Score</span>
+                      <span className="ps-mini-copy">Base Score</span>
                       <span className="font-bold">{Math.max(10, 100 - totalCost * 15)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Star Bonus</span>
-                      <span className="font-bold text-green-600">+{stars === 3 ? 50 : stars === 2 ? 25 : 0}</span>
+                      <span className="ps-mini-copy">Star Bonus</span>
+                      <span className="font-bold ps-efficiency-good">+{stars === 3 ? 50 : stars === 2 ? 25 : 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Time Bonus</span>
-                      <span className="font-bold text-blue-600">+{Math.max(0, Math.floor((60000 - (Date.now() - challengeStartTime)) / 100))}</span>
+                      <span className="ps-mini-copy">Time Bonus</span>
+                      <span className="font-bold ps-time-bonus">+{Math.max(0, Math.floor((60000 - (Date.now() - challengeStartTime)) / 100))}</span>
                     </div>
-                    <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                    <div className="ps-total-row">
                       <span>Total</span>
-                      <span className="text-primary">
+                      <span className="ps-chip-value">
                         {Math.max(10, 100 - totalCost * 15) + (stars === 3 ? 50 : stars === 2 ? 25 : 0) + Math.max(0, Math.floor((60000 - (Date.now() - challengeStartTime)) / 100))}
                       </span>
                     </div>
                   </div>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="ps-mini-copy text-sm">
                     {currentChallengeIndex < CHALLENGES.length - 1
                       ? 'Moving to next challenge...'
                       : "You've completed all challenges!"}
