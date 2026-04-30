@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import './LearningRoadmap.css'
 
 export interface RoadmapLevel {
@@ -23,11 +23,33 @@ interface LearningRoadmapProps {
 
 type NodeStatus = 'done' | 'current' | 'locked'
 
+type RoadmapPoint = {
+  x: number
+  y: number
+}
+
 function hexToRgba(hex: string, alpha: number) {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return `rgba(${r},${g},${b},${alpha})`
+}
+
+function buildConnectorPath(points: RoadmapPoint[]) {
+  if (points.length === 0) return ''
+
+  let path = `M ${points[0].x} ${points[0].y}`
+
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1]
+    const next = points[index]
+    const verticalDistance = next.y - previous.y
+    const controlOffset = Math.max(32, Math.min(120, Math.abs(verticalDistance) * 0.42))
+
+    path += ` C ${previous.x} ${previous.y + controlOffset} ${next.x} ${next.y - controlOffset} ${next.x} ${next.y}`
+  }
+
+  return path
 }
 
 export function LearningRoadmap({
@@ -40,6 +62,10 @@ export function LearningRoadmap({
   onExit,
 }: LearningRoadmapProps) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
+  const [mapPoints, setMapPoints] = useState<RoadmapPoint[]>([])
+  const [mapSize, setMapSize] = useState({ width: 0, height: 0 })
+  const trackRef = useRef<HTMLDivElement | null>(null)
+  const nodeRefs = useRef<Array<HTMLButtonElement | null>>([])
 
   const currentIdx = levels.findIndex(level => !completedIds.has(level.id))
   const allDone = currentIdx === -1
@@ -63,6 +89,51 @@ export function LearningRoadmap({
     '--rm-theme-border': hexToRgba(themeColor, 0.52),
     '--rm-theme-shadow': hexToRgba(themeColor, 0.32),
   } as CSSProperties
+  const mapPath = buildConnectorPath(mapPoints)
+
+  useLayoutEffect(() => {
+    function updateMapLayout() {
+      const trackElement = trackRef.current
+      if (!trackElement) return
+
+      const trackRect = trackElement.getBoundingClientRect()
+      const midpoint = trackRect.width / 2
+      const points = nodeRefs.current
+        .slice(0, levels.length)
+        .map(node => {
+          if (!node) return null
+
+          const rect = node.getBoundingClientRect()
+          const leftEdge = rect.left - trackRect.left
+          const rightEdge = rect.right - trackRect.left
+          const leftDistance = Math.abs(leftEdge - midpoint)
+          const rightDistance = Math.abs(rightEdge - midpoint)
+          const anchorOffset = 12
+          const anchorX = leftDistance <= rightDistance ? leftEdge - anchorOffset : rightEdge + anchorOffset
+          const anchorY = rect.top - trackRect.top + rect.height / 2
+
+          return {
+            x: Math.max(18, Math.min(trackRect.width - 18, anchorX)),
+            y: anchorY,
+          }
+        })
+        .filter((point): point is RoadmapPoint => point !== null)
+
+      setMapPoints(points)
+      setMapSize({
+        width: trackRect.width,
+        height: trackRect.height,
+      })
+    }
+
+    const frameId = window.requestAnimationFrame(updateMapLayout)
+    window.addEventListener('resize', updateMapLayout)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener('resize', updateMapLayout)
+    }
+  }, [expandedIdx, levels.length])
 
   return (
     <div className="rm-shell" style={themeVars}>
@@ -93,8 +164,28 @@ export function LearningRoadmap({
         </div>
       )}
 
-      <div className="rm-track">
-        <div className="rm-track-spine" aria-hidden="true" />
+      <div className="rm-track" ref={trackRef}>
+        {mapPath && (
+          <svg
+            className="rm-track-map"
+            aria-hidden="true"
+            viewBox={`0 0 ${mapSize.width} ${mapSize.height}`}
+            preserveAspectRatio="none"
+          >
+            <path className="rm-track-map-shadow" d={mapPath} />
+            <path className="rm-track-map-path" d={mapPath} />
+
+            {mapPoints.map((point, index) => (
+              <circle
+                key={`stop-${levels[index]?.id ?? index}`}
+                className="rm-track-map-stop"
+                cx={point.x}
+                cy={point.y}
+                r="7"
+              />
+            ))}
+          </svg>
+        )}
 
         {levels.map((level, idx) => {
           const status = getStatus(idx)
@@ -109,6 +200,9 @@ export function LearningRoadmap({
                 className={`rm-node rm-node-${status} ${isExpanded ? 'is-expanded' : ''}`}
                 disabled={status === 'locked'}
                 onClick={() => handleNodeClick(idx)}
+                ref={node => {
+                  nodeRefs.current[idx] = node
+                }}
                 style={{ '--rm-tilt': tilt } as CSSProperties}
               >
                 <div className="rm-node-icon-wrap">

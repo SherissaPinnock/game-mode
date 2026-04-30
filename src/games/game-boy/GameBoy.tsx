@@ -11,14 +11,46 @@ import {
   GAME_ID,
   type GameBoyConceptLevelId,
 } from './data/roadmap'
+import {
+  DEFAULT_LOADOUT,
+  type GameBoyLoadout,
+} from './data/loadout'
 import { BuildPullRunLevel } from './levels/BuildPullRunLevel'
 import { ConceptQuizLevel } from './levels/ConceptQuizLevel'
 import { DockerfileAssemblyLevel } from './levels/DockerfileAssemblyLevel'
 import { IntroLevel } from './levels/IntroLevel'
+import { VolumeCollapseLevel } from './levels/VolumeCollapseLevel'
 import './GameBoy.css'
 
 interface GameBoyProps {
   onExit: () => void
+}
+
+const LOADOUT_STORAGE_KEY = 'game-boy:last-loadout'
+
+function readStoredLoadout(): GameBoyLoadout {
+  if (typeof window === 'undefined') return DEFAULT_LOADOUT
+
+  try {
+    const raw = window.localStorage.getItem(LOADOUT_STORAGE_KEY)
+    if (!raw) return DEFAULT_LOADOUT
+
+    const parsed = JSON.parse(raw) as Partial<GameBoyLoadout>
+    if (!parsed.heroId || !parsed.settingId) return DEFAULT_LOADOUT
+
+    return {
+      heroId: parsed.heroId,
+      settingId: parsed.settingId,
+    } as GameBoyLoadout
+  } catch {
+    return DEFAULT_LOADOUT
+  }
+}
+
+function storeLoadout(loadout: GameBoyLoadout) {
+  if (typeof window === 'undefined') return
+
+  window.localStorage.setItem(LOADOUT_STORAGE_KEY, JSON.stringify(loadout))
 }
 
 export default function GameBoy({ onExit }: GameBoyProps) {
@@ -26,6 +58,7 @@ export default function GameBoy({ onExit }: GameBoyProps) {
   const [view, setView] = useState<'roadmap' | 'game'>('roadmap')
   const [activeLevelIdx, setActiveLevelIdx] = useState(0)
   const [completedIds, setCompletedIds] = useState(() => getCompletedLevels(GAME_ID))
+  const [lastLoadout, setLastLoadout] = useState<GameBoyLoadout>(() => readStoredLoadout())
 
   useEffect(() => {
     if (!userId) return
@@ -40,7 +73,12 @@ export default function GameBoy({ onExit }: GameBoyProps) {
     setView('game')
   }
 
-  function handleLevelComplete() {
+  function handleLevelComplete(loadout?: GameBoyLoadout) {
+    if (loadout) {
+      setLastLoadout(loadout)
+      storeLoadout(loadout)
+    }
+
     const levelId = GAME_BOY_LEVELS[activeLevelIdx]?.id
     if (levelId) {
       markLevelComplete(GAME_ID, levelId)
@@ -59,7 +97,7 @@ export default function GameBoy({ onExit }: GameBoyProps) {
   if (view === 'roadmap') {
     return (
       <LearningRoadmap
-        gameName="Docker Game Boy"
+        gameName="Docker DS"
         gameEmoji="🐳"
         themeColor="#2fb6ff"
         completedIds={completedIds}
@@ -90,6 +128,17 @@ export default function GameBoy({ onExit }: GameBoyProps) {
     return (
       <BuildPullRunLevel
         levelNumber={activeLevelIdx + 1}
+        onBack={handleBackToMap}
+        onComplete={handleLevelComplete}
+      />
+    )
+  }
+
+  if (activeLevel?.id === 'volumes') {
+    return (
+      <VolumeCollapseLevel
+        levelNumber={activeLevelIdx + 1}
+        loadout={lastLoadout}
         onBack={handleBackToMap}
         onComplete={handleLevelComplete}
       />

@@ -13,6 +13,7 @@ import voiceOverSrc from '@/assets/sounds/tutorial voice over.mp3'
 import wasCorrectSrc from '@/assets/sounds/was correct voice over.mp3'
 import wasWrongSrc from '@/assets/sounds/was wrong voice over.mp3'
 import vintageGameSrc from '@/assets/sounds/vintage game sound.mp3'
+import coinSrc from '@/assets/sounds/coin drop.mp3'
 /**
  * Play a short sound effect. Creates a fresh Audio each time
  * so overlapping plays don't cut each other off.
@@ -90,6 +91,13 @@ export function playWasCorrectVoiceOver(): HTMLAudioElement {
 export function playWasWrongVoiceOver(): HTMLAudioElement {
   const audio = new Audio(wasWrongSrc)
   audio.volume = 0.5
+  audio.play().catch(() => {})
+  return audio
+}
+
+export function playCoin(): HTMLAudioElement{
+  const audio= new Audio(coinSrc)
+  audio.volume=0.5
   audio.play().catch(() => {})
   return audio
 }

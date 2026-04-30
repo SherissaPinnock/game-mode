@@ -101,7 +101,7 @@ function getBeatCopy(beat: StoryBeat, cartridgeName: string | null, timeLeft: nu
   if (beat === 0) {
     return {
       title: 'Docker as a Nintendo',
-      body: 'Do you remember the Game Boy or Nintendo DS? If you remember, when you buy a Game Boy game it comes as a cartridge',
+      body: 'Do you remember the Nintendo DS or Gameboy (we didnt forget you, Grandpa)? If you remember, when you buy a game for these handhelds, it comes as a cartridge',
       actionLabel: 'Show me the cartridge',
     }
   }
