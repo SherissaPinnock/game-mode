@@ -5,6 +5,7 @@ import cartridge2 from '@/assets/game-boy/cartridge 2.png'
 import cartridge3 from '@/assets/game-boy/cartridge 3.png'
 import gameBoyImage from '@/assets/game-boy/gameboy.png'
 import { INTRO_CONTAINER_LESSON } from '../data/roadmap'
+import { useMobileStageFocus } from '../hooks/useMobileStageFocus'
 
 interface IntroLevelProps {
   onBack: () => void
@@ -209,6 +210,7 @@ export function IntroLevel({ onBack, onComplete }: IntroLevelProps) {
   const themeVars = {
     '--gb-accent': selectedCartridge?.accent ?? '#87d8ff',
   } as CSSProperties
+  const stageFocusRef = useMobileStageFocus(`${section}-${beat}-${containerScaleBeat}`)
   const levelHeader = (
     <header className="gb-level-header">
       <button className="gb-back-btn" onClick={onBack}>
@@ -396,7 +398,7 @@ export function IntroLevel({ onBack, onComplete }: IntroLevelProps) {
 
         <main className="gb-level-body">
           <div className="gb-intro-container-layout">
-            <section className="gb-panel gb-intro-container-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-intro-container-panel">
               <div className="gb-intro-container-hero">
                 <div>
                   <div className="gb-panel-chip">Containers</div>
@@ -503,7 +505,7 @@ export function IntroLevel({ onBack, onComplete }: IntroLevelProps) {
 
         <main className="gb-level-body">
           <div className="gb-story-layout gb-scale-layout">
-            <section className="gb-panel gb-scale-stage-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-scale-stage-panel">
               <div className="gb-scale-stage-copy">
                 <div className="gb-panel-chip">Containers</div>
                 <h2 className="gb-panel-title">{containerScaleScene.title}</h2>
@@ -620,7 +622,7 @@ export function IntroLevel({ onBack, onComplete }: IntroLevelProps) {
 
       <main className="gb-level-body">
         <div className="gb-story-layout">
-          <section className="gb-stage-panel">
+          <section ref={stageFocusRef} className="gb-stage-panel">
             <div
               className={`gb-console-stage ${dropActive ? 'is-drop-active' : ''}`}
               onDragOver={(event) => {

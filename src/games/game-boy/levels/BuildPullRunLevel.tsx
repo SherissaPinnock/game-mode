@@ -11,6 +11,7 @@ import {
   type SettingId,
   type VillainId,
 } from '../data/loadout'
+import { useMobileStageFocus } from '../hooks/useMobileStageFocus'
 
 interface BuildPullRunLevelProps {
   levelNumber: number
@@ -153,6 +154,7 @@ export function BuildPullRunLevel({ levelNumber, onBack, onComplete }: BuildPull
   } as CSSProperties
   const heroFrame = selectedHero ? Math.floor(battleView.elapsedMs / 140) % selectedHero.frames : 0
   const stepIndex = getStepIndex(step)
+  const stageFocusRef = useMobileStageFocus(step)
 
   useEffect(() => {
     if (step !== 'play' || !selectedHero || !selectedVillain) return
@@ -447,7 +449,7 @@ export function BuildPullRunLevel({ levelNumber, onBack, onComplete }: BuildPull
 
       <main className="gb-level-body">
         <div className="gb-bpr-layout">
-          <section className="gb-panel gb-bpr-stage-panel">
+          <section ref={stageFocusRef} className="gb-panel gb-bpr-stage-panel">
             {(step === 'hero' || step === 'villain' || step === 'setting') && (
               <div className="gb-bpr-selection-stage">
                 <div className="gb-bpr-preview-card">

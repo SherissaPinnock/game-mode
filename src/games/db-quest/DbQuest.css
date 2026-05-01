@@ -7,7 +7,7 @@
 .dbq-level {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
   color: #e2e8f0;
   font-family: 'Inter', system-ui, sans-serif;
@@ -102,10 +102,36 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  scroll-margin-top: 12px;
 }
 
 .dbq-phase-screen.dbq-phase-center {
   align-items: center;
+}
+
+@media (max-width: 780px) {
+  .dbq-level-header {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding: 12px 14px;
+  }
+
+  .dbq-level-title {
+    width: 100%;
+  }
+
+  .dbq-level-body {
+    padding: 16px 14px 28px;
+  }
+
+  .dbq-phase-screen {
+    gap: 18px;
+  }
+
+  .dbq-explain-box,
+  .dbq-outcome-box {
+    padding: 18px 16px;
+  }
 }
 
 /* ── Explanation box ─────────────────────────────────────────────── */

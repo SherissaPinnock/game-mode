@@ -4,6 +4,7 @@ import cartridge1 from '@/assets/game-boy/cartridge 1.png'
 import cartridge2 from '@/assets/game-boy/cartridge 2.png'
 import cartridge3 from '@/assets/game-boy/cartridge 3.png'
 import gameBoyImage from '@/assets/game-boy/gameboy.png'
+import { useMobileStageFocus } from '../hooks/useMobileStageFocus'
 
 interface ImagesLevelProps {
   onBack: () => void
@@ -168,6 +169,7 @@ export function ImagesLevel({ onBack, onComplete }: ImagesLevelProps) {
   const themeVars = {
     '--gb-accent': selectedCartridge?.accent ?? '#87d8ff',
   } as CSSProperties
+  const stageFocusRef = useMobileStageFocus(`story-${beat}`)
 
   useEffect(() => {
     if (beat !== 2 || !selectedCartridge) return
@@ -342,7 +344,7 @@ export function ImagesLevel({ onBack, onComplete }: ImagesLevelProps) {
 
       <main className="gb-level-body">
         <div className="gb-story-layout">
-          <section className="gb-stage-panel">
+          <section ref={stageFocusRef} className="gb-stage-panel">
             <div
               className={`gb-console-stage ${dropActive ? 'is-drop-active' : ''}`}
               onDragOver={(event) => {

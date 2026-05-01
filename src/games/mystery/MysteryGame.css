@@ -4,6 +4,10 @@
    ══════════════════════════════════════════════════════════════════ */
 
 .mys-root {
+  --mys-safe-top: max(12px, env(safe-area-inset-top));
+  --mys-safe-right: max(12px, env(safe-area-inset-right));
+  --mys-safe-bottom: max(12px, env(safe-area-inset-bottom));
+  --mys-safe-left: max(12px, env(safe-area-inset-left));
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -13,4 +17,55 @@
   user-select: none;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overscroll-behavior: none;
+}
+
+.mys-rotate-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--mys-safe-bottom) + 14px);
+  transform: translateX(-50%);
+  z-index: 80;
+  width: min(92vw, 420px);
+  display: none;
+  pointer-events: none;
+}
+
+.mys-rotate-card {
+  padding: 14px 16px;
+  border: 1px solid rgba(200, 150, 30, 0.3);
+  border-radius: 16px;
+  background: rgba(5, 3, 1, 0.94);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 210, 120, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.mys-rotate-kicker,
+.mys-rotate-text {
+  margin: 0;
+}
+
+.mys-rotate-kicker {
+  color: #c8960a;
+  font-family: 'Trebuchet MS', 'Gill Sans', 'Avenir Next', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mys-rotate-text {
+  margin-top: 6px;
+  color: #dfc99a;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 900px) {
+  .mys-rotate-prompt {
+    display: block;
+  }
 }

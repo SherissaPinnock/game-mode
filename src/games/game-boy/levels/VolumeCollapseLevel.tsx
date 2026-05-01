@@ -25,6 +25,7 @@ import {
   getSettingById,
   type GameBoyLoadout,
 } from '../data/loadout'
+import { useMobileStageFocus } from '../hooks/useMobileStageFocus'
 
 interface VolumeCollapseLevelProps {
   levelNumber: number
@@ -208,6 +209,7 @@ export function VolumeCollapseLevel({
   const stageVars = {
     '--gb-accent': selectedHero.accent,
   } as CSSProperties
+  const stageFocusRef = useMobileStageFocus(phase)
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -531,7 +533,7 @@ export function VolumeCollapseLevel({
   }
 
   const gameplayStage = currentRoundConfig ? (
-    <section className="gb-panel gb-vol-stage-panel">
+    <section ref={stageFocusRef} className="gb-panel gb-vol-stage-panel">
       <div className="gb-vol-stage-copy">
         <div>
           <span className="gb-panel-chip">
@@ -658,7 +660,7 @@ export function VolumeCollapseLevel({
       <main className="gb-level-body">
         {phase === 'briefing' && (
           <div className="gb-vol-layout is-single">
-            <section className="gb-panel gb-vol-info-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-vol-info-panel">
               <div className="gb-panel-chip">Volume briefing</div>
               <h2 className="gb-panel-title">Coins left in the container disappear</h2>
               <p className="gb-panel-copy">
@@ -708,7 +710,7 @@ export function VolumeCollapseLevel({
 
         {phase === 'mount' && (
           <div className="gb-vol-layout is-single">
-            <section className="gb-panel gb-vol-mount-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-vol-mount-panel">
               <div className="gb-panel-chip">Mount the volume</div>
               <h2 className="gb-panel-title">Link the Game Boy to the volume chest</h2>
               <p className="gb-panel-copy">{mountHint}</p>
@@ -785,7 +787,7 @@ export function VolumeCollapseLevel({
 
         {phase === 'round-break' && (
           <div className="gb-vol-layout is-summary">
-            <section className="gb-panel gb-vol-summary-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-vol-summary-panel">
               <div className="gb-panel-chip">Round 1 clear</div>
               <h2 className="gb-panel-title">The container collapsed</h2>
               <p className="gb-panel-copy">
@@ -826,7 +828,7 @@ export function VolumeCollapseLevel({
 
         {phase === 'shared-mount' && (
           <div className="gb-vol-layout is-single">
-            <section className="gb-panel gb-vol-mount-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-vol-mount-panel">
               <div className="gb-panel-chip">Shared volume mount</div>
               <h2 className="gb-panel-title">Connect one volume to both containers</h2>
               <p className="gb-panel-copy">{sharedMountHint}</p>
@@ -914,7 +916,7 @@ export function VolumeCollapseLevel({
 
         {phase === 'results' && (
           <div className="gb-vol-layout is-summary">
-            <section className="gb-panel gb-vol-summary-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-vol-summary-panel">
               <div className="gb-panel-chip">Level clear</div>
               <h2 className="gb-panel-title">The volume kept the loot alive</h2>
               <p className="gb-panel-copy">

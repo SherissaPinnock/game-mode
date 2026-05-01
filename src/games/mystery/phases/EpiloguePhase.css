@@ -45,7 +45,7 @@
 
 .epi-card {
   width: min(100%, 860px);
-  max-height: calc(100vh - 88px);
+  max-height: calc(100dvh - 88px);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -379,7 +379,7 @@
 
 @media (max-width: 720px) {
   .epi-shell {
-    padding: 20px 14px 16px;
+    padding: max(20px, var(--mys-safe-top, 12px)) 14px calc(var(--mys-safe-bottom, 12px) + 4px);
   }
 
   .epi-card {
@@ -415,5 +415,77 @@
   .epi-btn {
     width: 100%;
     min-width: 0;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .epi-shell {
+    padding: 12px 12px 10px;
+  }
+
+  .epi-progress {
+    top: 10px;
+    padding: 6px 10px;
+  }
+
+  .epi-card {
+    gap: 12px;
+    max-height: calc(100dvh - 28px);
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .epi-panel-content {
+    padding: 18px 18px 8px;
+    border-radius: 20px;
+  }
+
+  .epi-lesson-head {
+    margin-bottom: 12px;
+  }
+
+  .epi-lesson-icon,
+  .epi-seal {
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+  }
+
+  .epi-title {
+    font-size: 1.6rem;
+  }
+
+  .epi-copy p,
+  .epi-rag-copy,
+  .epi-steps li {
+    font-size: 0.88rem;
+    line-height: 1.65;
+  }
+
+  .epi-steps {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .epi-steps li {
+    padding: 12px 14px 12px 52px;
+  }
+
+  .epi-steps li::before {
+    top: 11px;
+    left: 14px;
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  .epi-btn {
+    min-width: 0;
+    padding: 10px 18px;
+    font-size: 0.88rem;
+  }
+
+  .epi-hint {
+    font-size: 0.7rem;
   }
 }

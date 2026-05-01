@@ -843,3 +843,75 @@
     padding-top: 14px;
   }
 }
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .lib-root .lib-topbar,
+  .kitch-root .kitch-topbar,
+  .bed-root .bed-topbar,
+  .std-root .std-topbar {
+    gap: 10px;
+    padding: max(8px, var(--mys-safe-top, 12px)) 14px 8px;
+  }
+
+  .lib-root .lib-room-label,
+  .kitch-root .kitch-room-label,
+  .bed-root .bed-room-label,
+  .std-root .std-room-label {
+    font-size: 0.94rem;
+  }
+
+  .lib-root .lib-step-hint,
+  .kitch-root .kitch-step-hint,
+  .bed-root .bed-step-hint,
+  .std-root .std-step-hint {
+    font-size: 0.66rem;
+  }
+
+  .lib-root .lib-letter-card,
+  .lib-root .lib-reveal-card,
+  .lib-root .lib-done-card,
+  .kitch-root .kitch-examine-card,
+  .kitch-root .kitch-reveal-card,
+  .bed-root .bed-discovery-card,
+  .bed-root .bed-done-card,
+  .std-root .std-seq-card,
+  .std-root .std-acc-card,
+  .std-root .std-done-card {
+    max-height: calc(100dvh - 112px);
+    padding: 18px 18px 16px;
+  }
+
+  .lib-root .lib-narration-panel,
+  .std-root .std-intro-panel {
+    min-height: 140px;
+    padding: 0 18px 18px;
+  }
+
+  .kitch-root .kitch-dialogue-panel,
+  .bed-root .bed-dialogue-panel {
+    gap: 12px;
+    padding: 0 14px 14px;
+  }
+
+  .kitch-root .kitch-portrait-wrap,
+  .bed-root .bed-portrait-wrap {
+    margin-top: -88px;
+  }
+
+  .kitch-root .kitch-portrait,
+  .bed-root .bed-portrait {
+    width: 170px;
+  }
+
+  .kitch-root .kitch-speech-box,
+  .bed-root .bed-speech-box {
+    padding: 16px 18px 14px;
+  }
+
+  .bed-root .bed-archive-main,
+  .lib-root .lib-results-pane,
+  .lib-root .lib-query-sidebar,
+  .std-root .std-rank {
+    padding: 16px 14px;
+  }
+}

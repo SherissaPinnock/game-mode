@@ -180,7 +180,7 @@ export function LandingPage({ onBrowseGames, onPlay, gameConfig }: LandingPagePr
       </nav>
 
       {/* ── Hero ── */}
-      <HeroBanner onBrowseGames={browse} />
+      <HeroBanner onBrowseGames={browse} onPlay={onPlay} />
 
       {/* ── Featured games ── */}
       <section className="lp-section lp-featured-section">

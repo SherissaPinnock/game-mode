@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { playClick, playPop, playCorrect, playWrong, playNextLevel, playComplete } from '@/lib/sounds'
+import { useMobilePhaseFocus } from '../hooks/useMobilePhaseFocus'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Phase =
@@ -46,6 +47,24 @@ interface Props {
 export default function NormalizationLevel({ onComplete, onBack }: Props) {
   const [phase, setPhase] = useState<Phase>('anomaly-intro')
   const advance = (next: Phase) => setPhase(next)
+  const levelBodyRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!window.matchMedia('(max-width: 780px), (max-height: 620px) and (orientation: landscape)').matches) return
+
+    const bodyEl = levelBodyRef.current
+    if (!bodyEl) return
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    window.requestAnimationFrame(() => {
+      bodyEl.scrollTo({
+        top: 0,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      })
+    })
+  }, [phase])
 
   return (
     <div className="dbq-level">
@@ -60,7 +79,7 @@ export default function NormalizationLevel({ onComplete, onBack }: Props) {
       </div>
 
       {/* Phase screens */}
-      <div className="dbq-level-body">
+      <div ref={levelBodyRef} className="dbq-level-body">
         {phase === 'anomaly-intro'    && <AnomalyIntro     onNext={() => advance('update-challenge')} />}
         {phase === 'update-challenge' && <UpdateChallenge  onNext={() => advance('split-intro')} />}
         {phase === 'split-intro'      && <SplitIntro       onNext={() => advance('normalize')} />}
@@ -301,6 +320,7 @@ function UpdateChallenge({ onNext }: { onNext: () => void }) {
   const [missed, setMissed] = useState(false)
   const [done, setDone] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const phaseFocusRef = useMobilePhaseFocus(`${started}-${done}-${missed}`)
 
   function startChallenge() {
     playClick()
@@ -338,7 +358,7 @@ function UpdateChallenge({ onNext }: { onNext: () => void }) {
   const integrityColor = integrity > 60 ? '#4ade80' : integrity > 30 ? '#fbbf24' : '#f87171'
 
   return (
-    <div className="dbq-phase-screen">
+    <div ref={phaseFocusRef} className="dbq-phase-screen">
       <div className="dbq-explain-box">
         <h2 className="dbq-phase-heading">📣 Alice Baker just moved house!</h2>
         <p className="dbq-phase-sub">
@@ -489,6 +509,7 @@ function NormalizePhase({ onNext }: { onNext: () => void }) {
   const ordersRef    = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [fkPaths, setFkPaths] = useState<{ d: string; color: string; label: string }[]>([])
+  const phaseFocusRef = useMobilePhaseFocus(`${animState}-${showFKLines}`)
 
   function doSplit() {
     setAnimState('splitting')
@@ -547,7 +568,7 @@ function NormalizePhase({ onNext }: { onNext: () => void }) {
   }, [showFKLines, computeFKPaths])
 
   return (
-    <div className="dbq-phase-screen">
+    <div ref={phaseFocusRef} className="dbq-phase-screen">
       <div className="dbq-explain-box">
         <h2 className="dbq-phase-heading">Watch the Split Happen</h2>
         <p className="dbq-phase-sub">
@@ -709,6 +730,7 @@ function PriceHikePhase({ onNext }: { onNext: () => void }) {
   const [leftCount, setLeftCount] = useState(0)
   const [showInsight, setShowInsight] = useState(false)
   const energyRows = ORDERS.filter(r => r.item === 'Energy Drink').length
+  const phaseFocusRef = useMobilePhaseFocus(`${animating}-${rightDone}-${showInsight}`)
 
   function runAnimation() {
     if (animating) return
@@ -732,7 +754,7 @@ function PriceHikePhase({ onNext }: { onNext: () => void }) {
   }
 
   return (
-    <div className="dbq-phase-screen">
+    <div ref={phaseFocusRef} className="dbq-phase-screen">
       <div className="dbq-explain-box">
         <h2 className="dbq-phase-heading">⚡ Energy Drinks are now $3.00!</h2>
         <p className="dbq-phase-sub">Watch what it takes to update the price before and after normalization.</p>
@@ -822,6 +844,7 @@ function GhostItemPhase({ onNext }: { onNext: () => void }) {
   const [leftDeleted, setLeftDeleted] = useState(false)
   const [rightDeleted, setRightDeleted] = useState(false)
   const [showInsight, setShowInsight] = useState(false)
+  const phaseFocusRef = useMobilePhaseFocus(`${leftDeleted}-${rightDeleted}-${showInsight}`)
 
   const redHatOrders = ORDERS.filter(r => r.item === 'Red Hat')
   const lastRedHat   = redHatOrders[redHatOrders.length - 1]
@@ -833,7 +856,7 @@ function GhostItemPhase({ onNext }: { onNext: () => void }) {
   }
 
   return (
-    <div className="dbq-phase-screen">
+    <div ref={phaseFocusRef} className="dbq-phase-screen">
       <div className="dbq-explain-box">
         <h2 className="dbq-phase-heading">👻 You've stopped selling Red Hats</h2>
         <p className="dbq-phase-sub">
@@ -1180,6 +1203,7 @@ function SplitChallenge({
   const [allCorrect, setAllCorrect] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [attempts, setAttempts] = useState(0)
+  const phaseFocusRef = useMobilePhaseFocus(`${checked}-${allCorrect}-${showHint}-${attempts}`)
 
   const unassigned = shuffledCols.filter(c => !assignment[c.id])
   const allAssigned = unassigned.length === 0
@@ -1234,7 +1258,7 @@ function SplitChallenge({
   const hasSelection = selected !== null
 
   return (
-    <div className="dbq-phase-screen">
+    <div ref={phaseFocusRef} className="dbq-phase-screen">
       {/* Header */}
       <div className="dbq-explain-box">
         <div className="dbq-sc-title-row">

@@ -21,7 +21,7 @@ export default function ExplorePhase({ onExit }: Props) {
         ← Exit
       </button>
       <span className="exp-title">🕯️ Blackwood Manor</span>
-      <span className="exp-hint">Click a room to investigate</span>
+      <span className="exp-hint">Tap a room to investigate</span>
     </div>
   )
 }

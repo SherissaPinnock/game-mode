@@ -18,8 +18,8 @@
 /* ── Exit button ───────────────────────────────────────────────── */
 .nar-exit-btn {
   position: absolute;
-  top: 14px;
-  left: 16px;
+  top: var(--mys-safe-top, 12px);
+  left: max(16px, var(--mys-safe-left, 12px));
   pointer-events: all;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -199,4 +199,79 @@
 @keyframes narHintPulse {
   0%, 100% { color: #3a2c10; }
   50%       { color: #6a5020; }
+}
+
+@media (max-width: 900px) {
+  .nar-panel {
+    gap: 18px;
+    padding: 0 18px 22px;
+  }
+
+  .nar-portrait-img {
+    width: 220px;
+  }
+}
+
+@media (max-width: 720px) {
+  .nar-panel {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 0 14px calc(var(--mys-safe-bottom, 12px) + 10px);
+  }
+
+  .nar-portrait-wrap {
+    margin-top: 0;
+    align-self: center;
+  }
+
+  .nar-portrait-img {
+    width: min(44vw, 170px);
+  }
+
+  .nar-dialogue-box {
+    min-height: 0;
+    padding: 18px 18px 14px;
+  }
+
+  .nar-dialogue-text {
+    min-height: 0;
+    font-size: 0.96rem;
+    line-height: 1.65;
+  }
+
+  .nar-dialogue-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .nar-panel {
+    gap: 14px;
+    padding: 0 14px 14px;
+  }
+
+  .nar-portrait-wrap {
+    margin-top: -96px;
+  }
+
+  .nar-portrait-img {
+    width: 160px;
+  }
+
+  .nar-dialogue-box {
+    min-height: 0;
+    padding: 16px 18px 14px;
+  }
+
+  .nar-dialogue-quote {
+    font-size: 3.8rem;
+  }
+
+  .nar-dialogue-text {
+    min-height: 0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
 }

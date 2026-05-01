@@ -131,6 +131,15 @@ export default function MysteryGame({ onExit }: Props) {
         />
       )}
 
+      <div className="mys-rotate-prompt" aria-live="polite">
+        <div className="mys-rotate-card">
+          <p className="mys-rotate-kicker">Mobile Tip</p>
+          <p className="mys-rotate-text">
+            Rotate your phone horizontally for the best Blackwood Manor view.
+          </p>
+        </div>
+      </div>
+
       {DEV && (
         <div style={{
           position: 'absolute', bottom: 12, right: 12, zIndex: 999,

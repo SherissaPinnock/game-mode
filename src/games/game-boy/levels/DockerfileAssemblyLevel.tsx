@@ -9,6 +9,7 @@ import {
   playVintageGame,
   playWrong,
 } from '@/lib/sounds'
+import { useMobileStageFocus } from '../hooks/useMobileStageFocus'
 
 interface DockerfileAssemblyLevelProps {
   levelNumber: number
@@ -144,6 +145,7 @@ export function DockerfileAssemblyLevel({
   const briefing = BRIEFING_STEPS[briefingStep]
   const isRecipeReady = placedBlocks.length === TARGET_SEQUENCE.length
   const chargePercent = Math.round((placedBlocks.length / TARGET_SEQUENCE.length) * 100)
+  const stageFocusRef = useMobileStageFocus(`${phase}-${briefingStep}`)
   useEffect(() => {
     if (phase !== 'building' || countdown === null) return
 
@@ -286,7 +288,7 @@ export function DockerfileAssemblyLevel({
       <main className="gb-level-body">
         {phase === 'briefing' ? (
           <div className="gb-df-layout">
-            <section className="gb-panel gb-df-lesson-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-df-lesson-panel">
               <div className="gb-df-lesson-hero">
                 <span className="gb-panel-chip">{briefing.chip}</span>
                 <h2 className="gb-panel-title">{briefing.title}</h2>
@@ -402,7 +404,7 @@ export function DockerfileAssemblyLevel({
           </div>
         ) : (
           <div className="gb-df-stage-shell">
-            <section className="gb-panel gb-df-stage-panel">
+            <section ref={stageFocusRef} className="gb-panel gb-df-stage-panel">
               <div className="gb-df-stage-hero">
                 <div>
                   <span className="gb-panel-chip">

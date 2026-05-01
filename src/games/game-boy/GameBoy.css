@@ -6,7 +6,7 @@
   --gb-panel-deep: #08344b;
   --gb-shadow: #0b2431;
   --gb-accent: #87d8ff;
-  min-height: 100vh;
+  min-height: 100dvh;
   color: #fff8db;
   font-family: 'Trebuchet MS', 'Avenir Next Condensed', 'Arial Rounded MT Bold', sans-serif;
   background:
@@ -136,6 +136,7 @@
 .gb-stage-panel,
 .gb-dialogue-card,
 .gb-panel {
+  scroll-margin-top: 12px;
   border-radius: 32px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(180deg, rgba(10, 61, 88, 0.96) 0%, rgba(8, 45, 64, 0.96) 100%);
@@ -3354,6 +3355,48 @@
   .gb-level-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    padding-top: 16px;
+  }
+
+  .gb-level-title {
+    padding: 14px 16px;
+    border-radius: 22px;
+    align-items: flex-start;
+  }
+
+  .gb-level-name {
+    line-height: 1.08;
+  }
+
+  .gb-level-body {
+    padding: 14px 14px 32px;
+  }
+
+  .gb-stage-panel,
+  .gb-dialogue-card,
+  .gb-panel {
+    gap: 14px;
+    padding: 20px;
+    border-radius: 26px;
+  }
+
+  .gb-dialogue-footer {
+    margin-top: 0;
+    gap: 12px;
+  }
+
+  .gb-scale-layout {
+    align-items: start;
+  }
+
+  .gb-scale-stage-panel,
+  .gb-scale-dialogue-card {
+    min-height: 0;
+  }
+
+  .gb-vol-summary-panel .gb-primary-btn {
+    margin-top: 0;
   }
 
   .gb-rack-grid,
@@ -3491,16 +3534,59 @@
   .gb-stage-panel,
   .gb-dialogue-card,
   .gb-panel {
-    padding: 18px;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .gb-level-title {
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .gb-level-badge {
+    padding: 8px 10px;
+    font-size: 0.66rem;
+  }
+
+  .gb-panel-title {
+    font-size: clamp(1.2rem, 5.6vw, 1.55rem);
+  }
+
+  .gb-panel-copy,
+  .gb-lesson-card p,
+  .gb-command-card p,
+  .gb-option-card,
+  .gb-fact-card,
+  .gb-df-block span:last-child,
+  .gb-df-feedback-card p,
+  .gb-vol-fact-card p,
+  .gb-vol-result-card p {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .gb-code-block {
+    padding: 14px;
+    font-size: 0.84rem;
+  }
+
+  .gb-intro-checkpoint-panel,
+  .gb-panel-quiz,
+  .gb-scale-dialogue-card,
+  .gb-bpr-dialogue-card,
+  .gb-df-sidebar,
+  .gb-vol-summary-panel {
+    gap: 12px;
   }
 
   .gb-scale-scene {
-    min-height: 360px;
-    padding: 18px;
+    min-height: clamp(250px, 72vw, 320px);
+    padding: 16px;
   }
 
   .gb-bpr-preview-visual {
-    min-height: 220px;
+    min-height: clamp(190px, 54vw, 220px);
   }
 
   .gb-bpr-choice-grid,
@@ -3509,7 +3595,7 @@
   }
 
   .gb-bpr-choice-card {
-    min-height: 210px;
+    min-height: clamp(168px, 48vw, 210px);
   }
 
   .gb-bp-blocks-panel,
@@ -3532,7 +3618,7 @@
   }
 
   .gb-bp-belt-scene {
-    min-height: 230px;
+    min-height: clamp(190px, 58vw, 230px);
   }
 
   .gb-bp-burner {
@@ -3578,7 +3664,7 @@
   }
 
   .gb-df-cartridge-bay {
-    min-height: 220px;
+    min-height: clamp(180px, 56vw, 220px);
   }
 
   .gb-df-cartridge {
@@ -3587,8 +3673,12 @@
 
   .gb-vol-mount-stage,
   .gb-vol-arena {
-    min-height: 0;
-    padding: 18px;
+    min-height: clamp(240px, 74vw, 320px);
+    padding: 16px;
+  }
+
+  .gb-vol-mount-stage.is-shared {
+    min-height: clamp(300px, 94vw, 420px);
   }
 
   .gb-vol-arena-hint {
@@ -3613,7 +3703,11 @@
   .gb-bpr-v2-stage,
   .gb-bpr-monitor-stage,
   .gb-bpr-console-stage {
-    min-height: 340px;
+    min-height: clamp(240px, 76vw, 320px);
+  }
+
+  .gb-bpr-monitor-stage {
+    min-height: clamp(260px, 86vw, 360px);
   }
 
   .gb-bpr-hero-sprite,
@@ -3657,14 +3751,142 @@
   }
 
   .gb-screen-idle p,
-  .gb-panel-copy,
-  .gb-lesson-card p,
-  .gb-command-card p,
-  .gb-option-card {
-    font-size: 0.95rem;
+  .gb-screen-summary p {
+    font-size: clamp(0.44rem, 1.8vw, 0.62rem);
   }
 
   .gb-scale-booth-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .gb-level-header {
+    gap: 10px;
+    padding: 10px 12px 0;
+  }
+
+  .gb-back-btn {
+    padding: 10px 14px;
+  }
+
+  .gb-level-title {
+    padding: 12px 14px;
+    border-radius: 20px;
+  }
+
+  .gb-level-body {
+    padding: 10px 12px 22px;
+  }
+
+  .gb-story-layout,
+  .gb-concept-layout,
+  .gb-intro-container-layout,
+  .gb-bpr-layout,
+  .gb-bp-layout,
+  .gb-df-layout,
+  .gb-vol-layout {
+    gap: 14px;
+  }
+
+  .gb-stage-panel,
+  .gb-dialogue-card,
+  .gb-panel {
+    gap: 12px;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .gb-panel-title {
+    font-size: clamp(1.14rem, 3vw, 1.45rem);
+  }
+
+  .gb-panel-copy,
+  .gb-lesson-card p,
+  .gb-command-card p,
+  .gb-option-card,
+  .gb-fact-card,
+  .gb-df-block span:last-child,
+  .gb-vol-fact-card p,
+  .gb-vol-result-card p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .gb-dialogue-footer {
+    margin-top: 0;
+    gap: 10px;
+  }
+
+  .gb-scale-layout {
+    align-items: start;
+  }
+
+  .gb-scale-stage-panel,
+  .gb-scale-dialogue-card {
+    min-height: 0;
+  }
+
+  .gb-scale-scene {
+    min-height: 250px;
+    padding: 14px;
+  }
+
+  .gb-scale-scene-caption {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    font-size: 0.72rem;
+  }
+
+  .gb-bpr-preview-visual {
+    min-height: 170px;
+  }
+
+  .gb-bpr-choice-card {
+    min-height: 168px;
+  }
+
+  .gb-bpr-assembly-board,
+  .gb-bpr-store-stage,
+  .gb-bpr-v2-stage,
+  .gb-bpr-console-stage {
+    min-height: 250px;
+  }
+
+  .gb-bpr-monitor-stage {
+    min-height: 300px;
+  }
+
+  .gb-bp-blueprint,
+  .gb-bp-belt-scene {
+    min-height: 0;
+  }
+
+  .gb-bp-belt-scene {
+    min-height: 190px;
+  }
+
+  .gb-df-cartridge-bay {
+    min-height: 180px;
+  }
+
+  .gb-df-block {
+    min-height: 152px;
+    padding: 14px;
+  }
+
+  .gb-vol-mount-stage,
+  .gb-vol-arena {
+    min-height: 250px;
+    padding: 14px;
+  }
+
+  .gb-vol-mount-stage.is-shared {
+    min-height: 340px;
+  }
+
+  .gb-vol-summary-panel .gb-primary-btn {
+    margin-top: 0;
   }
 }
