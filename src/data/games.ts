@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, Search, Box, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, Search, Box, GitBranch, type LucideIcon } from 'lucide-react'
 
 import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.webp'
 import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.webp'
@@ -182,5 +182,23 @@ export const games: Game[] = [
     tag: 'RPG',
     level: 'Intermediate',
     thumbnail: mysteryThumb
+  },
+  {
+    id: 'thread',
+    title: 'Thread Lightly',
+    description: 'Study a looping concurrency choreography, reconstruct the Java thread sequence with code blocks, and watch your own replay prove where the timing holds or breaks.',
+    icon: GitBranch,
+    tag: 'Simulation',
+    level: 'Intermediate',
+    thumbnailBg: 'linear-gradient(135deg, #4c5d5a 0%, #2f3d3b 45%, #1f2a29 100%)',
+  },
+  {
+    id: 'load-balancer',
+    title: 'Level 1: The Load Balancer',
+    description: 'Run Club Nexus like a neon backend operator. Drag each request to the right server, spread traffic evenly, and stop the nightclub from crashing.',
+    icon: Server,
+    tag: 'Simulation',
+    level: 'Intermediate',
+    thumbnailBg: 'linear-gradient(135deg, #250935 0%, #06173e 44%, #04121c 100%)',
   },
 ]

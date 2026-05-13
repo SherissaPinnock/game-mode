@@ -19,6 +19,8 @@ interface LearningRoadmapProps {
   levels: RoadmapLevel[]
   onPlay: (levelIdx: number) => void
   onExit: () => void
+  secondaryActionLabel?: string
+  onSecondaryAction?: () => void
 }
 
 type NodeStatus = 'done' | 'current' | 'locked'
@@ -60,6 +62,8 @@ export function LearningRoadmap({
   levels,
   onPlay,
   onExit,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: LearningRoadmapProps) {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [mapPoints, setMapPoints] = useState<RoadmapPoint[]>([])
@@ -151,9 +155,17 @@ export function LearningRoadmap({
           </div>
         </div>
 
-        <div className="rm-progress-panel" aria-label="Roadmap progress">
-          <span className="rm-progress-value">{completedIds.size}/{levels.length}</span>
-          <span className="rm-progress-label">stages cleared</span>
+        <div className="rm-side-panel">
+          {secondaryActionLabel && onSecondaryAction && (
+            <button className="rm-ui-btn rm-ui-btn-ghost rm-ui-btn-side" onClick={onSecondaryAction}>
+              {secondaryActionLabel}
+            </button>
+          )}
+
+          <div className="rm-progress-panel" aria-label="Roadmap progress">
+            <span className="rm-progress-value">{completedIds.size}/{levels.length}</span>
+            <span className="rm-progress-label">stages cleared</span>
+          </div>
         </div>
       </div>
 

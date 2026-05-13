@@ -14,12 +14,12 @@ export const DB_LEVELS: RoadmapLevel[] = [
   },
   {
     id: 'indexing',
-    title: 'The Index Vault',
-    subtitle: 'Speed up queries with smart indexing',
+    title: 'City Planner',
+    subtitle: 'Build the right index for each city query',
     icon: '🗂️',
     conceptTitle: 'Database Indexing',
-    conceptBody: 'Without an index, every query scans every row — like reading an entire book to find one word. An index is a sorted lookup structure that lets the database jump straight to the rows you need, skipping everything else.',
-    conceptHighlight: 'A full table scan on 10 million rows can take seconds. The same query with the right index runs in milliseconds.',
+    conceptBody: 'Without an index, every query scans row after row like a clerk walking every street in town. An index is a fast lookup path that lets the database jump to the right slice of data first.',
+    conceptHighlight: 'Composite indexes read left to right. Put equality filters first, and range filters like `>` after them whenever possible.',
   },
   {
     id: 'ctes',

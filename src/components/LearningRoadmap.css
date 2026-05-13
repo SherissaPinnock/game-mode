@@ -124,6 +124,16 @@
   gap: 2px;
 }
 
+.rm-side-panel {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.rm-ui-btn-side {
+  min-width: 126px;
+}
+
 .rm-progress-value {
   font-size: 1.6rem;
   font-weight: 900;
@@ -463,6 +473,10 @@
     grid-template-columns: 1fr;
   }
 
+  .rm-side-panel {
+    justify-items: stretch;
+  }
+
   .rm-stage-left,
   .rm-stage-right {
     align-items: flex-start;
@@ -499,6 +513,10 @@
 
   .rm-progress-panel,
   .rm-ui-btn-ghost {
+    width: 100%;
+  }
+
+  .rm-ui-btn-side {
     width: 100%;
   }
 

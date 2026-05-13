@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth'
 import { DB_LEVELS, GAME_ID } from './data/roadmap'
 import NormalizationLevel from './levels/NormalizationLevel'
 import IndexingLevel from './levels/IndexingLevel'
+import CteLevel from './levels/CteLevel'
 import './DbQuest.css'
 
 interface Props { onExit: () => void }
@@ -62,6 +63,9 @@ export default function DbQuest({ onExit }: Props) {
   }
   if (activeLevelIdx === 1) {
     return <IndexingLevel onComplete={handleLevelComplete} onBack={handleBackToMap} />
+  }
+  if (activeLevelIdx === 2) {
+    return <CteLevel onComplete={handleLevelComplete} onBack={handleBackToMap} />
   }
 
   // Future levels — fallback

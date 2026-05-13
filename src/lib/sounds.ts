@@ -14,6 +14,7 @@ import wasCorrectSrc from '@/assets/sounds/was correct voice over.mp3'
 import wasWrongSrc from '@/assets/sounds/was wrong voice over.mp3'
 import vintageGameSrc from '@/assets/sounds/vintage game sound.mp3'
 import coinSrc from '@/assets/sounds/coin drop.mp3'
+import clubSrc from '@/assets/sounds/club music.mp3'
 /**
  * Play a short sound effect. Creates a fresh Audio each time
  * so overlapping plays don't cut each other off.
@@ -72,6 +73,23 @@ export function playNextLevel() {
 
 export function playVintageGame() {
   play(vintageGameSrc)
+}
+
+export function playClubMusic({
+  loop = true,
+  volume = 0.35,
+  muted = false,
+}: {
+  loop?: boolean
+  volume?: number
+  muted?: boolean
+} = {}): HTMLAudioElement {
+  const audio = new Audio(clubSrc)
+  audio.loop = loop
+  audio.volume = volume
+  audio.muted = muted
+  audio.play().catch(() => {})
+  return audio
 }
 
 export function playVoiceOver(): HTMLAudioElement {

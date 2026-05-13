@@ -27,6 +27,8 @@ import ChessClouds from '@/games/chess-clouds/ChessClouds'
 import DbQuest from '@/games/db-quest/DbQuest'
 import GameBoy from '@/games/game-boy/GameBoy'
 import MysteryGame from '@/games/mystery/MysteryGame'
+import GhostReplay from '@/games/thread/GhostReplay'
+import LoadBalancerGame from '@/games/load-balancer/LoadBalancerGame'
 import './App.css'
 
 const RESUMABLE_GAMES = new Set(['devops-dynamo', 'build-a-startup', 'python-and-ladders'])
@@ -130,6 +132,12 @@ function GameRoute() {
   }
   if (gameId === 'mystery') {
     return <MysteryGame key={componentKey} onExit={handleExit} />
+  }
+  if (gameId === 'thread') {
+    return <GhostReplay key={componentKey} onExit={handleExit} />
+  }
+  if (gameId === 'load-balancer') {
+    return <LoadBalancerGame key={componentKey} onExit={handleExit} />
   }
 
   return <Navigate to="/games" replace />
