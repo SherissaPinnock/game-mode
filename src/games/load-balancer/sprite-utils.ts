@@ -21,6 +21,9 @@ const SPRITE_FRAMES: SpriteFrame[] = [
   { x: 1_214, y: 546, w: 198, h: 390 },
 ]
 
+const PORTRAIT_COLUMNS = 5
+const PORTRAIT_ROWS = 3
+
 type RGB = {
   r: number
   g: number
@@ -152,6 +155,42 @@ function extractFrame(image: HTMLImageElement, frame: SpriteFrame) {
   return trimTransparentBounds(canvas)
 }
 
+function extractAlphaFrame(image: HTMLImageElement, frame: SpriteFrame) {
+  const canvas = document.createElement('canvas')
+  canvas.width = frame.w
+  canvas.height = frame.h
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) return ''
+
+  ctx.drawImage(image, frame.x, frame.y, frame.w, frame.h, 0, 0, frame.w, frame.h)
+  return trimTransparentBounds(canvas)
+}
+
+function createGridFrames(width: number, height: number, columns: number, rows: number) {
+  const frames: SpriteFrame[] = []
+  const cellWidth = width / columns
+  const cellHeight = height / rows
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const x = Math.round(column * cellWidth)
+      const y = Math.round(row * cellHeight)
+      const nextX = Math.round((column + 1) * cellWidth)
+      const nextY = Math.round((row + 1) * cellHeight)
+
+      frames.push({
+        x,
+        y,
+        w: nextX - x,
+        h: nextY - y,
+      })
+    }
+  }
+
+  return frames
+}
+
 export async function extractPartySprites(sheetSrc: string) {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const next = new Image()
@@ -161,4 +200,16 @@ export async function extractPartySprites(sheetSrc: string) {
   })
 
   return SPRITE_FRAMES.map(frame => extractFrame(image, frame)).filter(Boolean)
+}
+
+export async function extractPortraitSprites(sheetSrc: string) {
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const next = new Image()
+    next.onload = () => resolve(next)
+    next.onerror = () => reject(new Error('Unable to load portrait sheet'))
+    next.src = sheetSrc
+  })
+
+  const portraitFrames = createGridFrames(image.width, image.height, PORTRAIT_COLUMNS, PORTRAIT_ROWS)
+  return portraitFrames.map(frame => extractAlphaFrame(image, frame)).filter(Boolean)
 }

@@ -13,15 +13,6 @@ export const LOAD_BALANCER_LEVELS: RoadmapLevel[] = [
     conceptHighlight: 'Balanced traffic keeps latency down, prevents crashes, and makes the whole system feel smoother to users.',
   },
   {
-    id: 'reverse-proxy',
-    title: 'Reverse Proxy',
-    subtitle: 'Shield the club entrance and smooth request flow',
-    icon: '🛡️',
-    conceptTitle: 'Reverse Proxies',
-    conceptBody: 'A reverse proxy sits in front of your backend, forwarding requests, hiding internals, and helping with TLS termination, caching, and smarter routing.',
-    conceptHighlight: 'One clean front door can protect many services behind it.',
-  },
-  {
     id: 'api-gateway',
     title: 'API Gateway',
     subtitle: 'Coordinate the full service lineup',

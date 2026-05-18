@@ -2,24 +2,24 @@ import { useState } from 'react'
 import { useTypewriter } from '@/games/mystery/hooks/useTypewriter'
 import { playClick, playPop } from '@/lib/sounds'
 
-const DJ_BYTEBEAT_SCRIPT = [
+const DJ_BYTEBEAT_SCRIPT: string[] = [
   'YO YO YO! Welcome to Club Nexus, rookie!',
   'Tonight, YOU are the Load Balancer.',
-  'See those three server doors? That’s the backend keeping this whole club alive.',
+  "See those three server doors? That's the backend keeping this whole club alive.",
   'Every party-goer walking in is a request hitting the system.',
-  'They’ve all got a math problem over their heads. Your job is to send them to the correct server before the line backs up.',
-  'But here’s the catch...',
+  "They've all got a math problem over their heads. Your job is to send them to the correct server before the line backs up.",
+  "But here's the catch...",
   'If one server gets too many requests at once, it overloads.',
   'And trust me — when a server crashes, the whole club feels it.',
-  'So don’t just send people anywhere.',
+  "So don't just send people anywhere.",
   'Spread the traffic evenly.',
   'Keep all three servers healthy.',
-  'That’s what load balancing is all about:\ndistributing incoming traffic so no single server gets overwhelmed.',
+  "That's what load balancing is all about:\ndistributing incoming traffic so no single server gets overwhelmed.",
   'Good load balancers keep apps fast, stable, and online.',
   'Bad load balancers?',
   'Heh... those get the club shut down.',
   'Balance the load. Protect the servers. Keep the party alive.',
-  'LET’S SPIN THIS TRAFFIC!',
+  "LET'S SPIN THIS TRAFFIC!",
 ]
 
 interface DJBytebeatIntroProps {
@@ -29,6 +29,10 @@ interface DJBytebeatIntroProps {
   onStart: () => void
   musicMuted: boolean
   onToggleMusic: () => void
+  script?: string[]
+  levelTitle?: string
+  phaseLabel?: string
+  onSkipAll?: () => void
 }
 
 export function DJBytebeatIntro({
@@ -38,11 +42,16 @@ export function DJBytebeatIntro({
   onStart,
   musicMuted,
   onToggleMusic,
+  script,
+  levelTitle,
+  phaseLabel,
+  onSkipAll,
 }: DJBytebeatIntroProps) {
+  const activeScript = script ?? DJ_BYTEBEAT_SCRIPT
   const [lineIndex, setLineIndex] = useState(0)
-  const currentLine = DJ_BYTEBEAT_SCRIPT[lineIndex]
+  const currentLine = activeScript[lineIndex] ?? ''
   const { typed, done, skip } = useTypewriter(currentLine, 22)
-  const isLastLine = lineIndex === DJ_BYTEBEAT_SCRIPT.length - 1
+  const isLastLine = lineIndex === activeScript.length - 1
 
   function handleAdvance() {
     if (!done) {
@@ -70,12 +79,19 @@ export function DJBytebeatIntro({
 
       <div className="lb-intro-topbar">
         <button className="lb-back-btn" onClick={onBack} type="button">
-          ← Back to roadmap
+          {'<-'} Back to roadmap
         </button>
 
-        <button className="lb-panel-btn" onClick={onToggleMusic} type="button">
-          Music {musicMuted ? 'Off' : 'On'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {onSkipAll && (
+            <button className="lb-panel-btn" onClick={onSkipAll} type="button">
+              Skip intro
+            </button>
+          )}
+          <button className="lb-panel-btn" onClick={onToggleMusic} type="button">
+            Music {musicMuted ? 'Off' : 'On'}
+          </button>
+        </div>
       </div>
 
       <div className="lb-intro-stage">
@@ -90,16 +106,16 @@ export function DJBytebeatIntro({
         </div>
 
         <div className="lb-intro-dialogue-panel">
-          <span className="lb-objective-badge">Pre-Shift Briefing</span>
-          <h2 className="lb-intro-title">Level 1: The Load Balancer</h2>
+          <span className="lb-objective-badge">{phaseLabel ?? 'Pre-Shift Briefing'}</span>
+          <h2 className="lb-intro-title">{levelTitle ?? 'Level 1: The Load Balancer'}</h2>
           <p className="lb-intro-line">
             {typed}
-            {!done && <span className="lb-intro-cursor">▍</span>}
+            {!done && <span className="lb-intro-cursor">{'|'}</span>}
           </p>
 
           <div className="lb-intro-footer">
             <div className="lb-intro-progress" aria-label="Intro progress">
-              {DJ_BYTEBEAT_SCRIPT.map((_, index) => (
+              {activeScript.map((_, index) => (
                 <span
                   key={index}
                   className={[

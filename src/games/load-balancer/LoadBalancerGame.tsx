@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { LearningRoadmap } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
 import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
@@ -17,6 +17,8 @@ import {
 import clubBackgroundSrc from '@/assets/bouncer/club background.png'
 import partySheetSrc from '@/assets/bouncer/club goer sprites.png'
 import djNarratorSrc from '@/assets/bouncer/dj narrator.png'
+import { ApiGatewayLevel } from './ApiGatewayLevel'
+import { ApiGatewayIntro } from './components/ApiGatewayIntro'
 import { DJBytebeatIntro } from './components/DJBytebeatIntro'
 import { FloatingText } from './components/FloatingText'
 import { HUD } from './components/HUD'
@@ -599,7 +601,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
   const winRecordedRef = useRef(false)
   const clubMusicRef = useRef<HTMLAudioElement | null>(null)
 
-  const [view, setView] = useState<'roadmap' | 'intro' | 'game'>('roadmap')
+  const [view, setView] = useState<'roadmap' | 'intro' | 'gateway-intro' | 'game'>('roadmap')
   const [activeLevelIdx, setActiveLevelIdx] = useState(0)
   const [completedIds, setCompletedIds] = useState(() => getCompletedLevels(GAME_ID))
   const [partySprites, setPartySprites] = useState<string[]>([])
@@ -608,8 +610,6 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
   const [hoveredDoorId, setHoveredDoorId] = useState<ServerId | null>(null)
   const [musicMuted, setMusicMuted] = useState(false)
 
-  completedIdsRef.current = completedIds
-
   useEffect(() => {
     gameRef.current = gameState
   }, [gameState])
@@ -617,6 +617,10 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
   useEffect(() => {
     dragRef.current = dragState
   }, [dragState])
+
+  useEffect(() => {
+    completedIdsRef.current = completedIds
+  }, [completedIds])
 
   useEffect(() => {
     return () => {
@@ -655,6 +659,20 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
     })
   }, [userId])
 
+  const recordLevelComplete = useCallback((levelId: string) => {
+    if (completedIdsRef.current.has(levelId)) return
+
+    const before = new Set(completedIdsRef.current)
+    markLevelComplete(GAME_ID, levelId)
+    const updated = getCompletedLevels(GAME_ID)
+    completedIdsRef.current = updated
+    setCompletedIds(updated)
+
+    if (userId) {
+      remoteMarkLevelComplete(userId, GAME_ID, levelId, before)
+    }
+  }, [userId])
+
   useEffect(() => {
     if (view !== 'game' || activeLevelIdx !== 0 || gameState.phase !== 'playing') return
 
@@ -669,12 +687,21 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
       gameRef.current = result.state
       setGameState(result.state)
       applySoundEvents(result.events)
+
+      if (result.events.includes('complete') && !winRecordedRef.current) {
+        const levelId = LOAD_BALANCER_LEVELS[0]?.id
+        if (levelId) {
+          winRecordedRef.current = true
+          recordLevelComplete(levelId)
+        }
+      }
+
       frameId = window.requestAnimationFrame(tick)
     }
 
     frameId = window.requestAnimationFrame(tick)
     return () => window.cancelAnimationFrame(frameId)
-  }, [view, activeLevelIdx, gameState.phase, partySprites.length])
+  }, [view, activeLevelIdx, gameState.phase, partySprites.length, recordLevelComplete])
 
   useEffect(() => {
     if (!dragState) return
@@ -727,23 +754,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
       window.removeEventListener('pointerup', handlePointerUp)
       window.removeEventListener('pointercancel', handlePointerUp)
     }
-  }, [dragState?.pointerId])
-
-  useEffect(() => {
-    if (view !== 'game' || activeLevelIdx !== 0 || gameState.phase !== 'won' || winRecordedRef.current) return
-
-    const levelId = LOAD_BALANCER_LEVELS[0]?.id
-    if (!levelId) return
-
-    winRecordedRef.current = true
-    if (!completedIdsRef.current.has(levelId)) {
-      const before = completedIdsRef.current
-      markLevelComplete(GAME_ID, levelId)
-      const updated = getCompletedLevels(GAME_ID)
-      setCompletedIds(updated)
-      if (userId) remoteMarkLevelComplete(userId, GAME_ID, levelId, before)
-    }
-  }, [view, activeLevelIdx, gameState.phase, userId])
+  }, [dragState])
 
   function resetStage() {
     winRecordedRef.current = false
@@ -803,6 +814,13 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
     if (levelIdx === 0) {
       resetStage()
       setView('intro')
+      ensureClubMusicPlaying()
+      playClick()
+      return
+    }
+
+    if (levelIdx === 1) {
+      setView('gateway-intro')
       ensureClubMusicPlaying()
       playClick()
       return
@@ -872,7 +890,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
   if (view === 'roadmap') {
     return (
       <LearningRoadmap
-        gameName="Level 1: The Load Balancer"
+        gameName="Club Nexus Ops"
         gameEmoji="🪩"
         themeColor="#ff4fd8"
         completedIds={completedIds}
@@ -896,20 +914,33 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
     )
   }
 
-  if (activeLevelIdx !== 0) {
+  if (view === 'gateway-intro') {
     return (
-      <div className="lb-coming-soon">
-        <div className="lb-coming-soon-card">
-          <h2>{LOAD_BALANCER_LEVELS[activeLevelIdx]?.title ?? 'Next Stage'} is queued up</h2>
-          <p>
-            Stage {activeLevelIdx + 1} is unlocked in the roadmap, but this prototype only ships the
-            full playable load balancer level right now.
-          </p>
-          <button className="lb-panel-btn" onClick={handleBackToRoadmap} type="button">
-            ← Back to roadmap
-          </button>
-        </div>
-      </div>
+      <ApiGatewayIntro
+        narratorSrc={djNarratorSrc}
+        backgroundSrc={clubBackgroundSrc}
+        onBack={handleBackToRoadmap}
+        onStart={() => {
+          setView('game')
+        }}
+        musicMuted={musicMuted}
+        onToggleMusic={handleToggleMusic}
+      />
+    )
+  }
+
+  if (activeLevelIdx === 1) {
+    return (
+      <ApiGatewayLevel
+        onBack={handleBackToRoadmap}
+        onToggleMusic={handleToggleMusic}
+        musicMuted={musicMuted}
+        onComplete={() => {
+          const levelId = LOAD_BALANCER_LEVELS[1]?.id
+          if (!levelId) return
+          recordLevelComplete(levelId)
+        }}
+      />
     )
   }
 

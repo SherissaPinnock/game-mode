@@ -17,6 +17,8 @@ import mahjongThumb from '@/assets/game thumbnails/mahjong.webp'
 import mysteryThumb from '@/assets/game thumbnails/blackwoon manor.webp'
 import dbThumb from '@/assets/game thumbnails/db quest.webp'
 import gameBoyThumb from '@/assets/game thumbnails/docker ds.webp'
+import threadThumb from '@/assets/game thumbnails/thread lightly.webp'
+import bouncerThumb from '@/assets/game thumbnails/bouncer duty.webp'
 
 export interface Game {
   id: string
@@ -190,15 +192,15 @@ export const games: Game[] = [
     icon: GitBranch,
     tag: 'Simulation',
     level: 'Intermediate',
-    thumbnailBg: 'linear-gradient(135deg, #4c5d5a 0%, #2f3d3b 45%, #1f2a29 100%)',
+    thumbnail: threadThumb
   },
   {
     id: 'load-balancer',
-    title: 'Level 1: The Load Balancer',
+    title: 'Bouncer Duty',
     description: 'Run Club Nexus like a neon backend operator. Drag each request to the right server, spread traffic evenly, and stop the nightclub from crashing.',
     icon: Server,
     tag: 'Simulation',
     level: 'Intermediate',
-    thumbnailBg: 'linear-gradient(135deg, #250935 0%, #06173e 44%, #04121c 100%)',
+    thumbnail: bouncerThumb
   },
 ]
