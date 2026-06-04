@@ -29,14 +29,17 @@ import GameBoy from '@/games/game-boy/GameBoy'
 import MysteryGame from '@/games/mystery/MysteryGame'
 import GhostReplay from '@/games/thread/GhostReplay'
 import LoadBalancerGame from '@/games/load-balancer/LoadBalancerGame'
+import SchemaSleuth from '@/games/schema-sleuth/SchemaSleuth'
+import GitCommandCommander from '@/games/git-command-commander/GitCommandCommander'
 import './App.css'
 
-const RESUMABLE_GAMES = new Set(['devops-dynamo', 'build-a-startup', 'python-and-ladders'])
+const RESUMABLE_GAMES = new Set(['devops-dynamo', 'build-a-startup', 'python-and-ladders', 'schema-sleuth'])
 
 const GAME_TITLES: Record<string, string> = {
   'devops-dynamo': 'DevOps Dynamo',
   'build-a-startup': 'Build a Startup',
   'python-and-ladders': 'Python & Ladders',
+  'schema-sleuth': 'Schema Sleuth',
 }
 
 type PendingGame = {
@@ -138,6 +141,13 @@ function GameRoute() {
   }
   if (gameId === 'load-balancer') {
     return <LoadBalancerGame key={componentKey} onExit={handleExit} />
+  }
+  if (gameId === 'schema-sleuth') {
+    const resumeState = routeState.resumeState as ComponentProps<typeof SchemaSleuth>['resumeState']
+    return <SchemaSleuth key={componentKey} onExit={handleExit} resumeState={resumeState} />
+  }
+  if (gameId === 'git-command-commander') {
+    return <GitCommandCommander key={componentKey} onExit={handleExit} />
   }
 
   return <Navigate to="/games" replace />

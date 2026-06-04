@@ -1,4 +1,4 @@
-import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, Search, Box, GitBranch, type LucideIcon } from 'lucide-react'
+import { Target, Network, LayoutGrid, Server, Hammer, Dices, Stethoscope, Pencil, Lightbulb, Database, Search, Box, GitBranch, GitMerge, type LucideIcon } from 'lucide-react'
 
 import archeryThumb      from '@/assets/game thumbnails/archery thumbnail.webp'
 import connectionsThumb  from '@/assets/game thumbnails/tech-connections-thumbnail.webp'
@@ -19,6 +19,8 @@ import dbThumb from '@/assets/game thumbnails/db quest.webp'
 import gameBoyThumb from '@/assets/game thumbnails/docker ds.webp'
 import threadThumb from '@/assets/game thumbnails/thread lightly.webp'
 import bouncerThumb from '@/assets/game thumbnails/bouncer duty.webp'
+import schemaThumb from '@/assets/game thumbnails/schema thumbnail.webp'
+import gitThumb from '@/assets/game thumbnails/git commander.webp'
 
 export interface Game {
   id: string
@@ -83,7 +85,7 @@ export const games: Game[] = [
     description: 'Craft the perfect prompt to solve challenges. Test and refine your prompts to achieve the best results.',
     icon: Pencil,
     tag: 'Simulation',
-    level: 'Intermediate',
+    level: 'Beginner',
     thumbnail: promptThumb,
   },
   {
@@ -182,7 +184,7 @@ export const games: Game[] = [
     description: 'A murder mystery RPG set in a pixel-art mansion. Investigate rooms, question suspects, and uncover the truth before the killer destroys the evidence.',
     icon: Search,
     tag: 'RPG',
-    level: 'Intermediate',
+    level: 'Beginner',
     thumbnail: mysteryThumb
   },
   {
@@ -202,5 +204,23 @@ export const games: Game[] = [
     tag: 'Simulation',
     level: 'Intermediate',
     thumbnail: bouncerThumb
+  },
+  {
+    id: 'schema-sleuth',
+    title: 'Schema Sleuth',
+    description: 'Untangle messy client stories into ERD diagrams. Drag entities onto the board, add keys and attributes, and prove the structure really fits the brief.',
+    icon: Search,
+    tag: 'Simulation',
+    level: 'Intermediate',
+    thumbnail: schemaThumb
+  },
+  {
+    id: 'git-command-commander',
+    title: 'Git Command Commander',
+    description: 'A puzzle game about Git workflow thinking. Stage commits, branch safely, resolve conflicts, and nail the PR process — no terminal required.',
+    icon: GitMerge,
+    tag: 'Simulation',
+    level: 'Beginner',
+    thumbnail: gitThumb
   },
 ]

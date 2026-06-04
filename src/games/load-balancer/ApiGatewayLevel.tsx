@@ -7,12 +7,14 @@ import portraitSheetSrc from '@/assets/bouncer/silhouette transparent.png'
 import starIconSrc from '@/assets/bouncer/star.svg'
 import ticketSrc from '@/assets/bouncer/ticket.png'
 import verticalTicketSrc from '@/assets/bouncer/vertical ticket.png'
+import { GameCompleteModal } from '@/components/GameCompleteModal'
 import {
   playClick,
   playComplete,
   playCorrect,
   playPop,
 } from '@/lib/sounds'
+import { API_GATEWAY_COMPLETION } from './data/completionData'
 import {
   acceptGatewayRequest,
   blockCurrentSpamIp,
@@ -276,6 +278,7 @@ export function ApiGatewayLevel({
   const [selectedEndpointId, setSelectedEndpointId] = useState<GatewayEndpointId | null>(null)
   const [handbookOpen, setHandbookOpen] = useState(false)
   const [sublevel, setSublevel] = useState<GatewaySublevel>(1)
+  const [showCompleteModal, setShowCompleteModal] = useState(false)
 
   const stateRef = useRef(state)
   const alertTimeoutRef = useRef<number | null>(null)
@@ -349,6 +352,7 @@ export function ApiGatewayLevel({
         completionSentRef.current = true
         if (sublevelRef.current >= 3) {
           onCompleteRef.current()
+          setShowCompleteModal(true)
         }
       }
     }
@@ -458,6 +462,7 @@ export function ApiGatewayLevel({
   function handleNextLevel() {
     if (sublevel >= 3) {
       onCompleteRef.current()
+      setShowCompleteModal(true)
       return
     }
     const next = (sublevel + 1) as GatewaySublevel
@@ -489,6 +494,7 @@ export function ApiGatewayLevel({
   const timeBarPct = Math.max(0, (state.timeLeftMs / levelConfig.durationMs) * 100)
 
   return (
+    <>
     <div className="ag-shell">
       {/* Top nav */}
       <nav className="ag-topnav">
@@ -872,5 +878,30 @@ export function ApiGatewayLevel({
         </div>
       )}
     </div>
+
+    {showCompleteModal && (
+      <GameCompleteModal
+        {...API_GATEWAY_COMPLETION}
+        score={Math.max(0, state.correctCount * 120 + Math.round(state.reputation) * 3 - state.breaches * 80)}
+        stats={[
+          { label: 'Correct', value: state.correctCount },
+          { label: 'Reputation', value: `${Math.round(state.reputation)}%` },
+          { label: 'Breaches', value: state.breaches },
+        ]}
+        onPlayAgain={() => {
+          setShowCompleteModal(false)
+          completionSentRef.current = false
+          const fresh = createInitialApiGatewayState(new Date(), Math.max(1, portraitSprites.length), 1)
+          setSublevel(1)
+          sublevelRef.current = 1
+          stateRef.current = fresh
+          setState(fresh)
+          setAlert(null)
+          setSelectedEndpointId(null)
+        }}
+        onBack={onBack}
+      />
+    )}
+    </>
   )
 }

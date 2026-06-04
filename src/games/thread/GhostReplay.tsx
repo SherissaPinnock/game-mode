@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { LearningRoadmap } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
-import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
+import { persistSession, remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
 import { useAuth } from '@/lib/auth'
 import { playCorrect } from '@/lib/sounds'
 
@@ -668,6 +668,7 @@ export default function GhostReplay({ onExit }: GhostReplayProps) {
     setCompletedIds(updated)
     if (userId) {
       remoteMarkLevelComplete(userId, THREAD_GAME_ID, stage.id, updated)
+      persistSession({ userId, gameId: THREAD_GAME_ID, score: 100, entries: [] })
     }
   }, [attempt, clockMs, isObserveStage, stage.id, stageCleared, userId])
 
@@ -782,6 +783,7 @@ export default function GhostReplay({ onExit }: GhostReplayProps) {
     setCompletedIds(updated)
     if (userId) {
       remoteMarkLevelComplete(userId, THREAD_GAME_ID, stage.id, updated)
+      persistSession({ userId, gameId: THREAD_GAME_ID, score: 100, entries: [] })
     }
     setStageCleared(true)
   }

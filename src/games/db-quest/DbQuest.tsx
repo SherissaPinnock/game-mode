@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { LearningRoadmap } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
-import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
+import { persistSession, remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
 import { useAuth } from '@/lib/auth'
 import { DB_LEVELS, GAME_ID } from './data/roadmap'
 import NormalizationLevel from './levels/NormalizationLevel'
@@ -35,7 +35,10 @@ export default function DbQuest({ onExit }: Props) {
       markLevelComplete(GAME_ID, levelId)
       const updated = getCompletedLevels(GAME_ID)
       setCompletedIds(updated)
-      if (userId) remoteMarkLevelComplete(userId, GAME_ID, levelId, updated)
+      if (userId) {
+        remoteMarkLevelComplete(userId, GAME_ID, levelId, updated)
+        persistSession({ userId, gameId: GAME_ID, score: 100, entries: [] })
+      }
     }
     setView('roadmap')
   }

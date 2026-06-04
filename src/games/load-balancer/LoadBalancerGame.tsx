@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { LearningRoadmap } from '@/components/LearningRoadmap'
 import { getCompletedLevels, markLevelComplete } from '@/lib/roadmap-progress'
-import { remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
+import { persistSession, remoteGetCompletedLevels, remoteMarkLevelComplete } from '@/lib/supabaseApi'
 import { useAuth } from '@/lib/auth'
 import {
   playClick,
@@ -17,6 +17,7 @@ import {
 import clubBackgroundSrc from '@/assets/bouncer/club background.png'
 import partySheetSrc from '@/assets/bouncer/club goer sprites.png'
 import djNarratorSrc from '@/assets/bouncer/dj narrator.png'
+import { GameCompleteModal } from '@/components/GameCompleteModal'
 import { ApiGatewayLevel } from './ApiGatewayLevel'
 import { ApiGatewayIntro } from './components/ApiGatewayIntro'
 import { DJBytebeatIntro } from './components/DJBytebeatIntro'
@@ -24,6 +25,7 @@ import { FloatingText } from './components/FloatingText'
 import { HUD } from './components/HUD'
 import { PartyGoer } from './components/PartyGoer'
 import { ServerDoor } from './components/ServerDoor'
+import { LOAD_BALANCER_COMPLETION } from './data/completionData'
 import { GAME_ID, LOAD_BALANCER_LEVELS } from './data/roadmap'
 import {
   createPartyGoer,
@@ -659,7 +661,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
     })
   }, [userId])
 
-  const recordLevelComplete = useCallback((levelId: string) => {
+  const recordLevelComplete = useCallback((levelId: string, score = 0) => {
     if (completedIdsRef.current.has(levelId)) return
 
     const before = new Set(completedIdsRef.current)
@@ -670,6 +672,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
 
     if (userId) {
       remoteMarkLevelComplete(userId, GAME_ID, levelId, before)
+      persistSession({ userId, gameId: GAME_ID, score, entries: [] })
     }
   }, [userId])
 
@@ -692,7 +695,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
         const levelId = LOAD_BALANCER_LEVELS[0]?.id
         if (levelId) {
           winRecordedRef.current = true
-          recordLevelComplete(levelId)
+          recordLevelComplete(levelId, result.state.score)
         }
       }
 
@@ -945,6 +948,7 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
   }
 
   return (
+    <>
     <div className="lb-shell">
       <div className="lb-layout">
         <div className="lb-topbar">
@@ -1047,23 +1051,12 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
               ))}
             </div>
 
-            {gameState.phase !== 'playing' && (
+            {gameState.phase === 'lost' && (
               <div className="lb-results">
                 <div className="lb-results-card">
-                  <div className={`lb-results-badge ${gameState.phase === 'won' ? 'good' : 'bad'}`}>
-                    {gameState.phase === 'won' ? 'Club Online' : 'Service Disrupted'}
-                  </div>
-                  <h2>
-                    {gameState.phase === 'won'
-                      ? 'You survived the traffic storm.'
-                      : 'The crowd overwhelmed the floor.'}
-                  </h2>
-                  <p>
-                    {gameState.phase === 'won'
-                      ? 'Stage 1 is cleared. Reverse Proxy is now unlocked on the roadmap.'
-                      : 'Try tighter round-robin routing. Spreading requests earlier buys recovery time before the crash chain starts.'}
-                  </p>
-
+                  <div className="lb-results-badge bad">Service Disrupted</div>
+                  <h2>The crowd overwhelmed the floor.</h2>
+                  <p>Try tighter round-robin routing. Spreading requests earlier buys recovery time before the crash chain starts.</p>
                   <div className="lb-results-stats">
                     <div className="lb-results-stat">
                       <span>Score</span>
@@ -1078,14 +1071,9 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
                       <strong>{gameState.servers.reduce((sum, server) => sum + server.totalAssigned, 0)}</strong>
                     </div>
                   </div>
-
                   <div className="lb-results-actions">
-                    <button className="lb-panel-btn" onClick={handleRetry} type="button">
-                      Retry level
-                    </button>
-                    <button className="lb-panel-btn" onClick={handleBackToRoadmap} type="button">
-                      Back to roadmap
-                    </button>
+                    <button className="lb-panel-btn" onClick={handleRetry} type="button">Retry level</button>
+                    <button className="lb-panel-btn" onClick={handleBackToRoadmap} type="button">Back to roadmap</button>
                   </div>
                 </div>
               </div>
@@ -1094,5 +1082,19 @@ export default function LoadBalancerGame({ onExit }: LoadBalancerGameProps) {
         </div>
       </div>
     </div>
+
+    {gameState.phase === 'won' && (
+      <GameCompleteModal
+        {...LOAD_BALANCER_COMPLETION}
+        score={gameState.score}
+        stats={[
+          { label: 'Reputation', value: `${Math.round(gameState.reputation)}%` },
+          { label: 'Handled', value: gameState.servers.reduce((sum, server) => sum + server.totalAssigned, 0) },
+        ]}
+        onPlayAgain={handleRetry}
+        onBack={handleBackToRoadmap}
+      />
+    )}
+    </>
   )
 }
